@@ -20,6 +20,49 @@ black & white film photographs. Static site, deployed to Cloudflare Pages.
 - **No dependencies unless necessary**. If a feature can be done with a few
   lines of CSS or vanilla JS, do that.
 
+## Grug-brained development
+
+This project is built in the spirit of [the grug-brained developer](https://grugbrain.dev/).
+A working translation, applied here:
+
+- **Complexity is the demon.** Every dependency, every abstraction, every clever
+  trick is a tax on future-grug. Refuse complexity loudly; pay it only when
+  forced.
+- **"No" is grug's most powerful word.** Each "yes" is permanent. This site does
+  not need: a CMS, comments, an analytics dashboard, a search box that fights
+  the existing tag pages, a custom build pipeline, image-recognition auto-tags,
+  a microservice for anything. Most feature ideas are best declined or
+  deferred.
+- **Boring beats shiny.** Astro + plain CSS + markdown frontmatter is the
+  correct stack precisely because it is boring. No bundler tweaks, no design
+  system, no framework du jour. A 20-line script beats a dependency.
+- **Avoid premature abstraction.** Duplication is cheap and reversible; the
+  wrong abstraction is expensive and stuck. Repeat code three times before
+  extracting a helper. (`src/lib/format.ts` was extracted only after Astro's
+  `getStaticPaths` couldn't see module-level helpers — not because it might
+  one day be reused.)
+- **Hide complexity at the seams.** When something *does* get complex (e.g.
+  the gallery loupe), keep it inside one file with one job. Don't sprawl.
+- **Don't fight the framework.** Astro wants content collections,
+  `getStaticPaths`, `<Image>`. Use those. Don't reinvent routing, don't build
+  a homemade markdown parser, don't replace the asset pipeline.
+- **Tests where the joints are.** No test framework yet. The
+  `npm run check-photos` script is the only test that earns its keep —
+  it catches publishing mistakes (missing alt, oversized images, orphan
+  files). When a real bug class appears, write a test for *that*, not for a
+  coverage target.
+- **Closure beats novelty.** Finish what you start. Demo routes are allowed
+  during exploration; they must be deleted once a direction is picked.
+  Open loops accumulate weight.
+- **Premature optimization is bad. Ignorant non-optimization is worse.** No
+  need for a CDN, a service worker, or a Cloudflare Worker for 9 photos. Do
+  need to keep image sizes in check (`scripts/check.mjs` warns past 3MB).
+- **"We should rewrite this" is almost always wrong.** When the site feels
+  broken, the answer is usually to delete code, not add a new layer.
+
+The recurring question for every change: not "can we?" but "would removing
+this leave something missing?" If no, don't ship it.
+
 ## Stack
 
 - **Astro** — static output, content collections.
