@@ -1,0 +1,65 @@
+---
+import { Image } from "astro:assets";
+import { getCollection, getEntry, render } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+	const photos = await getCollection("photos", ({ data }) => !data.draft);
+	return photos.map((photo) => ({
+		params: { id: photo.id },
+		props: { photo },
+	}));
+}
+
+const { photo } = Astro.props;
+const { Content } = await render(photo);
+const { title, date, image, alt, caption, camera, film, location, format, series, tags } = photo.data;
+const seriesEntry = series ? await getEntry(series) : null;
+const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
+---
+
+<Layout title={`${title} — Chris Bendel`} description={alt}>
+	{
+		seriesEntry && (
+			<p class="eyebrow">
+				<a href={`/series/${seriesEntry.id}/`}>← {seriesEntry.data.title}</a>
+			</p>
+		)
+	}
+
+	<figure>
+		<Image src={image} alt={alt} loading="eager" />
+		{caption && <figcaption>{caption}</figcaption>}
+	</figure>
+
+	<h1>{title}</h1>
+
+	<dl class="photo-meta">
+		<dt>Date</dt>
+		<dd>{fmt.format(date)}</dd>
+		{location && (<><dt>Location</dt><dd>{location}</dd></>)}
+		{camera && (<><dt>Camera</dt><dd>{camera}</dd></>)}
+		{film && (<><dt>Film</dt><dd>{film}</dd></>)}
+		{format && (<><dt>Format</dt><dd>{format}</dd></>)}
+	</dl>
+
+	<section class="notes">
+		<h2>Notes</h2>
+		<Content />
+	</section>
+
+	{
+		tags && tags.length > 0 && (
+			<ul class="tag-chips">
+				{tags.map((t) => (
+					<li>
+						<a href={`/tags/${t}/`}>#{t}</a>
+					</li>
+				))}
+			</ul>
+		)
+	}
+
+	<hr />
+	<p><a href="/">← Back to series</a></p>
+</Layout>

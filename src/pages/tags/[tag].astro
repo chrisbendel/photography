@@ -1,0 +1,49 @@
+---
+import { Image } from "astro:assets";
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+export async function getStaticPaths() {
+	const photos = await getCollection("photos", ({ data }) => !data.draft);
+	const byTag = new Map();
+	for (const p of photos) {
+		for (const t of p.data.tags ?? []) {
+			if (!byTag.has(t)) byTag.set(t, []);
+			byTag.get(t).push(p);
+		}
+	}
+	return [...byTag.entries()].map(([tag, ps]) => ({
+		params: { tag },
+		props: {
+			tag,
+			photos: ps.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()),
+		},
+	}));
+}
+
+const { tag, photos } = Astro.props;
+---
+
+<Layout title={`#${tag} — Chris Bendel`} description={`Photographs tagged ${tag}.`}>
+	<section class="intro">
+		<p class="eyebrow"><a href="/tags/">← All tags</a></p>
+		<h1>#{tag}</h1>
+		<p class="intro-meta">{photos.length} photograph{photos.length === 1 ? "" : "s"}</p>
+	</section>
+
+	<div class="sheet">
+		{
+			photos.map((photo) => (
+				<a href={`/photos/${photo.id}/`} class="cell" aria-label={photo.data.title}>
+					<Image
+						src={photo.data.image}
+						alt={photo.data.alt}
+						widths={[200, 400, 600]}
+						sizes="(min-width: 700px) 220px, 45vw"
+						loading="lazy"
+					/>
+				</a>
+			))
+		}
+	</div>
+</Layout>

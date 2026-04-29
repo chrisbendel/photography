@@ -1,0 +1,41 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+const photos = await getCollection("photos", ({ data }) => !data.draft);
+const counts = new Map();
+for (const p of photos) {
+	for (const t of p.data.tags ?? []) {
+		counts.set(t, (counts.get(t) ?? 0) + 1);
+	}
+}
+
+const tags = [...counts.entries()]
+	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+---
+
+<Layout title="Tags — Chris Bendel" description="Browse photographs by tag.">
+	<section class="intro">
+		<h1>Tags</h1>
+		<p>
+			Pick a thread to follow. Tags are written by hand, mostly while writing
+			notes — they're whatever felt true at the time.
+		</p>
+	</section>
+
+	{
+		tags.length === 0 ? (
+			<p><em>No tags yet.</em></p>
+		) : (
+			<ul class="tag-cloud">
+				{tags.map(([tag, count]) => (
+					<li>
+						<a href={`/tags/${tag}/`}>
+							#{tag} <span class="count">{count}</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		)
+	}
+</Layout>

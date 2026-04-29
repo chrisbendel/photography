@@ -1,46 +1,51 @@
-# Astro Starter Kit: Basics
+# photography
+
+Personal photography site. Astro, plain CSS, deploys to Cloudflare Pages.
+
+For ethos, content model, and detailed workflow, see [`AGENTS.md`](./AGENTS.md).
+
+## Setup
 
 ```sh
-yarn create astro@latest -- --template basics
+yarn install
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Commands
 
-## 🚀 Project Structure
+| Command | What it does |
+| --- | --- |
+| `yarn dev` | Local dev server at `localhost:4321` |
+| `yarn build` | Build static site to `./dist/` |
+| `yarn preview` | Preview the production build locally |
+| `yarn run new-photo -- <slug> [image]` | Scaffold a new photo entry (draft) |
+| `yarn run check-photos` | Lint photos: alt text, sizes, refs, bodies |
+| `yarn run suggest-tags -- <slug>\|--all` | Suggest tags via local Ollama (optional) |
 
-Inside of your Astro project, you'll see the following folders and files:
+## Add a photograph
 
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
+```sh
+yarn run new-photo -- field ~/Desktop/scan.jpg   # copies image, creates stub
+# fill src/content/photos/field.md, write notes
+yarn run check-photos                            # lint
+# flip draft: false
+git commit && git push                           # Cloudflare deploys
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Optional: AI tag suggestions
 
-## 🧞 Commands
+```sh
+brew install ollama
+ollama pull moondream
+yarn run suggest-tags -- field
+```
 
-All commands are run from the root of the project, from a terminal:
+Local model. No API key. Suggestions only — never writes to your files.
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `yarn install`             | Installs dependencies                            |
-| `yarn dev`             | Starts local dev server at `localhost:4321`      |
-| `yarn build`           | Build your production site to `./dist/`          |
-| `yarn preview`         | Preview your build locally, before deploying     |
-| `yarn astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `yarn astro -- --help` | Get help using the Astro CLI                     |
+## Routes
 
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- `/` series grid
+- `/series/<slug>/` series reading view
+- `/read/` global reading view
+- `/sheet/` contact sheet mosaic
+- `/tags/` and `/tags/<tag>/` tag index + per-tag mosaic
+- `/photos/<slug>/` permalink

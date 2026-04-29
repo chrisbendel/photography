@@ -9,9 +9,16 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "new-photo": "node scripts/new-photo.mjs",
+    "check-photos": "node scripts/check.mjs",
+    "suggest-tags": "node scripts/suggest-tags.mjs"
   },
   "dependencies": {
-    "astro": "^6.1.10"
+    "astro": "^6.1.10",
+    "sharp": "^0.34.5"
+  },
+  "devDependencies": {
+    "ollama": "^0.6.3"
   }
 }

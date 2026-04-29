@@ -1,0 +1,46 @@
+---
+const links = [
+	{ href: "/", label: "Series" },
+	{ href: "/read/", label: "Read" },
+	{ href: "/sheet/", label: "Sheet" },
+	// Future: { href: "/shop", label: "Shop" },
+	// Future: { href: "/about", label: "About" },
+];
+
+const path = Astro.url.pathname;
+const isCurrent = (href: string) => {
+	if (href === "/") return path === "/" || path.startsWith("/series/");
+	return path.startsWith(href);
+};
+---
+
+<header class="site">
+	<nav class="site-nav" aria-label="Primary">
+		<a href="/" class="brand">Chris Bendel</a>
+		<ul>
+			{
+				links.map(({ href, label }) => (
+					<li>
+						<a href={href} aria-current={isCurrent(href) ? "page" : undefined}>
+							{label}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+		<button
+			type="button"
+			class="theme-toggle"
+			id="theme-toggle"
+			aria-label="Toggle color theme"
+		>
+			<svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+			</svg>
+			<svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+				<circle cx="12" cy="12" r="4" />
+				<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+			</svg>
+		</button>
+	</nav>
+</header>

@@ -1,0 +1,56 @@
+---
+import { Image } from "astro:assets";
+import { getCollection, render } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+
+const photos = (await getCollection("photos", ({ data }) => !data.draft)).sort(
+	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+
+const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
+
+const rendered = await Promise.all(
+	photos.map(async (photo) => ({
+		photo,
+		Content: (await render(photo)).Content,
+	})),
+);
+---
+
+<Layout title="Read — Chris Bendel" description="Every photograph, top to bottom.">
+	<section class="intro">
+		<h1>Read</h1>
+		<p>
+			Every photograph, newest first. Scroll slowly. Read the notes. This is
+			the long version — for the short version, see the <a href="/sheet/">contact sheet</a>
+			or jump to a <a href="/">series</a>.
+		</p>
+	</section>
+
+	{
+		rendered.length === 0 ? (
+			<p><em>No photographs yet.</em></p>
+		) : (
+			rendered.map(({ photo, Content }) => (
+				<article class="entry" id={photo.id}>
+					<figure>
+						<Image src={photo.data.image} alt={photo.data.alt} loading="lazy" />
+						{photo.data.caption && <figcaption>{photo.data.caption}</figcaption>}
+					</figure>
+					<header class="entry-head">
+						<h2>
+							<a href={`/photos/${photo.id}/`}>{photo.data.title}</a>
+						</h2>
+						<p class="entry-meta">
+							{fmt.format(photo.data.date)}
+							{photo.data.location && ` · ${photo.data.location}`}
+						</p>
+					</header>
+					<div class="entry-body">
+						<Content />
+					</div>
+				</article>
+			))
+		)
+	}
+</Layout>

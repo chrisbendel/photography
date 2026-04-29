@@ -1,11 +1,52 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+import { Image } from "astro:assets";
+import { getCollection, getEntry } from "astro:content";
+import Layout from "../layouts/Layout.astro";
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+const allSeries = (await getCollection("series", ({ data }) => !data.draft)).sort(
+	(a, b) => a.data.order - b.data.order,
+);
+
+const allPhotos = await getCollection("photos", ({ data }) => !data.draft);
+
+const seriesData = await Promise.all(
+	allSeries.map(async (series) => {
+		const cover = await getEntry(series.data.cover);
+		const count = allPhotos.filter((p) => p.data.series?.id === series.id).length;
+		return { series, cover, count };
+	}),
+);
 ---
 
-<Layout>
-	<Welcome />
+<Layout title="Chris Bendel — Photography" description="Selected film photography, organized by series.">
+	<section class="intro">
+		<h1>Photographs</h1>
+		<p>
+			Selected scans from medium and large format film. Black and white,
+			mostly. Organized into a few small series.
+		</p>
+	</section>
+
+	<div class="series-grid">
+		{
+			seriesData.map(({ series, cover, count }) => (
+				<a href={`/series/${series.id}/`} class="series-card">
+					{cover && (
+						<Image
+							src={cover.data.image}
+							alt={cover.data.alt}
+							widths={[400, 800, 1200]}
+							sizes="(min-width: 700px) 45vw, 90vw"
+							loading="lazy"
+						/>
+					)}
+					<div class="series-card-meta">
+						<h2>{series.data.title}</h2>
+						<p class="count">{count} photograph{count === 1 ? "" : "s"}</p>
+						{series.data.description && <p class="desc">{series.data.description}</p>}
+					</div>
+				</a>
+			))
+		}
+	</div>
 </Layout>
