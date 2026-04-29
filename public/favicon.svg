@@ -2,7 +2,7 @@
 	<title>4×5 sheet film with burned-in landscape</title>
 	<defs>
 		<clipPath id="sheet-clip">
-			<path d="M 0 0 L 17 0 L 17 5 L 21 5 L 21 0 L 23 0 L 23 5 L 27 5 L 27 0 L 32 0 L 32 40 L 0 40 Z" />
+			<path d="M 0 0 L 9 0 L 9 5 L 13 5 L 13 0 L 15 0 L 15 5 L 17 5 L 17 0 L 23 0 L 23 5 L 27 5 L 27 0 L 32 0 L 32 40 L 0 40 Z" />
 		</clipPath>
 	</defs>
 	<style>
@@ -14,29 +14,39 @@
 		}
 	</style>
 
-	<!-- Sheet body (4×5 portrait) with FP4 Plus two-notch code -->
+	<!--
+		4×5 sheet film silhouette (portrait), Ilford FP4 Plus (NEW) notch code.
+		Per https://en.wikipedia.org/wiki/Notch_code:
+		  __   ___  _______   ___
+		    ╰-╯ ╰╯     ╰-╯
+		Three notches in the top edge, left-to-right: wide, narrow, wide.
+		Square cuts (no curved bottoms) for clarity at favicon scale.
+	-->
 	<path
 		class="sheet"
-		d="M 0 0 L 17 0 L 17 5 L 21 5 L 21 0 L 23 0 L 23 5 L 27 5 L 27 0 L 32 0 L 32 40 L 0 40 Z"
+		d="M 0 0
+		   L 9 0  L 9 5  L 13 5 L 13 0
+		   L 15 0 L 15 5 L 17 5 L 17 0
+		   L 23 0 L 23 5 L 27 5 L 27 0
+		   L 32 0
+		   L 32 40
+		   L 0 40
+		   Z"
 	/>
 
-	<!-- Burned-in landscape: sun, mountains, foreground band -->
+	<!-- Burned-in landscape: sun, two ridges, foreground band -->
 	<g clip-path="url(#sheet-clip)">
-		<!-- Sun -->
 		<circle class="img" cx="9" cy="17" r="2.2" opacity="0.5" />
-		<!-- Distant ridge -->
 		<path
 			class="img"
 			opacity="0.35"
 			d="M 0 28 L 5 24 L 10 27 L 14 22 L 19 26 L 24 23 L 32 27 L 32 30 L 0 30 Z"
 		/>
-		<!-- Foreground mountain -->
 		<path
 			class="img"
 			opacity="0.6"
 			d="M 0 33 L 7 24 L 13 30 L 18 21 L 24 28 L 32 25 L 32 36 L 0 36 Z"
 		/>
-		<!-- Foreground / ground band -->
 		<rect class="img" x="0" y="36" width="32" height="4" opacity="0.4" />
 	</g>
 </svg>

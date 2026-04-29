@@ -14,9 +14,9 @@ black & white film photographs. Static site, deployed to Cloudflare Pages.
 - **Plain HTML and typography**. Lean on semantic elements and the natural
   cascade. No design system. No component libraries.
 - **Darkroom palette**. Warm Ilford-fiber off-white and deep warm black, never
-  pure RGB extremes. Dark mode is a "safelight" treatment — warm near-black
-  with a deep desaturated red as the only accent (used on hover/focus, very
-  sparingly). One subtle paper-grain SVG overlays the whole page.
+  pure RGB extremes. Dark mode is warm near-black, no blue. No accent color —
+  hover/focus states are conveyed by underline, weight, or border, not by a
+  splash of red. One subtle paper-grain SVG overlays the whole page.
 - **No dependencies unless necessary**. If a feature can be done with a few
   lines of CSS or vanilla JS, do that.
 
