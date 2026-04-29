@@ -43,9 +43,7 @@ Local model. No API key. Suggestions only — never writes to your files.
 
 ## Routes
 
-- `/` series grid
-- `/series/<slug>/` series reading view
-- `/read/` global reading view
-- `/sheet/` contact sheet mosaic
+- `/` series labels (front door)
+- `/series/<slug>/` prints in a series, stacked by format
+- `/photos/<slug>/` single print permalink
 - `/tags/` and `/tags/<tag>/` tag index + per-tag mosaic
-- `/photos/<slug>/` permalink

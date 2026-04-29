@@ -9,42 +9,60 @@ const allSeries = (await getCollection("series", ({ data }) => !data.draft)).sor
 
 const allPhotos = await getCollection("photos", ({ data }) => !data.draft);
 
+const fmtYear = new Intl.DateTimeFormat("en-US", { year: "numeric" });
+
 const seriesData = await Promise.all(
 	allSeries.map(async (series) => {
 		const cover = await getEntry(series.data.cover);
-		const count = allPhotos.filter((p) => p.data.series?.id === series.id).length;
-		return { series, cover, count };
+		const photos = allPhotos.filter((p) => p.data.series?.id === series.id);
+		const dates = photos.map((p) => p.data.date.valueOf());
+		const earliest = dates.length ? new Date(Math.min(...dates)) : null;
+		const latest = dates.length ? new Date(Math.max(...dates)) : null;
+		const range =
+			earliest && latest
+				? earliest.getFullYear() === latest.getFullYear()
+					? fmtYear.format(latest)
+					: `${fmtYear.format(earliest)}–${fmtYear.format(latest)}`
+				: "";
+		return { series, cover, count: photos.length, range };
 	}),
 );
 ---
 
-<Layout title="Chris Bendel — Photography" description="Selected film photography, organized by series.">
+<Layout title="Chris Bendel — Photography" description="Selected film photography, organized into series.">
 	<section class="intro">
 		<h1>Photographs</h1>
 		<p>
-			Selected scans from medium and large format film. Black and white,
-			mostly. Organized into a few small series.
+			Black-and-white film. Medium and large format. Scanned at home, written
+			about slowly. A few small series, stacked like prints in the darkroom.
 		</p>
 	</section>
 
-	<div class="series-grid">
+	<div class="series-stack">
 		{
-			seriesData.map(({ series, cover, count }) => (
+			seriesData.map(({ series, cover, count, range }) => (
 				<a href={`/series/${series.id}/`} class="series-card">
-					{cover && (
-						<Image
-							src={cover.data.image}
-							alt={cover.data.alt}
-							widths={[400, 800, 1200]}
-							sizes="(min-width: 700px) 45vw, 90vw"
-							loading="lazy"
-						/>
-					)}
-					<div class="series-card-meta">
-						<h2>{series.data.title}</h2>
-						<p class="count">{count} photograph{count === 1 ? "" : "s"}</p>
-						{series.data.description && <p class="desc">{series.data.description}</p>}
+					<div>
+						<h2 class="series-label">{series.data.title}</h2>
+						<p class="series-stat">
+							{count} print{count === 1 ? "" : "s"}
+							{range && ` · ${range}`}
+						</p>
+						{series.data.description && (
+							<p class="series-desc">{series.data.description}</p>
+						)}
 					</div>
+					{cover && (
+						<div class="series-thumb">
+							<Image
+								src={cover.data.image}
+								alt=""
+								widths={[160, 320]}
+								sizes="6rem"
+								loading="lazy"
+							/>
+						</div>
+					)}
 				</a>
 			))
 		}

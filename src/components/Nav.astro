@@ -1,17 +1,12 @@
 ---
 const links = [
-	{ href: "/", label: "Series" },
-	{ href: "/read/", label: "Read" },
-	{ href: "/sheet/", label: "Sheet" },
+	{ href: "/tags/", label: "Tags" },
 	// Future: { href: "/shop", label: "Shop" },
 	// Future: { href: "/about", label: "About" },
 ];
 
 const path = Astro.url.pathname;
-const isCurrent = (href: string) => {
-	if (href === "/") return path === "/" || path.startsWith("/series/");
-	return path.startsWith(href);
-};
+const isCurrent = (href: string) => path.startsWith(href);
 ---
 
 <header class="site">

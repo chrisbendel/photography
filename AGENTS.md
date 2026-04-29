@@ -13,8 +13,10 @@ black & white film photographs. Static site, deployed to Cloudflare Pages.
   addition as a tax against that quietness.
 - **Plain HTML and typography**. Lean on semantic elements and the natural
   cascade. No design system. No component libraries.
-- **Monochrome**. Black, white, a few greys. No accent colors. Dark mode via
-  `prefers-color-scheme` only.
+- **Darkroom palette**. Warm Ilford-fiber off-white and deep warm black, never
+  pure RGB extremes. Dark mode is a "safelight" treatment — warm near-black
+  with a deep desaturated red as the only accent (used on hover/focus, very
+  sparingly). One subtle paper-grain SVG overlays the whole page.
 - **No dependencies unless necessary**. If a feature can be done with a few
   lines of CSS or vanilla JS, do that.
 
@@ -155,36 +157,42 @@ run suggest-tags ...`.
 
 ## Routing & views
 
-Three ways to see the work, deliberately. Each maps to how a photographer
-actually thinks about their archive.
+The site borrows the metaphor of a darkroom shelf: a few labeled paper boxes,
+each holding prints stacked by size. One front door, no view picker.
 
-- `/` — **series grid (front door)**. A small grid of cover images, one per
-  series. The curated entry point. Each cover links to that series' reading
-  view. Loose photos (no series) do not appear here.
+- `/` — **front door**. Each series rendered as a typographic paper-box label
+  (uppercase title, small monospace stat line, italic description, tiny cover
+  thumb). Stacked vertically with thin rules between. Click = open the box.
 
-- `/series/<slug>/` — **per-series reading view**. The series treated as a
-  small monograph: intro, then every photograph in that series stacked
-  vertically with notes inline. Newest first.
+- `/series/<slug>/` — **open the box**. Stack of prints in that series,
+  grouped by format (largest first: 4×5 → 6×7 → 6×6 → 35mm). Within each
+  format group, newest first. Mirrors how prints physically stack in a paper
+  box, sorted by size.
 
-- `/read/` — **global reading view**. Every non-draft photograph stacked
-  vertically, newest first, with notes inline. The "everything top to bottom"
-  view. Useful when you want to read all the work as one long thing.
+- `/photos/<id>/` — **single print**. Permalink. Larger image, full
+  metadata as a verso label, notes, tag chips. Used for sharing.
 
-- `/sheet/` — **contact sheet**. CSS-column mosaic of every non-draft
-  photograph as thumbnails. Implemented with `column-count` +
-  `break-inside: avoid` — true masonry without JS. Each thumb links to its
-  permalink page. Discovery, not consumption.
+- `/tags/` — index of every tag with a count.
 
-- `/photos/<id>/` — **permalink** for a single photograph. Used for sharing.
-  `<id>` is the filename without extension. If the photo belongs to a series,
-  the page links back to that series.
+- `/tags/<tag>/` — small mosaic of photographs with that tag. Cross-cutting
+  alternative to series. The only place a mosaic appears, and only because
+  tags are inherently cross-cutting.
+
+### Verso treatment
+
+Per-photo metadata (camera, film, format, date, location) is rendered like a
+museum label or pencil notes on the back of a print: small, uppercase,
+monospace, faint. In the in-stream views (series, tag) it's a single comma-
+separated line. On the permalink it expands to a definition list with the
+same monospace treatment. The format strings render with `×` not `x`
+(`6×7`, `4×5`).
 
 ### When to add views
 
-Resist adding more views. The structure above already covers
-*curated → series → linear → mosaic → single*. If a need shows up (e.g.
-"by year" or "by camera"), prefer adding it as a section within an existing
-view before adding a new route.
+Resist adding more views. The constraint is the point — a darkroom doesn't
+have ten ways to view the same print. If a need shows up (e.g. "by year" or
+"by camera"), prefer adding it as a section within an existing view before
+adding a new route.
 
 ## Series
 

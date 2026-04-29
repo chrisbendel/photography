@@ -40,7 +40,7 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 		{location && (<><dt>Location</dt><dd>{location}</dd></>)}
 		{camera && (<><dt>Camera</dt><dd>{camera}</dd></>)}
 		{film && (<><dt>Film</dt><dd>{film}</dd></>)}
-		{format && (<><dt>Format</dt><dd>{format}</dd></>)}
+		{format && (<><dt>Format</dt><dd>{format.replace("x", "×")}</dd></>)}
 	</dl>
 
 	<section class="notes">
