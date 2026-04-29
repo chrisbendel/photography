@@ -3,15 +3,16 @@ import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 
 const photos = await getCollection("photos", ({ data }) => !data.draft);
-const counts = new Map();
+const counts = new Map<string, number>();
 for (const p of photos) {
 	for (const t of p.data.tags ?? []) {
 		counts.set(t, (counts.get(t) ?? 0) + 1);
 	}
 }
 
-const tags = [...counts.entries()]
-	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const tags = [...counts.entries()].sort(
+	(a, b) => b[1] - a[1] || a[0].localeCompare(b[0]),
+);
 ---
 
 <Layout title="Tags — Chris Bendel" description="Browse photographs by tag.">
@@ -27,15 +28,61 @@ const tags = [...counts.entries()]
 		tags.length === 0 ? (
 			<p><em>No tags yet.</em></p>
 		) : (
-			<ul class="tag-cloud">
-				{tags.map(([tag, count]) => (
-					<li>
-						<a href={`/tags/${tag}/`}>
-							#{tag} <span class="count">{count}</span>
-						</a>
-					</li>
-				))}
-			</ul>
+			<>
+				<div class="tag-search">
+					<label for="tag-filter" class="visually-hidden">Filter tags</label>
+					<input
+						id="tag-filter"
+						type="search"
+						placeholder="Filter tags…"
+						autocomplete="off"
+						spellcheck="false"
+					/>
+					<p id="tag-filter-status" class="tag-search-status" aria-live="polite">
+						{tags.length} tag{tags.length === 1 ? "" : "s"}
+					</p>
+				</div>
+
+				<ul class="tag-cloud" id="tag-cloud">
+					{tags.map(([tag, count]) => (
+						<li data-tag={tag}>
+							<a href={`/tags/${tag}/`}>
+								#{tag} <span class="count">{count}</span>
+							</a>
+						</li>
+					))}
+				</ul>
+
+				<script is:inline>
+					(function () {
+						const input = document.getElementById("tag-filter");
+						const cloud = document.getElementById("tag-cloud");
+						const status = document.getElementById("tag-filter-status");
+						if (!input || !cloud || !status) return;
+
+						const items = Array.from(cloud.querySelectorAll("li"));
+						const total = items.length;
+
+						function applyFilter() {
+							const q = input.value.trim().toLowerCase();
+							let shown = 0;
+							for (const li of items) {
+								const tag = (li.dataset.tag || "").toLowerCase();
+								const match = !q || tag.includes(q);
+								li.hidden = !match;
+								if (match) shown++;
+							}
+							status.textContent =
+								q === ""
+									? `${total} tag${total === 1 ? "" : "s"}`
+									: `${shown} of ${total} match`;
+						}
+
+						input.addEventListener("input", applyFilter);
+						input.addEventListener("search", applyFilter);
+					})();
+				</script>
+			</>
 		)
 	}
 </Layout>

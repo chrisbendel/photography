@@ -1,0 +1,58 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../layouts/Layout.astro";
+
+const allSeries = (await getCollection("series", ({ data }) => !data.draft)).sort(
+	(a, b) => a.data.order - b.data.order,
+);
+const allPhotos = await getCollection("photos", ({ data }) => !data.draft);
+
+const fmtYear = new Intl.DateTimeFormat("en-US", { year: "numeric" });
+
+const seriesData = allSeries.map((series) => {
+	const photos = allPhotos.filter((p) => p.data.series?.id === series.id);
+	const dates = photos.map((p) => p.data.date.valueOf());
+	const earliest = dates.length ? new Date(Math.min(...dates)) : null;
+	const latest = dates.length ? new Date(Math.max(...dates)) : null;
+	const range =
+		earliest && latest
+			? earliest.getFullYear() === latest.getFullYear()
+				? fmtYear.format(latest)
+				: `${fmtYear.format(earliest)}–${fmtYear.format(latest)}`
+			: "";
+	const formats = [...new Set(photos.map((p) => p.data.format).filter(Boolean))];
+	return { series, count: photos.length, range, formats };
+});
+---
+
+<Layout title="Chris Bendel — Photography (E)" description="Series as paper boxes, laid out on a table.">
+	<section class="intro">
+		<h1>Photographs</h1>
+		<p>
+			Boxes of prints, organized by series. Open a box to read the prints inside.
+		</p>
+	</section>
+
+	<div class="paper-shelf">
+		{
+			seriesData.map(({ series, count, range, formats }) => (
+				<a href={`/series/${series.id}/`} class="paper-box" aria-label={`${series.data.title} — ${count} prints`}>
+					<div class="paper-box-body">
+						<div class="paper-box-label">
+							<span class="label-brand">CHRIS · BENDEL</span>
+							<span class="label-title">{series.data.title}</span>
+							<span class="label-spec">
+								{count} PRINT{count === 1 ? "" : "S"}
+								{formats.length > 0 && ` · ${formats[0].toUpperCase().replace("X", "×")}`}
+							</span>
+						</div>
+						<div class="paper-box-meta">
+							<span class="meta-side">PORTFOLIO</span>
+							<span class="meta-side">{range || ""}</span>
+						</div>
+					</div>
+				</a>
+			))
+		}
+	</div>
+</Layout>

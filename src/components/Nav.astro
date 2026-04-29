@@ -1,8 +1,16 @@
 ---
 const links = [
+	{ href: "/gallery/", label: "Gallery" },
 	{ href: "/tags/", label: "Tags" },
 	// Future: { href: "/shop", label: "Shop" },
 	// Future: { href: "/about", label: "About" },
+];
+
+const demos = [
+	{ href: "/a/", label: "A" },
+	{ href: "/b/", label: "B" },
+	{ href: "/d/", label: "D" },
+	{ href: "/e/", label: "E" },
 ];
 
 const path = Astro.url.pathname;
@@ -15,6 +23,17 @@ const isCurrent = (href: string) => path.startsWith(href);
 		<ul>
 			{
 				links.map(({ href, label }) => (
+					<li>
+						<a href={href} aria-current={isCurrent(href) ? "page" : undefined}>
+							{label}
+						</a>
+					</li>
+				))
+			}
+		</ul>
+		<ul class="demo-links" aria-label="Homepage variants">
+			{
+				demos.map(({ href, label }) => (
 					<li>
 						<a href={href} aria-current={isCurrent(href) ? "page" : undefined}>
 							{label}

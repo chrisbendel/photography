@@ -45,5 +45,6 @@ Local model. No API key. Suggestions only — never writes to your files.
 
 - `/` series labels (front door)
 - `/series/<slug>/` prints in a series, stacked by format
+- `/gallery/` mosaic of every print
 - `/photos/<slug>/` single print permalink
 - `/tags/` and `/tags/<tag>/` tag index + per-tag mosaic

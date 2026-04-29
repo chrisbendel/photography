@@ -169,6 +169,12 @@ each holding prints stacked by size. One front door, no view picker.
   format group, newest first. Mirrors how prints physically stack in a paper
   box, sorted by size.
 
+- `/gallery/` — **everything at a glance**. CSS-column mosaic of every
+  non-draft photograph, mixed aspects packing naturally via `column-count` +
+  `break-inside: avoid`. Click any thumb → permalink. The cross-cutting
+  alternative to series — useful when you don't know which box something
+  lives in.
+
 - `/photos/<id>/` — **single print**. Permalink. Larger image, full
   metadata as a verso label, notes, tag chips. Used for sharing.
 

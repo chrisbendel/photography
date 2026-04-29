@@ -27,10 +27,44 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 		)
 	}
 
-	<figure>
-		<Image src={image} alt={alt} loading="eager" />
+	<figure class="print-figure" data-invert="false">
+		<div class="print-frame">
+			<Image src={image} alt={alt} loading="eager" class="print-img" />
+			<button
+				type="button"
+				class="invert-btn"
+				aria-pressed="false"
+				aria-label="Toggle negative"
+				title="View as negative"
+			>
+				<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+					<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6" />
+					<path d="M 12 3 A 9 9 0 0 1 12 21 Z" fill="currentColor" />
+				</svg>
+			</button>
+		</div>
 		{caption && <figcaption>{caption}</figcaption>}
 	</figure>
+
+	<script is:inline>
+		(function () {
+			const figs = document.querySelectorAll(".print-figure");
+			figs.forEach((fig) => {
+				const btn = fig.querySelector(".invert-btn");
+				if (!btn) return;
+				btn.addEventListener("click", () => {
+					const inverted = fig.getAttribute("data-invert") === "true";
+					const next = !inverted;
+					fig.setAttribute("data-invert", String(next));
+					btn.setAttribute("aria-pressed", String(next));
+					btn.setAttribute(
+						"title",
+						next ? "View as positive" : "View as negative",
+					);
+				});
+			});
+		})();
+	</script>
 
 	<h1>{title}</h1>
 
