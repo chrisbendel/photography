@@ -1,0 +1,28 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "../../layouts/Layout.astro";
+
+const allSeries = (await getCollection("series", ({ data }) => !data.draft)).sort(
+	(a, b) => a.data.order - b.data.order,
+);
+const allPhotos = await getCollection("photos", ({ data }) => !data.draft);
+
+const seriesData = allSeries.map((series) => {
+	const photos = allPhotos.filter((p) => p.data.series?.id === series.id);
+	return { series, count: photos.length };
+});
+---
+
+<Layout title="Series — Chris Bendel" description="Photographic series.">
+	<ul>
+		{
+			seriesData.map(({ series, count }) => (
+				<li>
+					<a href={`/series/${series.id}/`}>{series.data.title}</a>
+					{" — "}
+					{count} print{count === 1 ? "" : "s"}
+				</li>
+			))
+		}
+	</ul>
+</Layout>

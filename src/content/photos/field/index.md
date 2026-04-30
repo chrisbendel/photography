@@ -1,7 +1,7 @@
 ---
 title: "Field"
 date: 2024-06-22
-image: ./field.jpg
+image: ./image.jpg
 alt: "A wide empty field under a bright sky."
 caption: "Western Massachusetts."
 camera: "Toyo 45CF"

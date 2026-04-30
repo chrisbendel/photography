@@ -37,24 +37,47 @@ const { title = "Photography", description = "Selected film photography" } = Ast
 			<slot />
 		</main>
 		<footer class="site">
-			<p>© {new Date().getFullYear()} Chris Bendel</p>
+			<div class="site-foot">
+				<p>© {new Date().getFullYear()} Chris Bendel</p>
+			</div>
 		</footer>
 		<script is:inline>
 			(function () {
-				var btn = document.getElementById("theme-toggle");
-				if (!btn) return;
-				btn.addEventListener("click", function () {
-					var root = document.documentElement;
-					var current =
-						root.getAttribute("data-theme") ||
+				var pull = document.getElementById("theme-pull");
+				if (!pull) return;
+
+				function currentTheme() {
+					return (
+						document.documentElement.getAttribute("data-theme") ||
 						(window.matchMedia("(prefers-color-scheme: dark)").matches
 							? "dark"
-							: "light");
-					var next = current === "dark" ? "light" : "dark";
-					root.setAttribute("data-theme", next);
+							: "light")
+					);
+				}
+
+				function syncTitle() {
+					var theme = currentTheme();
+					pull.title = theme === "dark" ? "Turn light on" : "Turn light off";
+				}
+
+				function flipTheme() {
+					var next = currentTheme() === "dark" ? "light" : "dark";
+					document.documentElement.setAttribute("data-theme", next);
 					try {
 						localStorage.setItem("theme", next);
 					} catch (_) {}
+					syncTitle();
+				}
+
+				syncTitle();
+
+				pull.addEventListener("click", function () {
+					pull.classList.add("is-pulling");
+					// Trigger flip slightly into the pull, syncing the "click" feel
+					setTimeout(flipTheme, 140);
+					setTimeout(function () {
+						pull.classList.remove("is-pulling");
+					}, 600);
 				});
 			})();
 		</script>

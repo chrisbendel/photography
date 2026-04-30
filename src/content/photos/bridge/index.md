@@ -1,7 +1,7 @@
 ---
 title: "Bridge"
 date: 2025-09-03
-image: ./bridge.jpg
+image: ./image.jpg
 alt: "Steel girders of a bridge against an overcast sky, vertical composition."
 caption: "Looking up, near the East River."
 camera: "Pentax 67"

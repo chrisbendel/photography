@@ -26,9 +26,8 @@ const { tag, photos } = Astro.props;
 
 <Layout title={`#${tag} — Chris Bendel`} description={`Photographs tagged ${tag}.`}>
 	<section class="intro">
-		<p class="eyebrow"><a href="/tags/">← All tags</a></p>
+		<p class="eyebrow"><a href="/tags/">← Tags</a></p>
 		<h1>#{tag}</h1>
-		<p class="intro-meta">{photos.length} photograph{photos.length === 1 ? "" : "s"}</p>
 	</section>
 
 	<div class="sheet">

@@ -16,14 +16,6 @@ const tags = [...counts.entries()].sort(
 ---
 
 <Layout title="Tags — Chris Bendel" description="Browse photographs by tag.">
-	<section class="intro">
-		<h1>Tags</h1>
-		<p>
-			Pick a thread to follow. Tags are written by hand, mostly while writing
-			notes — they're whatever felt true at the time.
-		</p>
-	</section>
-
 	{
 		tags.length === 0 ? (
 			<p><em>No tags yet.</em></p>

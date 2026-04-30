@@ -1,7 +1,7 @@
 ---
 title: "Empty Chair"
 date: 2025-07-21
-image: ./empty-chair.jpg
+image: ./image.jpg
 alt: "A wooden chair against a plain white wall."
 caption: ""
 camera: "Hasselblad 500C/M"

@@ -2,7 +2,14 @@ import { defineCollection, reference, z } from "astro:content";
 import { glob } from "astro/loaders";
 
 const photos = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./src/content/photos" }),
+	loader: glob({
+		pattern: "**/*.md",
+		base: "./src/content/photos",
+		// Each photo lives in its own directory: src/content/photos/<slug>/index.md
+		// Strip the trailing `/index.md` so the entry id is just the slug.
+		generateId: ({ entry }) =>
+			entry.replace(/\/?index\.md$/, "").replace(/\.md$/, ""),
+	}),
 	schema: ({ image }) =>
 		z.object({
 			title: z.string(),

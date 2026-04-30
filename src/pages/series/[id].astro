@@ -1,21 +1,17 @@
 ---
 import { Image } from "astro:assets";
-import { getCollection, render } from "astro:content";
+import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
-import { formatRank, formatLabel } from "../../lib/format";
 
 export async function getStaticPaths() {
 	const allSeries = await getCollection("series", ({ data }) => !data.draft);
 	const allPhotos = await getCollection("photos", ({ data }) => !data.draft);
 
 	return allSeries.map((series) => {
+		// Newest first — top of the stack
 		const photos = allPhotos
 			.filter((p) => p.data.series?.id === series.id)
-			.sort((a, b) => {
-				const r = formatRank(b.data.format) - formatRank(a.data.format);
-				if (r !== 0) return r;
-				return b.data.date.valueOf() - a.data.date.valueOf();
-			});
+			.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
 		return {
 			params: { id: series.id },
 			props: { series, photos },
@@ -24,76 +20,42 @@ export async function getStaticPaths() {
 }
 
 const { series, photos } = Astro.props;
-const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
+const fmtYear = new Intl.DateTimeFormat("en-US", { year: "numeric" });
 
-const rendered = await Promise.all(
-	photos.map(async (photo) => ({
-		photo,
-		Content: (await render(photo)).Content,
-	})),
-);
-
-// Group by format, preserving sorted order
-const groups: { format: string; entries: typeof rendered }[] = [];
-for (const r of rendered) {
-	const key = r.photo.data.format ?? "";
-	const last = groups[groups.length - 1];
-	if (last && last.format === key) {
-		last.entries.push(r);
-	} else {
-		groups.push({ format: key, entries: [r] });
-	}
-}
-
-function verso(photo: (typeof rendered)[number]["photo"]): string {
-	const d = photo.data;
-	const parts = [
-		d.camera,
-		d.film,
-		d.format && formatLabel(d.format),
-		fmt.format(d.date),
-		d.location,
-	].filter(Boolean);
-	return parts.join(" · ");
-}
+const dates = photos.map((p) => p.data.date.valueOf());
+const earliest = dates.length ? new Date(Math.min(...dates)) : null;
+const latest = dates.length ? new Date(Math.max(...dates)) : null;
+const range =
+	earliest && latest
+		? earliest.getFullYear() === latest.getFullYear()
+			? fmtYear.format(latest)
+			: `${fmtYear.format(earliest)}–${fmtYear.format(latest)}`
+		: "";
 ---
 
 <Layout title={`${series.data.title} — Chris Bendel`} description={series.data.description}>
 	<section class="intro">
-		<p class="eyebrow"><a href="/">← All series</a></p>
+		<p class="eyebrow"><a href="/series/">← Series</a></p>
 		<h1>{series.data.title}</h1>
-		{series.data.description && <p>{series.data.description}</p>}
-		<p class="intro-meta">{photos.length} print{photos.length === 1 ? "" : "s"}, stacked by size.</p>
 	</section>
 
 	{
-		rendered.length === 0 ? (
-			<p><em>No photographs in this series yet.</em></p>
+		photos.length === 0 ? (
+			<p><em>No photographs in this box yet.</em></p>
 		) : (
-			groups.map(({ format, entries }) => (
-				<>
-					<div class="format-group-header">
-						<span>{formatLabel(format) || "Unspecified"}</span>
-					</div>
-					{entries.map(({ photo, Content }) => (
-						<article class="entry" id={photo.id}>
+			<div class="print-stack">
+				{photos.map((photo) => (
+					<a class="print-entry" href={`/photos/${photo.id}/`} id={photo.id}>
+						<div class="print-mount">
 							<figure>
 								<Image src={photo.data.image} alt={photo.data.alt} loading="lazy" />
 								{photo.data.caption && <figcaption>{photo.data.caption}</figcaption>}
 							</figure>
-							<header class="entry-head">
-								<h2>
-									<a href={`/photos/${photo.id}/`}>{photo.data.title}</a>
-								</h2>
-								<p class="verso">{verso(photo)}</p>
-							</header>
-							<div class="entry-body">
-								<Content />
-							</div>
-						</article>
-					))}
-				</>
-			))
+						</div>
+					</a>
+				))}
+			</div>
 		)
 	}
+
 </Layout>

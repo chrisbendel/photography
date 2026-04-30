@@ -1,7 +1,7 @@
 ---
 title: "Hands"
 date: 2024-08-14
-image: ./hands.jpg
+image: ./image.jpg
 alt: "A pair of weathered hands resting on a tabletop."
 caption: ""
 camera: "Mamiya RB67"

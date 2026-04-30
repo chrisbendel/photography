@@ -1,7 +1,7 @@
 ---
 title: "Winter Trees"
 date: 2025-02-08
-image: ./winter-trees.jpg
+image: ./image.jpg
 alt: "Bare trees in a field on a grey winter morning."
 caption: "Catskills, before the snow."
 camera: "Mamiya 7 II"

@@ -22,7 +22,7 @@ import { Ollama } from "ollama";
 
 const HOST = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
 const MODEL = process.env.OLLAMA_MODEL || "moondream";
-const DIR = "src/content/photos";
+const PHOTOS_DIR = "src/content/photos";
 const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 
 const arg = process.argv[2];
@@ -46,15 +46,18 @@ async function ping() {
 }
 
 function findImage(slug) {
-	const files = readdirSync(DIR);
-	return files.find(
+	const dir = join(PHOTOS_DIR, slug);
+	if (!existsSync(dir)) return null;
+	const files = readdirSync(dir);
+	const img = files.find(
 		(f) =>
-			f.startsWith(slug + ".") && IMAGE_EXTS.includes(extname(f).toLowerCase()),
+			f.startsWith("image.") && IMAGE_EXTS.includes(extname(f).toLowerCase()),
 	);
+	return img ? join(dir, img) : null;
 }
 
 function readContext(slug) {
-	const mdPath = join(DIR, slug + ".md");
+	const mdPath = join(PHOTOS_DIR, slug, "index.md");
 	if (!existsSync(mdPath)) return "";
 	const md = readFileSync(mdPath, "utf8");
 	const get = (key) => {
@@ -84,12 +87,11 @@ Avoid generic tags like "photo", "image", "black-and-white", "film", "art".
 Return ONLY a comma-separated list of tags. No commentary, no numbering.`;
 
 async function suggest(slug) {
-	const imageFile = findImage(slug);
-	if (!imageFile) {
-		console.error(`  ✗ No image found for "${slug}" in ${DIR}/`);
+	const imagePath = findImage(slug);
+	if (!imagePath) {
+		console.error(`  ✗ No image found for "${slug}" in ${PHOTOS_DIR}/${slug}/`);
 		return;
 	}
-	const imagePath = join(DIR, imageFile);
 	const imgB64 = readFileSync(imagePath, { encoding: "base64" });
 	const context = readContext(slug);
 
@@ -122,9 +124,9 @@ async function suggest(slug) {
 
 await ping();
 
-const allSlugs = readdirSync(DIR)
-	.filter((f) => f.endsWith(".md"))
-	.map((f) => f.replace(/\.md$/, ""));
+const allSlugs = readdirSync(PHOTOS_DIR, { withFileTypes: true })
+	.filter((d) => d.isDirectory())
+	.map((d) => d.name);
 
 const targets = arg === "--all" ? allSlugs : [arg];
 
@@ -132,7 +134,7 @@ console.log(`Suggesting tags via ${MODEL} @ ${HOST}\n`);
 
 for (const slug of targets) {
 	if (!allSlugs.includes(slug)) {
-		console.error(`  ✗ "${slug}" — no .md found in ${DIR}/`);
+		console.error(`  ✗ "${slug}" — no folder found in ${PHOTOS_DIR}/`);
 		continue;
 	}
 	try {

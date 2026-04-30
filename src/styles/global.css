@@ -267,57 +267,232 @@ nav.site-nav ul a[aria-current="page"] {
 	color: var(--ink);
 }
 
-button.theme-toggle {
+/* ---------- Darkroom pull-cord light switch ---------- */
+
+button.darkroom-pull {
 	background: none;
 	border: 0;
-	color: var(--ink-soft);
-	font: inherit;
-	font-size: 0.95rem;
-	padding: 0.25rem;
+	padding: 0;
+	margin-left: auto;
 	cursor: pointer;
-	display: inline-flex;
-	align-items: center;
-}
-
-button.theme-toggle:hover {
 	color: var(--ink);
+	display: inline-flex;
+	align-items: flex-start;
+	height: 2.6rem;
+	overflow: visible;
 }
 
-button.theme-toggle:focus-visible {
+button.darkroom-pull svg {
+	width: 1.45rem;
+	height: 2.55rem;
+	overflow: visible;
+}
+
+/* ---------- Idle (off) state — dark mode default ---------- */
+
+/* Anchor */
+button.darkroom-pull .anchor {
+	fill: var(--ink-faint);
+}
+
+/* Cord + knob */
+button.darkroom-pull .cord {
+	stroke: var(--ink-faint);
+	stroke-width: 0.6;
+	stroke-linecap: round;
+	transform-origin: 14px 0;
+	transition: stroke 0.25s ease;
+}
+
+button.darkroom-pull .knob {
+	fill: var(--ink);
+	stroke: none;
+	transition: transform 0.15s ease;
+}
+
+/* Screw cap */
+button.darkroom-pull .cap {
+	fill: var(--ink-faint);
+	transition: fill 0.3s ease;
+}
+
+/* Glass — off state: cool, dim, hollow-feeling */
+button.darkroom-pull .glass {
+	fill: color-mix(in srgb, var(--ink) 8%, transparent);
+	stroke: var(--ink-soft);
+	stroke-width: 0.8;
+	transition: fill 0.4s ease, stroke 0.3s ease;
+}
+
+/* Filament — off: barely visible */
+button.darkroom-pull .filament {
+	stroke: var(--ink-faint);
+	stroke-width: 0.55;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	opacity: 0.45;
+	transition: stroke 0.3s ease, opacity 0.3s ease, stroke-width 0.3s ease;
+}
+
+/* Highlight — off: invisible */
+button.darkroom-pull .highlight {
+	fill: #fff;
+	opacity: 0;
+	transition: opacity 0.35s ease;
+}
+
+/* Halos — off: invisible */
+button.darkroom-pull .halo {
+	opacity: 0;
+	transition: opacity 0.4s ease, r 0.4s ease;
+	pointer-events: none;
+}
+
+button.darkroom-pull .halo-inner {
+	fill: #ffe88a;
+	filter: blur(1.5px);
+}
+
+button.darkroom-pull .halo-outer {
+	fill: #fff2b8;
+	filter: blur(5px);
+}
+
+/* ---------- On (lit) state — light mode ---------- */
+
+/* Auto via OS pref */
+@media (prefers-color-scheme: light) {
+	:root:not([data-theme="dark"]) button.darkroom-pull .glass {
+		fill: #fff1b8;
+		stroke: #d4a82b;
+	}
+	:root:not([data-theme="dark"]) button.darkroom-pull .cap {
+		fill: var(--ink-soft);
+	}
+	:root:not([data-theme="dark"]) button.darkroom-pull .filament {
+		stroke: #d68500;
+		stroke-width: 0.85;
+		opacity: 1;
+	}
+	:root:not([data-theme="dark"]) button.darkroom-pull .highlight {
+		opacity: 0.85;
+	}
+	:root:not([data-theme="dark"]) button.darkroom-pull .halo-inner {
+		opacity: 0.75;
+	}
+	:root:not([data-theme="dark"]) button.darkroom-pull .halo-outer {
+		opacity: 0.45;
+	}
+}
+
+/* Explicit data-theme overrides */
+:root[data-theme="light"] button.darkroom-pull .glass {
+	fill: #fff1b8;
+	stroke: #d4a82b;
+}
+:root[data-theme="light"] button.darkroom-pull .cap {
+	fill: var(--ink-soft);
+}
+:root[data-theme="light"] button.darkroom-pull .filament {
+	stroke: #d68500;
+	stroke-width: 0.85;
+	opacity: 1;
+}
+:root[data-theme="light"] button.darkroom-pull .highlight {
+	opacity: 0.85;
+}
+:root[data-theme="light"] button.darkroom-pull .halo-inner {
+	opacity: 0.75;
+}
+:root[data-theme="light"] button.darkroom-pull .halo-outer {
+	opacity: 0.45;
+}
+
+/* Force off in dark mode regardless of OS */
+:root[data-theme="dark"] button.darkroom-pull .halo {
+	opacity: 0;
+}
+:root[data-theme="dark"] button.darkroom-pull .highlight {
+	opacity: 0;
+}
+
+/* ---------- Pull animation ---------- */
+
+@keyframes cord-stretch {
+	0%   { transform: scaleY(1); }
+	22%  { transform: scaleY(1.20); }
+	55%  { transform: scaleY(0.93); }
+	80%  { transform: scaleY(1.05); }
+	100% { transform: scaleY(1); }
+}
+
+@keyframes bulb-tug {
+	0%   { transform: translateY(0); }
+	22%  { transform: translateY(3.5px); }
+	55%  { transform: translateY(-1.6px); }
+	80%  { transform: translateY(0.9px); }
+	100% { transform: translateY(0); }
+}
+
+/* Halo flash on pull — short pulse so user feels the click */
+@keyframes halo-flash {
+	0%   { transform: scale(1); }
+	30%  { transform: scale(1.15); }
+	100% { transform: scale(1); }
+}
+
+button.darkroom-pull.is-pulling .cord-group {
+	animation: cord-stretch 0.55s cubic-bezier(0.5, 0, 0.4, 1.6);
+	transform-origin: top;
+}
+
+button.darkroom-pull.is-pulling .bulb-group {
+	animation: bulb-tug 0.55s cubic-bezier(0.5, 0, 0.4, 1.6);
+}
+
+button.darkroom-pull.is-pulling .halo {
+	animation: halo-flash 0.55s ease;
+	transform-origin: 14px 32px;
+}
+
+/* ---------- Hover affordance ---------- */
+
+button.darkroom-pull:hover .cord {
+	stroke: var(--ink);
+}
+
+button.darkroom-pull:hover .knob {
+	transform: translateY(0.6px);
+}
+
+button.darkroom-pull:focus-visible {
 	outline: 1px solid var(--ink);
 	outline-offset: 2px;
 }
 
-button.theme-toggle svg {
-	width: 1em;
-	height: 1em;
-}
-
-:root:not([data-theme="dark"]) button.theme-toggle .icon-sun {
-	display: none;
-}
-
-:root[data-theme="dark"] button.theme-toggle .icon-moon {
-	display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-	:root:not([data-theme="light"]) button.theme-toggle .icon-moon {
-		display: none;
-	}
-	:root:not([data-theme="light"]) button.theme-toggle .icon-sun {
-		display: inline;
+@media (prefers-reduced-motion: reduce) {
+	button.darkroom-pull.is-pulling .cord-group,
+	button.darkroom-pull.is-pulling .bulb-group,
+	button.darkroom-pull.is-pulling .halo {
+		animation: none;
 	}
 }
 
 footer.site {
+	border-top: 1px solid var(--rule);
+}
+
+footer.site .site-foot {
 	max-width: var(--measure);
 	margin: 0 auto;
 	padding: 2rem var(--gutter);
 	color: var(--ink-faint);
 	font-size: 0.8rem;
-	border-top: 1px solid var(--rule);
 	letter-spacing: 0.05em;
+}
+
+footer.site p {
+	margin: 0;
 }
 
 /* ---------- Intro ---------- */
@@ -353,314 +528,34 @@ section.intro p {
 	color: var(--ink);
 }
 
-/* ---------- Demo nav links (A/B/C/D variants) ---------- */
+/* ---------- Home page: single featured photograph ---------- */
 
-nav.site-nav .demo-links {
-	flex: 0 0 auto;
-	gap: 0.5rem;
-	padding-left: 1rem;
-	border-left: 1px solid var(--rule);
-	font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-	font-size: 0.7rem;
-	letter-spacing: 0.1em;
+.home {
+	margin: 1rem 0 2rem;
 }
 
-nav.site-nav .demo-links a {
-	text-transform: uppercase;
-	color: var(--ink-faint);
-}
-
-nav.site-nav .demo-links a:hover,
-nav.site-nav .demo-links a[aria-current="page"] {
-	color: var(--ink);
-}
-
-/* ---------- Variant E: paper-box shelf ---------- */
-/* Skeuomorphic but restrained — typographic essence of an Ilford paper box */
-
-:root {
-	--ilford: #b81f25;
-	--box-paper: #faf7f1;
-	--box-edge: #d8d2c4;
-}
-
-@media (prefers-color-scheme: dark) {
-	:root {
-		--box-paper: #ece6d6;
-		--box-edge: #b3ad9f;
-	}
-}
-
-:root[data-theme="light"] {
-	--box-paper: #faf7f1;
-	--box-edge: #d8d2c4;
-}
-
-:root[data-theme="dark"] {
-	--box-paper: #ece6d6;
-	--box-edge: #b3ad9f;
-}
-
-.paper-shelf {
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: 2rem;
-	margin: 2.5rem 0 1rem;
-}
-
-@media (min-width: 600px) {
-	.paper-shelf {
-		grid-template-columns: 1fr 1fr;
-		gap: 1.75rem;
-	}
-}
-
-.paper-box {
+.home-figure {
 	display: block;
-	text-decoration: none;
-	color: inherit;
-	aspect-ratio: 4 / 5;
-	transition: transform 0.18s ease, box-shadow 0.18s ease;
-	will-change: transform;
+	margin-bottom: 1.5rem;
 }
 
-.paper-box:hover {
-	transform: translateY(-2px) rotate(-0.3deg);
-}
-
-.paper-box-body {
-	width: 100%;
-	height: 100%;
-	background: var(--box-paper);
-	color: #222;
-	border: 1px solid var(--box-edge);
-	box-shadow:
-		0 1px 0 rgba(0, 0, 0, 0.06),
-		0 8px 18px -8px rgba(0, 0, 0, 0.18),
-		inset 0 0 0 1px rgba(255, 255, 255, 0.4);
-	display: grid;
-	grid-template-rows: 1fr auto auto 1fr;
-	padding: 1.25rem 1.5rem;
-	position: relative;
-	overflow: hidden;
-	font-family: ui-sans-serif, "Helvetica Neue", Arial, sans-serif;
-}
-
-@media (prefers-color-scheme: dark) {
-	.paper-box-body {
-		box-shadow:
-			0 1px 0 rgba(0, 0, 0, 0.4),
-			0 10px 24px -8px rgba(0, 0, 0, 0.6),
-			inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-	}
-}
-
-:root[data-theme="dark"] .paper-box-body {
-	box-shadow:
-		0 1px 0 rgba(0, 0, 0, 0.4),
-		0 10px 24px -8px rgba(0, 0, 0, 0.6),
-		inset 0 0 0 1px rgba(255, 255, 255, 0.25);
-}
-
-.paper-box:hover .paper-box-body {
-	box-shadow:
-		0 1px 0 rgba(0, 0, 0, 0.08),
-		0 14px 28px -8px rgba(0, 0, 0, 0.25),
-		inset 0 0 0 1px rgba(255, 255, 255, 0.4);
-}
-
-/* Subtle paper texture on the box body */
-.paper-box-body::before {
-	content: "";
-	position: absolute;
-	inset: 0;
-	background-image: url("/grain.svg");
-	background-repeat: repeat;
-	opacity: 0.06;
-	mix-blend-mode: multiply;
-	pointer-events: none;
-}
-
-/* Red horizontal label band — the Ilford red wrap */
-.paper-box-label {
-	grid-row: 2;
-	background: var(--ilford);
-	color: #fff;
-	padding: 0.85rem 1rem;
-	margin: 0 -1.5rem;
-	display: flex;
-	flex-direction: column;
-	gap: 0.15rem;
-	letter-spacing: 0.06em;
-	position: relative;
-	z-index: 1;
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.18),
-		inset 0 -1px 0 rgba(0, 0, 0, 0.18);
-}
-
-.paper-box-label .label-brand {
-	font-size: 0.55rem;
-	letter-spacing: 0.32em;
-	text-transform: uppercase;
-	opacity: 0.85;
-	font-weight: 500;
-}
-
-.paper-box-label .label-title {
-	font-size: 1.5rem;
-	font-weight: 700;
-	letter-spacing: 0.04em;
-	text-transform: uppercase;
-	line-height: 1.05;
-}
-
-.paper-box-label .label-spec {
-	font-size: 0.7rem;
-	letter-spacing: 0.18em;
-	text-transform: uppercase;
-	opacity: 0.92;
-	font-weight: 500;
-	margin-top: 0.15rem;
-}
-
-.paper-box-meta {
-	grid-row: 3;
-	display: flex;
-	justify-content: space-between;
-	align-items: baseline;
-	margin-top: 0.85rem;
-	font-size: 0.6rem;
-	letter-spacing: 0.28em;
-	text-transform: uppercase;
-	color: #444;
-	font-weight: 500;
-	position: relative;
-	z-index: 1;
-}
-
-.paper-box:hover .paper-box-label .label-title {
-	color: #fff;
-}
-
-.paper-box:hover {
-	color: inherit;
-}
-
-/* ---------- Variant D: current series stack, bigger thumb ---------- */
-
-.variant-d-stack {
-	display: grid;
-	grid-template-columns: 1fr;
-	margin: 2rem 0;
-	border-top: 1px solid var(--rule);
-}
-
-.variant-d-card {
-	display: grid;
-	grid-template-columns: 1fr 14rem;
-	gap: 1.5rem;
-	align-items: start;
-	padding: 2rem 0;
-	border-bottom: 1px solid var(--rule);
-	text-decoration: none;
-	color: inherit;
-	transition: background-color 0.15s ease;
-}
-
-.variant-d-card:hover {
-	background-color: var(--paper-shadow);
-}
-
-.variant-d-card:hover .series-label {
-	color: var(--ink);
-}
-
-.variant-d-thumb {
-	width: 100%;
-}
-
-.variant-d-thumb img {
+.home-figure img {
+	display: block;
 	width: 100%;
 	height: auto;
-	border: 1px solid var(--rule);
 }
 
-@media (max-width: 600px) {
-	.variant-d-card {
-		grid-template-columns: 1fr;
-	}
-	.variant-d-thumb {
-		max-width: 100%;
-	}
+.home-figure:hover img {
+	opacity: 0.95;
 }
 
-/* ---------- Series cards (front door) ---------- */
-/* Each series styled like a paper-box label — typographic, not skeuomorphic */
-
-.series-stack {
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: 0;
-	margin: 2rem 0;
-	border-top: 1px solid var(--rule);
-}
-
-.series-card {
-	display: grid;
-	grid-template-columns: 1fr 6rem;
-	gap: 1.25rem;
-	align-items: start;
-	padding: 1.75rem 0;
-	border-bottom: 1px solid var(--rule);
-	text-decoration: none;
-	color: inherit;
-	transition: background-color 0.15s ease;
-}
-
-.series-card:hover {
-	background-color: var(--paper-shadow);
-}
-
-.series-card:hover .series-label {
-	color: var(--ink);
-}
-
-.series-label {
-	font-size: 1.1rem;
-	font-weight: 500;
-	letter-spacing: 0.18em;
-	text-transform: uppercase;
-	margin: 0;
-	line-height: 1.3;
-}
-
-.series-stat {
-	font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-	font-size: 0.75rem;
-	color: var(--ink-faint);
-	letter-spacing: 0.05em;
-	margin: 0.4rem 0 0.75rem;
-	text-transform: uppercase;
-}
-
-.series-desc {
-	color: var(--ink-soft);
-	font-size: 0.95rem;
-	font-style: italic;
+.home-meta h1 {
+	font-size: 1.4rem;
 	margin: 0;
 }
 
-.series-thumb {
-	margin-left: auto;
-	width: 100%;
-	max-width: 6rem;
-}
-
-.series-thumb img {
-	width: 100%;
-	height: auto;
-	border: 1px solid var(--rule);
+.home-meta .verso {
+	margin-top: 0.4rem;
 }
 
 /* ---------- Reading view (in stream — series + tag pages) ---------- */
@@ -713,29 +608,100 @@ article.entry .entry-body {
 	margin-top: 1.25rem;
 }
 
-/* ---------- Format-group headers in series view ---------- */
+/* ---------- Series page ---------- */
 
-.format-group-header {
-	display: flex;
-	align-items: baseline;
-	gap: 0.75rem;
-	margin: 4rem 0 2rem;
+.series-meta {
 	color: var(--ink-faint);
-	font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-	font-size: 0.75rem;
-	letter-spacing: 0.18em;
-	text-transform: uppercase;
+	font-size: 0.85rem;
+	margin: 0.25rem 0 0.5rem;
 }
 
-.format-group-header::after {
-	content: "";
-	flex: 1;
-	height: 1px;
-	background: var(--rule);
+.series-description {
+	color: var(--ink-soft);
+	margin: 0.5rem 0 2.5rem;
 }
 
-.format-group-header:first-of-type {
-	margin-top: 2rem;
+/* ---------- Print stack ---------- */
+/* Each photo is a print resting on top of the next. Slight tilt + paper matte. */
+
+.print-stack {
+	display: flex;
+	flex-direction: column;
+	gap: 4rem;
+	padding-top: 1rem;
+}
+
+.print-entry {
+	display: block;
+	text-decoration: none;
+	color: inherit;
+	margin: 0;
+}
+
+.print-entry:hover .print-mount {
+	transform: translateY(-2px) rotate(0deg);
+	box-shadow:
+		0 1px 0 rgba(0, 0, 0, 0.06),
+		0 18px 32px -10px rgba(0, 0, 0, 0.34),
+		inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+/* Paper mount around the image — like a darkroom print with a paper border */
+.print-mount {
+	background: var(--box-paper);
+	padding: 1rem 1rem 1.5rem;
+	box-shadow:
+		0 1px 0 rgba(0, 0, 0, 0.05),
+		0 12px 24px -10px rgba(0, 0, 0, 0.28),
+		inset 0 0 0 1px rgba(0, 0, 0, 0.04);
+	margin-bottom: 1.5rem;
+	transition: transform 0.25s ease;
+}
+
+@media (prefers-color-scheme: dark) {
+	.print-mount {
+		box-shadow:
+			0 1px 0 rgba(0, 0, 0, 0.4),
+			0 14px 28px -10px rgba(0, 0, 0, 0.55),
+			inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+	}
+}
+
+:root[data-theme="dark"] .print-mount {
+	box-shadow:
+		0 1px 0 rgba(0, 0, 0, 0.4),
+		0 14px 28px -10px rgba(0, 0, 0, 0.55),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Per-print tilt — prints don't stack perfectly straight */
+.print-entry:nth-child(odd)  .print-mount { transform: rotate(-0.35deg); }
+.print-entry:nth-child(even) .print-mount { transform: rotate(0.4deg); }
+.print-entry:nth-child(3n)   .print-mount { transform: rotate(-0.15deg); }
+
+.print-mount figure {
+	margin: 0;
+}
+
+.print-mount img {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.print-mount figcaption {
+	margin: 0.6rem 0 0;
+	color: var(--ink-soft);
+	font-size: 0.85rem;
+	font-style: italic;
+	text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.print-mount {
+		transition: none;
+		transform: none !important;
+	}
 }
 
 /* ---------- Photo permalink (single-print page) ---------- */
@@ -1001,31 +967,23 @@ dl.photo-meta dd {
 	}
 }
 
-/* ---------- Tag chips + cloud ---------- */
+/* ---------- Photo permalink: inline plain-text tags + tag cloud ---------- */
 
-ul.tag-chips {
-	list-style: none;
-	padding: 0;
-	margin: 1.5rem 0 2rem;
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.4rem;
+.photo-tags {
+	margin: 2rem 0 0;
+	color: var(--ink-faint);
+	font-size: 0.85rem;
 }
 
-ul.tag-chips a {
-	display: inline-block;
-	padding: 0.2rem 0.55rem;
-	border: 1px solid var(--rule);
-	font-size: 0.7rem;
+.photo-tags a {
 	color: var(--ink-soft);
 	text-decoration: none;
-	letter-spacing: 0.06em;
-	text-transform: lowercase;
+	border-bottom: 1px dotted var(--rule);
 }
 
-ul.tag-chips a:hover {
+.photo-tags a:hover {
 	color: var(--ink);
-	border-color: var(--ink);
+	border-bottom-color: var(--ink-faint);
 }
 
 .visually-hidden {

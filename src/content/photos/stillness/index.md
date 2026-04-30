@@ -1,7 +1,7 @@
 ---
 title: "Stillness"
 date: 2026-04-15
-image: ./stillness.jpg
+image: ./image.jpg
 alt: "Placeholder — work in progress, not yet ready."
 caption: ""
 camera: "Mamiya RB67"

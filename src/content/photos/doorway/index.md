@@ -1,7 +1,7 @@
 ---
 title: "Doorway"
 date: 2024-04-09
-image: ./doorway.jpg
+image: ./image.jpg
 alt: "An open doorway viewed from inside a darkened room."
 caption: "An open door is its own invitation."
 camera: "Hasselblad 500C/M"

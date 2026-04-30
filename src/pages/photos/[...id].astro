@@ -84,16 +84,14 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 
 	{
 		tags && tags.length > 0 && (
-			<ul class="tag-chips">
-				{tags.map((t) => (
-					<li>
-						<a href={`/tags/${t}/`}>#{t}</a>
-					</li>
+			<p class="photo-tags">
+				{tags.map((t, i) => (
+					<>
+						{i > 0 && ", "}
+						<a href={`/tags/${t}/`}>{t}</a>
+					</>
 				))}
-			</ul>
+			</p>
 		)
 	}
-
-	<hr />
-	<p><a href="/">← Back to series</a></p>
 </Layout>

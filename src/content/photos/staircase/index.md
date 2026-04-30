@@ -1,7 +1,7 @@
 ---
 title: "Staircase"
 date: 2024-11-30
-image: ./staircase.jpg
+image: ./image.jpg
 alt: "A wooden staircase descending into shadow."
 caption: "Late afternoon, going down."
 camera: "Pentax 67"

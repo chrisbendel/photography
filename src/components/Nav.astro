@@ -1,14 +1,10 @@
 ---
 const links = [
 	{ href: "/gallery/", label: "Gallery" },
+	{ href: "/series/", label: "Series" },
 	{ href: "/tags/", label: "Tags" },
 	// Future: { href: "/shop", label: "Shop" },
 	// Future: { href: "/about", label: "About" },
-];
-
-const demos = [
-	{ href: "/d/", label: "D" },
-	{ href: "/e/", label: "E" },
 ];
 
 const path = Astro.url.pathname;
@@ -61,29 +57,41 @@ const isCurrent = (href: string) => path.startsWith(href);
 				))
 			}
 		</ul>
-		<ul class="demo-links" aria-label="Homepage variants">
-			{
-				demos.map(({ href, label }) => (
-					<li>
-						<a href={href} aria-current={isCurrent(href) ? "page" : undefined}>
-							{label}
-						</a>
-					</li>
-				))
-			}
-		</ul>
 		<button
 			type="button"
-			class="theme-toggle"
-			id="theme-toggle"
-			aria-label="Toggle color theme"
+			class="darkroom-pull"
+			id="theme-pull"
+			aria-label="Toggle darkroom light"
+			title="Turn light on/off"
 		>
-			<svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-				<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-			</svg>
-			<svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-				<circle cx="12" cy="12" r="4" />
-				<path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+			<svg viewBox="0 0 28 44" aria-hidden="true" focusable="false">
+				<!-- soft outer glow halo (largest, blurriest) -->
+				<circle class="halo halo-outer" cx="14" cy="32" r="14" />
+				<!-- inner glow halo -->
+				<circle class="halo halo-inner" cx="14" cy="32" r="9" />
+				<!-- ceiling anchor -->
+				<circle class="anchor" cx="14" cy="0.6" r="0.9" />
+				<!-- cord -->
+				<g class="cord-group">
+					<line class="cord" x1="14" y1="0" x2="14" y2="20" />
+					<!-- pull-knob at end of cord -->
+					<circle class="knob" cx="14" cy="21" r="1.1" />
+				</g>
+				<!-- bulb hanging from cord -->
+				<g class="bulb-group">
+					<!-- screw cap -->
+					<rect class="cap" x="11.5" y="22.5" width="5" height="2.6" rx="0.4" />
+					<!-- glass envelope -->
+					<ellipse class="glass" cx="14" cy="32" rx="5.8" ry="6.6" />
+					<!-- filament: classic figure-8 zigzag -->
+					<path
+						class="filament"
+						d="M 11 31 Q 12.5 33 14 31 Q 15.5 29 17 31 Q 15.5 33.5 14 32 Q 12.5 30.5 11 32 Z"
+						fill="none"
+					/>
+					<!-- highlight on glass when lit (subtle reflection) -->
+					<ellipse class="highlight" cx="11.5" cy="29.5" rx="1.1" ry="1.8" />
+				</g>
 			</svg>
 		</button>
 	</nav>

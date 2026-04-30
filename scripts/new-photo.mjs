@@ -15,17 +15,19 @@ if (!/^[a-z0-9-]+$/.test(slug)) {
 	process.exit(1);
 }
 
-const dir = "src/content/photos";
-mkdirSync(dir, { recursive: true });
+// Each photo lives in its own folder: src/content/photos/<slug>/{index.md,image.<ext>}
+const photoDir = join("src/content/photos", slug);
+const mdPath = join(photoDir, "index.md");
 
-const mdPath = join(dir, `${slug}.md`);
-if (existsSync(mdPath)) {
-	console.error(`${mdPath} already exists. Pick a different slug.`);
+if (existsSync(photoDir)) {
+	console.error(`${photoDir} already exists. Pick a different slug.`);
 	process.exit(1);
 }
 
-let imageRef = `./${slug}.jpg`;
-let imageNote = `Drop image at ${join(dir, slug + ".jpg")} before publishing.`;
+mkdirSync(photoDir, { recursive: true });
+
+let imageRef = "./image.jpg";
+let imageNote = `Drop image at ${join(photoDir, "image.jpg")} before publishing.`;
 
 if (imagePath) {
 	if (!existsSync(imagePath)) {
@@ -33,9 +35,9 @@ if (imagePath) {
 		process.exit(1);
 	}
 	const ext = (extname(imagePath) || ".jpg").toLowerCase();
-	const dest = join(dir, `${slug}${ext}`);
+	const dest = join(photoDir, `image${ext}`);
 	copyFileSync(imagePath, dest);
-	imageRef = `./${slug}${ext}`;
+	imageRef = `./image${ext}`;
 	imageNote = `Copied ${basename(imagePath)} → ${dest}`;
 }
 

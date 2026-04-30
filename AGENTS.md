@@ -19,6 +19,14 @@ black & white film photographs. Static site, deployed to Cloudflare Pages.
   splash of red. One subtle paper-grain SVG overlays the whole page.
 - **No dependencies unless necessary**. If a feature can be done with a few
   lines of CSS or vanilla JS, do that.
+- **The site is also the photographer's filing system.** This is not just a
+  public portal — it is the way the photographer organizes his own work. The
+  layout, the schema, the routes, the categories all evolve as his
+  organizational instincts evolve. If the way he thinks about a photograph
+  changes (a new way of grouping, a new piece of metadata, a new view that
+  helps him *find* something he made), the site changes to reflect that.
+  Resist the urge to lock the structure in early. The structure is meant to
+  bend with the practice.
 
 ## Grug-brained development
 
@@ -63,6 +71,51 @@ A working translation, applied here:
 The recurring question for every change: not "can we?" but "would removing
 this leave something missing?" If no, don't ship it.
 
+## Tactile details
+
+The site is a quiet photo viewer first. Within that quiet, small tactile
+details — borrowed from the analog process of making and printing
+photographs — are what separate the site from a generic gallery template.
+They reward attention without demanding it.
+
+Existing details:
+
+- **Pull-cord light switch** (nav). An Edison bulb on a cord. Pull it to
+  flip the theme. Cord stretches, bulb dips and rebounds, halo blooms.
+  Mirrors the actual fixture in the photographer's darkroom.
+- **Paper-grain overlay**. A near-imperceptible noise SVG over the page,
+  multiply-blended in light mode, screen-blended in dark. Page reads like
+  fiber paper, not screen.
+- **Verso treatment**. Per-photo metadata as small uppercase monospace —
+  evokes pencil notes on the back of a print.
+- **Print invert button**. A small overlay on the photo flips the scan to
+  negative. Mirrors holding a real negative up to the light.
+- **Format-grouped series view**. Prints sorted largest first within each
+  series, mirroring how prints physically stack in a paper box.
+
+When adding a feature, ask: is there a real-world analog to what this is
+doing? If yes, can the interaction feel a little more like that real
+thing — without becoming kitsch, slow, or skeuomorphic theater?
+
+Rules:
+
+1. **Restraint over elaboration.** A 0.4s animation that *suggests* an
+   action beats a 2s animation that *performs* it.
+2. **Never block the user.** Animations may not delay critical interaction
+   beyond ~400ms total.
+3. **Always degrade gracefully.** Honor `prefers-reduced-motion`. The site
+   must function without animation.
+4. **No skeuomorphism for its own sake.** Wood-grain page background = cosplay.
+   Paper grain that disappears at normal viewing distance = texture.
+5. **CSS-first.** If a tactile detail can be done with CSS animations and a
+   few lines of vanilla JS, do that. Avoid libraries.
+6. **Discoverable, not required.** A user who never notices the pull-cord
+   still has a working theme toggle. Tactile details supplement function;
+   they never replace it.
+
+These small things, accumulated, are the work. They don't compete with the
+photographs — they frame them.
+
 ## Stack
 
 - **Astro** — static output, content collections.
@@ -75,9 +128,28 @@ this leave something missing?" If no, don't ship it.
 
 ## Content model
 
-Each photograph is a markdown file under `src/content/photos/`. The image lives
-next to it (e.g. `sample.md` + `sample.jpg`). Schema is in
+Each photograph lives in its own folder under `src/content/photos/<slug>/`,
+containing its markdown (`index.md`) and image (`image.jpg`). The markdown's
+`image:` field is a local relative path, `image: ./image.jpg`. Schema is in
 `src/content.config.ts`.
+
+```
+src/content/photos/
+  morning-window/
+    index.md
+    image.jpg
+  bridge/
+    index.md
+    image.jpg
+```
+
+The slug for routing comes from the directory name. The content collection's
+`generateId` strips the trailing `/index.md` so the entry id is just `<slug>`,
+keeping URLs clean (`/photos/<slug>/`).
+
+Why this layout: each photo is a self-contained package — drop the folder,
+photo gone; share the folder, photo travels intact. Browsing `src/content/photos/`
+shows one row per photograph (the slug), not interleaved markdown and JPEGs.
 
 Required frontmatter: `title`, `date`, `image`, `alt`.
 Optional: `caption`, `camera`, `film`, `location`, `format`, `draft`.
@@ -101,9 +173,9 @@ Posting is intentionally a deliberate act.
 ```
 1. Process the scan to a final JPEG (3000–4000px long edge, ~85 quality).
 2. Run: npm run new-photo -- <slug> path/to/image.jpg
-   (the script copies the image into src/content/photos/ and creates
-    a markdown stub with draft: true)
-3. Open src/content/photos/<slug>.md, fill the frontmatter and write notes.
+   (the script creates src/content/photos/<slug>/ with index.md (stub,
+    draft: true) and image.<ext> copied from your scan)
+3. Open src/content/photos/<slug>/index.md, fill the frontmatter and write notes.
 4. npm run dev — eyeball both the reading view (/) and the contact sheet (/sheet).
 5. Flip draft: false when you're ready to publish.
 6. npm run check-photos — validates alt text, image sizes, references, and bodies.
@@ -188,10 +260,10 @@ run suggest-tags ...`.
 
 ## Image handling
 
-- For now, images are checked into git under `src/content/photos/` and served
-  through Astro's asset pipeline (`<Image />` from `astro:assets`). This gives
-  responsive `srcset`, format conversion (avif/webp), and content hashing for
-  free.
+- For now, images are checked into git under `src/content/photos/<slug>/` and
+  served through Astro's asset pipeline (`<Image />` from `astro:assets`).
+  This gives responsive `srcset`, format conversion (avif/webp), and content
+  hashing for free.
 - Keep source files reasonable. A 3000–4000px long edge JPEG at quality ~85 is
   plenty for web.
 - When the repo gets uncomfortable (rough rule: > 500 MB), migrate to

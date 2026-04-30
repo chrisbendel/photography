@@ -1,7 +1,7 @@
 ---
 title: "Morning Window"
 date: 2025-10-12
-image: ./morning-window.jpg
+image: ./image.jpg
 alt: "Light falling through a tall window onto a bare wood floor."
 caption: "First light, kitchen."
 camera: "Mamiya RB67"

@@ -1,7 +1,7 @@
 ---
 title: "Window Light"
 date: 2024-01-17
-image: ./window-light.jpg
+image: ./image.jpg
 alt: "A figure half-lit by light from a window."
 caption: "Sunday."
 camera: "Mamiya RB67"
