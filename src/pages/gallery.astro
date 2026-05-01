@@ -1,32 +1,21 @@
 ---
 import { Image, getImage } from "astro:assets";
-import { getCollection, getEntry } from "astro:content";
+import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
-import { formatLabel } from "../lib/format";
+import { sortKey } from "../lib/format";
 
 const allPhotos = (await getCollection("photos", ({ data }) => !data.draft)).sort(
-	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+	(a, b) => sortKey(b) - sortKey(a),
 );
 
-const fmtMonthYear = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
-
-// Build per-photo metadata + a 1600w large variant URL for the loupe
+// Build per-photo data + a 1600w large variant URL for the loupe
 const photoData = await Promise.all(
 	allPhotos.map(async (p) => {
-		const seriesEntry = p.data.series ? await getEntry(p.data.series) : null;
 		const large = await getImage({ src: p.data.image, width: 1600 });
 		return {
 			id: p.id,
-			title: p.data.title,
 			alt: p.data.alt,
-			caption: p.data.caption ?? "",
-			seriesTitle: seriesEntry?.data.title ?? "",
-			format: p.data.format ? formatLabel(p.data.format) : "",
-			date: fmtMonthYear.format(p.data.date),
-			location: p.data.location ?? "",
 			largeSrc: large.src,
-			width: large.attributes.width ?? null,
-			height: large.attributes.height ?? null,
 		};
 	}),
 );
@@ -83,15 +72,167 @@ const loupeJson = JSON.stringify(photoData);
 	<figure class="loupe-stage">
 		<img id="loupe-img" alt="" />
 		<figcaption class="loupe-caption">
-			<a id="loupe-permalink" class="loupe-title" href="#">
-				<span id="loupe-title-text"></span>
-				<span class="loupe-arrow" aria-hidden="true">→</span>
-			</a>
-			<span id="loupe-verso" class="verso"></span>
 			<span id="loupe-position" class="loupe-position"></span>
+			<a id="loupe-permalink" class="loupe-details" href="#">Details</a>
 		</figcaption>
 	</figure>
 </div>
+
+<style>
+	/* Grid cells use <button> instead of <a> — strip default button chrome */
+	.sheet button.cell {
+		background: none;
+		border: 0;
+		padding: 0;
+		cursor: zoom-in;
+		font: inherit;
+		color: inherit;
+	}
+
+	/* Loupe overlay — appears above the grid when a thumb is clicked */
+	.loupe {
+		position: fixed;
+		inset: 0;
+		z-index: 100;
+		background: color-mix(in srgb, var(--paper) 92%, transparent);
+		display: grid;
+		grid-template-columns: auto 1fr auto;
+		grid-template-rows: 1fr auto;
+		gap: 0;
+		align-items: center;
+		justify-items: center;
+		padding: 4vh 4vw;
+		cursor: zoom-out;
+		animation: loupe-fade 0.18s ease;
+		color: var(--ink);
+	}
+
+	@keyframes loupe-fade {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	.loupe[hidden] {
+		display: none;
+	}
+
+	.loupe-stage {
+		grid-column: 2;
+		grid-row: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		max-width: 100%;
+		max-height: 100%;
+		cursor: default;
+		margin: 0;
+	}
+
+	.loupe-stage img {
+		max-width: 100%;
+		max-height: calc(92vh - 5rem);
+		height: auto;
+		width: auto;
+		display: block;
+		box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6);
+	}
+
+	.loupe-caption {
+		color: var(--ink);
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-size: 0.7rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.loupe-position {
+		color: var(--ink-faint);
+	}
+
+	.loupe-details {
+		color: var(--ink);
+		text-decoration: none;
+		border-bottom: 1px solid var(--ink-faint);
+	}
+
+	.loupe-details:hover {
+		border-bottom-color: var(--ink);
+	}
+
+	.loupe-btn {
+		background: color-mix(in srgb, var(--ink) 8%, transparent);
+		border: 1px solid color-mix(in srgb, var(--ink) 22%, transparent);
+		color: var(--ink);
+		padding: 0.5rem;
+		cursor: pointer;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		width: 2.5rem;
+		height: 2.5rem;
+		transition: background-color 0.12s ease, border-color 0.12s ease;
+	}
+
+	.loupe-btn:hover {
+		background: color-mix(in srgb, var(--ink) 16%, transparent);
+		border-color: color-mix(in srgb, var(--ink) 50%, transparent);
+	}
+
+	.loupe-btn:focus-visible {
+		outline: 2px solid var(--ink);
+		outline-offset: 2px;
+	}
+
+	.loupe-close {
+		position: fixed;
+		top: 1.25rem;
+		right: 1.25rem;
+	}
+
+	.loupe-prev {
+		grid-column: 1;
+		grid-row: 1;
+		justify-self: start;
+		align-self: center;
+	}
+
+	.loupe-next {
+		grid-column: 3;
+		grid-row: 1;
+		justify-self: end;
+		align-self: center;
+	}
+
+	@media (max-width: 600px) {
+		.loupe {
+			padding: 3vh 1rem;
+			grid-template-columns: 1fr;
+			grid-template-rows: 1fr auto;
+		}
+		.loupe-stage {
+			grid-column: 1;
+			grid-row: 1;
+		}
+		.loupe-prev,
+		.loupe-next {
+			grid-row: 2;
+			grid-column: 1;
+			align-self: end;
+		}
+		.loupe-prev {
+			justify-self: start;
+		}
+		.loupe-next {
+			justify-self: end;
+		}
+	}
+</style>
 
 <script id="loupe-data" type="application/json" set:html={loupeJson}></script>
 
@@ -104,17 +245,14 @@ const loupeJson = JSON.stringify(photoData);
 
 		const loupe = document.getElementById("loupe");
 		const img = document.getElementById("loupe-img");
-		const titleText = document.getElementById("loupe-title-text");
 		const permalink = document.getElementById("loupe-permalink");
-		const verso = document.getElementById("loupe-verso");
 		const position = document.getElementById("loupe-position");
 		const grid = document.getElementById("gallery-grid");
 		const btnClose = loupe?.querySelector(".loupe-close");
 		const btnPrev = loupe?.querySelector(".loupe-prev");
 		const btnNext = loupe?.querySelector(".loupe-next");
 
-		if (!loupe || !img || !titleText || !permalink || !verso || !position || !grid)
-			return;
+		if (!loupe || !img || !permalink || !position || !grid) return;
 
 		let currentIdx = -1;
 
@@ -128,10 +266,7 @@ const loupeJson = JSON.stringify(photoData);
 			const p = photos[idx];
 			img.src = p.largeSrc;
 			img.alt = p.alt;
-			titleText.textContent = p.title;
 			permalink.href = "/photos/" + p.id + "/";
-			const versoBits = [p.seriesTitle, p.format, p.date, p.location].filter(Boolean);
-			verso.textContent = versoBits.join(" · ");
 			position.textContent = idx + 1 + " / " + photos.length;
 			loupe.hidden = false;
 			document.body.style.overflow = "hidden";

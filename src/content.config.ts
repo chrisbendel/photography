@@ -14,6 +14,10 @@ const photos = defineCollection({
 		z.object({
 			title: z.string(),
 			date: z.coerce.date(),
+			// When the entry was added to the site. Used for "latest" sorts on
+			// /, /gallery, etc. Optional — falls back to `date` if absent so
+			// existing entries Just Work.
+			published: z.coerce.date().optional(),
 			image: image(),
 			alt: z.string(),
 			caption: z.string().optional(),

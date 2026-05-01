@@ -2,7 +2,7 @@
 	<title>4×5 sheet film with burned-in landscape</title>
 	<defs>
 		<clipPath id="sheet-clip">
-			<path d="M 0 0 L 9 0 L 9 5 L 13 5 L 13 0 L 15 0 L 15 5 L 17 5 L 17 0 L 23 0 L 23 5 L 27 5 L 27 0 L 32 0 L 32 40 L 0 40 Z" />
+			<path d="M 0 0 L 13 0 L 13 1 A 1 1 0 0 0 14 2 L 17 2 A 1 1 0 0 0 18 1 L 18 0 L 19 0 L 19 1 A 1 1 0 0 0 21 1 L 21 0 L 26 0 L 26 1 A 1 1 0 0 0 27 2 L 30 2 A 1 1 0 0 0 31 1 L 31 0 L 32 0 L 32 40 L 0 40 Z" />
 		</clipPath>
 	</defs>
 	<style>
@@ -15,19 +15,24 @@
 	</style>
 
 	<!--
-		4×5 sheet film silhouette (portrait), Ilford FP4 Plus (NEW) notch code.
-		Per https://en.wikipedia.org/wiki/Notch_code:
-		  __   ___  _______   ___
-		    ╰-╯ ╰╯     ╰-╯
-		Three notches in the top edge, left-to-right: wide, narrow, wide.
-		Square cuts (no curved bottoms) for clarity at favicon scale.
+		4×5 sheet film silhouette (portrait), Ilford FP4 Plus notch code.
+		Three rounded dips on top edge, packed near the right corner:
+		wide, narrow, wide.
 	-->
 	<path
 		class="sheet"
 		d="M 0 0
-		   L 9 0  L 9 5  L 13 5 L 13 0
-		   L 15 0 L 15 5 L 17 5 L 17 0
-		   L 23 0 L 23 5 L 27 5 L 27 0
+		   L 13 0 L 13 1
+		   A 1 1 0 0 0 14 2
+		   L 17 2
+		   A 1 1 0 0 0 18 1
+		   L 18 0 L 19 0 L 19 1
+		   A 1 1 0 0 0 21 1
+		   L 21 0 L 26 0 L 26 1
+		   A 1 1 0 0 0 27 2
+		   L 30 2
+		   A 1 1 0 0 0 31 1
+		   L 31 0
 		   L 32 0
 		   L 32 40
 		   L 0 40

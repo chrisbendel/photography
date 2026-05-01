@@ -34,10 +34,7 @@ const range =
 ---
 
 <Layout title={`${series.data.title} — Chris Bendel`} description={series.data.description}>
-	<section class="intro">
-		<p class="eyebrow"><a href="/series/">← Series</a></p>
-		<h1>{series.data.title}</h1>
-	</section>
+	<h1>{series.data.title}</h1>
 
 	{
 		photos.length === 0 ? (
@@ -59,3 +56,42 @@ const range =
 	}
 
 </Layout>
+
+<style>
+	.print-stack {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+	}
+
+	.print-entry {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+	}
+
+	.print-mount figure {
+		margin: 0;
+	}
+
+	.print-mount img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	/* Caption sits flush under image (small gap), reads as one unit. */
+	.print-mount figcaption {
+		margin: 0.2rem 0 0;
+		color: var(--ink-faint);
+		font-size: 0.8rem;
+		font-style: italic;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.print-mount {
+			transition: none;
+			transform: none !important;
+		}
+	}
+</style>

@@ -45,7 +45,8 @@ const today = new Date().toISOString().slice(0, 10);
 
 const tpl = `---
 title: ""
-date: ${today}
+date: ${today}        # when the photograph was made
+published: ${today}   # when added to the site (drives "latest" sorts)
 image: ${imageRef}
 alt: ""
 caption: ""

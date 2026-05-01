@@ -78,3 +78,87 @@ const tags = [...counts.entries()].sort(
 		)
 	}
 </Layout>
+
+<style>
+	.visually-hidden {
+		position: absolute !important;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.tag-search {
+		display: flex;
+		align-items: baseline;
+		gap: 1rem;
+		margin: 1.5rem 0 1.25rem;
+		flex-wrap: wrap;
+	}
+
+	.tag-search input[type="search"] {
+		flex: 1;
+		min-width: 12rem;
+		background: transparent;
+		border: 0;
+		border-bottom: 1px solid var(--rule);
+		color: var(--ink);
+		font: inherit;
+		font-size: 1rem;
+		padding: 0.4rem 0;
+		outline: none;
+	}
+
+	.tag-search input[type="search"]:focus {
+		border-bottom-color: var(--ink);
+	}
+
+	.tag-search input[type="search"]::placeholder {
+		color: var(--ink-faint);
+		font-style: italic;
+	}
+
+	.tag-search-status {
+		margin: 0;
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-size: 0.7rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+	}
+
+	ul.tag-cloud {
+		list-style: none;
+		padding: 0;
+		margin: 2rem 0 0;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	ul.tag-cloud a {
+		display: inline-block;
+		padding: 0.35rem 0.7rem;
+		border: 1px solid var(--rule);
+		font-size: 0.85rem;
+		color: var(--ink-soft);
+		text-decoration: none;
+		letter-spacing: 0.04em;
+	}
+
+	ul.tag-cloud a:hover {
+		color: var(--ink);
+		border-color: var(--ink);
+	}
+
+	ul.tag-cloud .count {
+		color: var(--ink-faint);
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-size: 0.75rem;
+		margin-left: 0.3rem;
+	}
+</style>

@@ -1,3 +1,10 @@
+// Sort-by-recency key: prefer `published` (when added to site) over `date`
+// (when photograph was made). Old scans get current published date, so they
+// don't sink in "latest" sorts.
+export function sortKey(photo: { data: { published?: Date; date: Date } }): number {
+	return (photo.data.published ?? photo.data.date).valueOf();
+}
+
 // Print-format helpers. Used by series view to sort/group photos by paper size.
 // Larger formats sort first — mirrors how prints stack physically in a paper box.
 

@@ -27,6 +27,12 @@ black & white film photographs. Static site, deployed to Cloudflare Pages.
   helps him *find* something he made), the site changes to reflect that.
   Resist the urge to lock the structure in early. The structure is meant to
   bend with the practice.
+- **And it is also a log book.** Each photograph is a dated entry —
+  stamped with when it was made, when it was added, what camera, what film,
+  where, and a written reflection. The site is the cumulative record of a
+  practice over years. Read forward, you see what's new; read backward, you
+  see how the work has changed. Treat each entry like an entry — not like a
+  product page. Quiet, dated, complete, sequential.
 
 ## Grug-brained development
 
@@ -152,9 +158,21 @@ photo gone; share the folder, photo travels intact. Browsing `src/content/photos
 shows one row per photograph (the slug), not interleaved markdown and JPEGs.
 
 Required frontmatter: `title`, `date`, `image`, `alt`.
-Optional: `caption`, `camera`, `film`, `location`, `format`, `draft`.
+Optional: `published`, `caption`, `camera`, `film`, `location`, `format`,
+`series`, `tags`, `draft`.
 
 `draft: true` excludes the entry from the index and from `getStaticPaths`.
+
+### `date` vs `published`
+
+- `date` — when the photograph was *made* (shutter clicked). Shown on the
+  photo's permalink as the date. Used to sort prints inside a series
+  (capture chronology is meaningful within a body of work).
+- `published` — when the entry was *added to the site*. Optional. Drives
+  "latest" sorts on `/` and `/gallery/`. Falls back to `date` if absent.
+  The `new-photo` script writes today's date here automatically. This way
+  scanning a 4-year-old negative today doesn't sink it to the bottom of the
+  homepage.
 
 ### `caption` vs body
 
@@ -357,6 +375,16 @@ masterwork.
   catalogue justifies it.
 - Custom domain — pick one when it picks itself.
 - R2 for image hosting — only once git size hurts.
+
+## Open questions
+
+Decisions deliberately deferred — sit with them through real use, then revisit.
+
+- **Homepage shape.** Currently `/` shows a single featured photograph
+  (latest-published). Considered: a small grid of recent photos, a
+  text-only "portal" listing sections, status quo. Sit with the single-photo
+  approach for at least ~10 real posts before changing. The friction will
+  name itself in actual use; right now it's just imagined.
 
 ## Hosting
 

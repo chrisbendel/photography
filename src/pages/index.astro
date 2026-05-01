@@ -2,10 +2,10 @@
 import { Image } from "astro:assets";
 import { getCollection, getEntry } from "astro:content";
 import Layout from "../layouts/Layout.astro";
-import { formatLabel } from "../lib/format";
+import { formatLabel, sortKey } from "../lib/format";
 
 const allPhotos = (await getCollection("photos", ({ data }) => !data.draft)).sort(
-	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+	(a, b) => sortKey(b) - sortKey(a),
 );
 
 const photo = allPhotos[0];
@@ -48,3 +48,38 @@ const fmtMonthYear = new Intl.DateTimeFormat("en-US", { year: "numeric", month: 
 		)
 	}
 </Layout>
+
+<style>
+	.home {
+		display: flex;
+		flex-direction: column;
+		gap: var(--gap);
+	}
+
+	.home > * {
+		margin: 0;
+	}
+
+	.home-figure {
+		display: block;
+	}
+
+	.home-figure img {
+		display: block;
+		width: 100%;
+		height: auto;
+	}
+
+	.home-meta h1 {
+		margin: 0.5rem 0 0;
+	}
+
+	.verso {
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-size: 0.72rem;
+		color: var(--ink-faint);
+		margin: 0.25rem 0 0;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+</style>

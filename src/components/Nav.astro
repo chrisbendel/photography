@@ -22,12 +22,12 @@ const isCurrent = (href: string) => path.startsWith(href);
 			>
 				<defs>
 					<clipPath id="brand-mark-clip">
-						<path d="M 0 0 L 9 0 L 9 5 L 13 5 L 13 0 L 15 0 L 15 5 L 17 5 L 17 0 L 23 0 L 23 5 L 27 5 L 27 0 L 32 0 L 32 40 L 0 40 Z" />
+						<path d="M 0 0 L 13 0 L 13 1 A 1 1 0 0 0 14 2 L 17 2 A 1 1 0 0 0 18 1 L 18 0 L 19 0 L 19 1 A 1 1 0 0 0 21 1 L 21 0 L 26 0 L 26 1 A 1 1 0 0 0 27 2 L 30 2 A 1 1 0 0 0 31 1 L 31 0 L 32 0 L 32 40 L 0 40 Z" />
 					</clipPath>
 				</defs>
 				<path
 					class="mark-sheet"
-					d="M 0 0 L 9 0 L 9 5 L 13 5 L 13 0 L 15 0 L 15 5 L 17 5 L 17 0 L 23 0 L 23 5 L 27 5 L 27 0 L 32 0 L 32 40 L 0 40 Z"
+					d="M 0 0 L 13 0 L 13 1 A 1 1 0 0 0 14 2 L 17 2 A 1 1 0 0 0 18 1 L 18 0 L 19 0 L 19 1 A 1 1 0 0 0 21 1 L 21 0 L 26 0 L 26 1 A 1 1 0 0 0 27 2 L 30 2 A 1 1 0 0 0 31 1 L 31 0 L 32 0 L 32 40 L 0 40 Z"
 				/>
 				<g clip-path="url(#brand-mark-clip)">
 					<circle class="mark-img" cx="9" cy="17" r="2.2" opacity="0.5" />
@@ -96,3 +96,277 @@ const isCurrent = (href: string) => path.startsWith(href);
 		</button>
 	</nav>
 </header>
+
+<style>
+	header.site {
+		border-bottom: 1px solid var(--rule);
+	}
+
+	nav.site-nav {
+		max-width: var(--measure);
+		margin: 0 auto;
+		padding: 1rem var(--gutter);
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		font-size: 0.85rem;
+	}
+
+	nav.site-nav .brand {
+		text-decoration: none;
+		color: var(--ink);
+		font-weight: 500;
+		letter-spacing: 0.02em;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+	}
+
+	nav.site-nav .brand:hover {
+		color: var(--ink);
+	}
+
+	.brand-mark {
+		width: 1.4rem;
+		height: 1.75rem;
+		flex-shrink: 0;
+		color: currentColor;
+		display: block;
+	}
+
+	.brand-mark .mark-sheet {
+		fill: currentColor;
+	}
+
+	.brand-mark .mark-img {
+		fill: var(--paper);
+	}
+
+	.brand-name {
+		display: inline-block;
+	}
+
+	@media (max-width: 480px) {
+		.brand-name {
+			display: none;
+		}
+	}
+
+	nav.site-nav ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		gap: 1.25rem;
+		flex: 1;
+	}
+
+	nav.site-nav ul a {
+		text-decoration: none;
+		color: var(--ink-soft);
+		letter-spacing: 0.06em;
+		text-transform: lowercase;
+	}
+
+	nav.site-nav ul a:hover,
+	nav.site-nav ul a[aria-current="page"] {
+		color: var(--ink);
+	}
+
+	/* ---------- Darkroom pull-cord light switch ---------- */
+
+	button.darkroom-pull {
+		background: none;
+		border: 0;
+		padding: 0;
+		margin-left: auto;
+		cursor: pointer;
+		color: var(--ink);
+		display: inline-flex;
+		align-items: flex-start;
+		height: 2.6rem;
+		overflow: visible;
+	}
+
+	button.darkroom-pull svg {
+		width: 1.45rem;
+		height: 2.55rem;
+		overflow: visible;
+	}
+
+	/* Idle (off) state */
+	.anchor {
+		fill: var(--ink-faint);
+	}
+
+	.cord {
+		stroke: var(--ink-faint);
+		stroke-width: 0.6;
+		stroke-linecap: round;
+		transform-origin: 14px 0;
+		transition: stroke 0.25s ease;
+	}
+
+	.knob {
+		fill: var(--ink);
+		stroke: none;
+		transition: transform 0.15s ease;
+	}
+
+	.cap {
+		fill: var(--ink-faint);
+		transition: fill 0.3s ease;
+	}
+
+	.glass {
+		fill: color-mix(in srgb, var(--ink) 8%, transparent);
+		stroke: var(--ink-soft);
+		stroke-width: 0.8;
+		transition: fill 0.4s ease, stroke 0.3s ease;
+	}
+
+	.filament {
+		stroke: var(--ink-faint);
+		stroke-width: 0.55;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		opacity: 0.45;
+		transition: stroke 0.3s ease, opacity 0.3s ease, stroke-width 0.3s ease;
+	}
+
+	.highlight {
+		fill: #fff;
+		opacity: 0;
+		transition: opacity 0.35s ease;
+	}
+
+	.halo {
+		opacity: 0;
+		transition: opacity 0.4s ease, r 0.4s ease;
+		pointer-events: none;
+	}
+
+	.halo-inner {
+		fill: #ffe88a;
+		filter: blur(1.5px);
+	}
+
+	.halo-outer {
+		fill: #fff2b8;
+		filter: blur(5px);
+	}
+
+	/* On (lit) — light mode via OS pref */
+	@media (prefers-color-scheme: light) {
+		:global(:root:not([data-theme="dark"])) .glass {
+			fill: #fff1b8;
+			stroke: #d4a82b;
+		}
+		:global(:root:not([data-theme="dark"])) .cap {
+			fill: var(--ink-soft);
+		}
+		:global(:root:not([data-theme="dark"])) .filament {
+			stroke: #d68500;
+			stroke-width: 0.85;
+			opacity: 1;
+		}
+		:global(:root:not([data-theme="dark"])) .highlight {
+			opacity: 0.85;
+		}
+		:global(:root:not([data-theme="dark"])) .halo-inner {
+			opacity: 0.75;
+		}
+		:global(:root:not([data-theme="dark"])) .halo-outer {
+			opacity: 0.45;
+		}
+	}
+
+	/* On (lit) — explicit data-theme=light */
+	:global(:root[data-theme="light"]) .glass {
+		fill: #fff1b8;
+		stroke: #d4a82b;
+	}
+	:global(:root[data-theme="light"]) .cap {
+		fill: var(--ink-soft);
+	}
+	:global(:root[data-theme="light"]) .filament {
+		stroke: #d68500;
+		stroke-width: 0.85;
+		opacity: 1;
+	}
+	:global(:root[data-theme="light"]) .highlight {
+		opacity: 0.85;
+	}
+	:global(:root[data-theme="light"]) .halo-inner {
+		opacity: 0.75;
+	}
+	:global(:root[data-theme="light"]) .halo-outer {
+		opacity: 0.45;
+	}
+
+	/* Force off in explicit dark mode regardless of OS */
+	:global(:root[data-theme="dark"]) .halo {
+		opacity: 0;
+	}
+	:global(:root[data-theme="dark"]) .highlight {
+		opacity: 0;
+	}
+
+	/* Pull animation */
+	@keyframes cord-stretch {
+		0%   { transform: scaleY(1); }
+		22%  { transform: scaleY(1.20); }
+		55%  { transform: scaleY(0.93); }
+		80%  { transform: scaleY(1.05); }
+		100% { transform: scaleY(1); }
+	}
+
+	@keyframes bulb-tug {
+		0%   { transform: translateY(0); }
+		22%  { transform: translateY(3.5px); }
+		55%  { transform: translateY(-1.6px); }
+		80%  { transform: translateY(0.9px); }
+		100% { transform: translateY(0); }
+	}
+
+	@keyframes halo-flash {
+		0%   { transform: scale(1); }
+		30%  { transform: scale(1.15); }
+		100% { transform: scale(1); }
+	}
+
+	button.darkroom-pull.is-pulling .cord-group {
+		animation: cord-stretch 0.55s cubic-bezier(0.5, 0, 0.4, 1.6);
+		transform-origin: top;
+	}
+
+	button.darkroom-pull.is-pulling .bulb-group {
+		animation: bulb-tug 0.55s cubic-bezier(0.5, 0, 0.4, 1.6);
+	}
+
+	button.darkroom-pull.is-pulling .halo {
+		animation: halo-flash 0.55s ease;
+		transform-origin: 14px 32px;
+	}
+
+	button.darkroom-pull:hover .cord {
+		stroke: var(--ink);
+	}
+
+	button.darkroom-pull:hover .knob {
+		transform: translateY(0.6px);
+	}
+
+	button.darkroom-pull:focus-visible {
+		outline: 1px solid var(--ink);
+		outline-offset: 2px;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		button.darkroom-pull.is-pulling .cord-group,
+		button.darkroom-pull.is-pulling .bulb-group,
+		button.darkroom-pull.is-pulling .halo {
+			animation: none;
+		}
+	}
+</style>
