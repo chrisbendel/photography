@@ -2,6 +2,7 @@
 import { Image } from "astro:assets";
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import { byNewest } from "../../lib/format";
 
 export async function getStaticPaths() {
 	const photos = await getCollection("photos");
@@ -14,10 +15,7 @@ export async function getStaticPaths() {
 	}
 	return [...byTag.entries()].map(([tag, ps]) => ({
 		params: { tag },
-		props: {
-			tag,
-			photos: ps.sort((a, b) => b.id.localeCompare(a.id)),
-		},
+		props: { tag, photos: ps.sort(byNewest) },
 	}));
 }
 

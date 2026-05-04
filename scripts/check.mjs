@@ -13,7 +13,7 @@ const warn = (msg) => {
 };
 
 // Each photo lives in its own folder: <id>/index.md (+ image.<ext>)
-// where <id> is a zero-padded numeric directory name (e.g. 0042).
+// where <id> is a 6-char lowercase hex hash (e.g. a3f4c1).
 const ids = readdirSync(photosDir, { withFileTypes: true })
 	.filter((d) => d.isDirectory())
 	.map((d) => d.name);
@@ -21,8 +21,8 @@ const ids = readdirSync(photosDir, { withFileTypes: true })
 console.log(`Checking ${ids.length} photo entries in ${photosDir}/\n`);
 
 for (const id of ids) {
-	if (!/^\d+$/.test(id)) {
-		warn(`${id}/: directory name is not numeric — expected zero-padded id like 0042`);
+	if (!/^[0-9a-f]{6}$/.test(id)) {
+		warn(`${id}/: directory name is not a 6-char hex hash`);
 	}
 
 	const photoDir = join(photosDir, id);
@@ -46,9 +46,11 @@ for (const id of ids) {
 		return m ? m[1].trim().replace(/^["']|["']$/g, "") : "";
 	};
 
+	const added = get("added");
 	const alt = get("alt");
 	const image = get("image");
 
+	if (!added) warn(`${id}: missing required 'added' date`);
 	if (!alt) warn(`${id}: missing alt text`);
 
 	// Image checks: ref + existence + size

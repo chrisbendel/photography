@@ -6,13 +6,17 @@ const photos = defineCollection({
 		pattern: "**/*.md",
 		base: "./src/content/photos",
 		// Each photo lives in its own directory: src/content/photos/<id>/index.md
-		// where <id> is a zero-padded numeric slug (e.g. "0042"). Strip the
-		// trailing `/index.md` so the entry id is just the directory name.
+		// where <id> is a 6-char hex hash (e.g. "a3f4c1"). Strip the trailing
+		// `/index.md` so the entry id is just the directory name.
 		generateId: ({ entry }) =>
 			entry.replace(/\/?index\.md$/, "").replace(/\.md$/, ""),
 	}),
 	schema: ({ image }) =>
 		z.object({
+			// When the entry was added to the site (machine-stamped by
+			// `new-photo`). Drives "newest" sorts.
+			added: z.coerce.date(),
+			// When the photograph was made (shutter clicked). Display only.
 			date: z.coerce.date().optional(),
 			image: image(),
 			alt: z.string(),
@@ -31,7 +35,8 @@ const series = defineCollection({
 	schema: z.object({
 		title: z.string(),
 		description: z.string().optional(),
-		cover: reference("photos"),
+		// Optional — a series may exist without a chosen cover photo.
+		cover: reference("photos").optional(),
 		order: z.number().default(0),
 	}),
 });

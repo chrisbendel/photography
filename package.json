@@ -11,6 +11,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "new-photo": "node scripts/new-photo.mjs",
+    "publish": "node scripts/publish.mjs",
     "check-photos": "node scripts/check.mjs",
     "suggest-tags": "node scripts/suggest-tags.mjs"
   },

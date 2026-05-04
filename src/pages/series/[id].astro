@@ -8,14 +8,16 @@ export async function getStaticPaths() {
 	const allPhotos = await getCollection("photos");
 
 	return allSeries.map((series) => {
-		// Newest first — by capture date when present, else by id desc.
+		// Within a series, capture chronology matters more than add order:
+		// sort by `date` (when made) desc when present, else fall back to
+		// `added` desc.
 		const photos = allPhotos
 			.filter((p) => p.data.series?.id === series.id)
 			.sort((a, b) => {
 				const aD = a.data.date?.valueOf();
 				const bD = b.data.date?.valueOf();
 				if (aD != null && bD != null) return bD - aD;
-				return b.id.localeCompare(a.id);
+				return b.data.added.valueOf() - a.data.added.valueOf();
 			});
 		return {
 			params: { id: series.id },

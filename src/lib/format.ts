@@ -1,8 +1,13 @@
-// Sort by entry id descending — newest add lands at top.
-// Numeric ids ("0001", "0002", …) sort lexically the same as numerically
-// because of zero-padding, so localeCompare is fine.
-export function byNewest<T extends { id: string }>(a: T, b: T): number {
-	return b.id.localeCompare(a.id);
+// Sort by `added` (when entry joined the site) descending — newest at top.
+// `added` is machine-stamped by `new-photo` and never user-edited, so it's
+// safe to rely on. Falls back to id compare if two adds tied to the same
+// instant (extremely rare).
+export function byNewest<T extends { id: string; data: { added: Date } }>(
+	a: T,
+	b: T,
+): number {
+	const diff = b.data.added.valueOf() - a.data.added.valueOf();
+	return diff !== 0 ? diff : b.id.localeCompare(a.id);
 }
 
 // Print-format helpers. Used by series view to sort/group photos by paper size.

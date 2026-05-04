@@ -19,8 +19,6 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 ---
 
 <Layout title={`#${photo.id} — Chris Bendel`} description={alt}>
-	<!-- DEMO: side-by-side comparison. Pick one, delete the other. -->
-	<p class="variant-label">Raw</p>
 	<figure class="print-figure" data-invert="false">
 		<div class="print-frame">
 			<Image src={image} alt={alt} loading="eager" class="print-img" />
@@ -36,14 +34,6 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 					<path d="M 12 3 A 9 9 0 0 1 12 21 Z" fill="currentColor" />
 				</svg>
 			</button>
-		</div>
-		{caption && <figcaption>{caption}</figcaption>}
-	</figure>
-
-	<p class="variant-label">Matted</p>
-	<figure class="print-figure print-figure-matted">
-		<div class="print-mat">
-			<Image src={image} alt={alt} loading="lazy" class="print-img" />
 		</div>
 		{caption && <figcaption>{caption}</figcaption>}
 	</figure>
@@ -104,34 +94,8 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 </Layout>
 
 <style>
-	.variant-label {
-		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-		font-size: 0.7rem;
-		letter-spacing: 0.18em;
-		text-transform: uppercase;
-		color: var(--ink-faint);
-		margin: 0 0 0.25rem;
-	}
-
 	.print-figure {
 		margin: 0 0 2rem;
-	}
-
-	/* Matted variant — paper mat around the print, like a museum / framed wall print. */
-	.print-figure-matted .print-mat {
-		background: var(--paper-shadow);
-		padding: 1.5rem 1.5rem 2.75rem;  /* heavier bottom — matting convention */
-		box-shadow:
-			inset 0 0 0 1px rgba(0, 0, 0, 0.06),
-			0 1px 0 rgba(0, 0, 0, 0.04),
-			0 12px 28px -10px rgba(0, 0, 0, 0.22);
-		line-height: 0;
-	}
-
-	.print-figure-matted .print-img {
-		display: block;
-		width: 100%;
-		height: auto;
 	}
 
 	.print-frame {
