@@ -2,22 +2,31 @@
 import { Image } from "astro:assets";
 import { getCollection, getEntry } from "astro:content";
 import Layout from "../layouts/Layout.astro";
-import { formatLabel, sortKey } from "../lib/format";
+import { byNewest, formatLabel } from "../lib/format";
 
-const allPhotos = (await getCollection("photos", ({ data }) => !data.draft)).sort(
-	(a, b) => sortKey(b) - sortKey(a),
-);
+const allPhotos = (await getCollection("photos")).sort(byNewest);
 
 const photo = allPhotos[0];
 const seriesEntry = photo?.data.series ? await getEntry(photo.data.series) : null;
 const fmtMonthYear = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
+
+const versoLine = photo
+	? [
+			seriesEntry?.data.title,
+			photo.data.format && formatLabel(photo.data.format),
+			photo.data.date && fmtMonthYear.format(photo.data.date),
+			photo.data.location,
+		]
+			.filter(Boolean)
+			.join(" · ")
+	: "";
 ---
 
 <Layout title="Chris Bendel — Photography" description="Selected film photography.">
 	{
 		photo ? (
-			<article class="home">
-				<a href={`/photos/${photo.id}/`} class="home-figure">
+			<figure class="home">
+				<a href={`/photos/${photo.id}/`}>
 					<Image
 						src={photo.data.image}
 						alt={photo.data.alt}
@@ -26,20 +35,8 @@ const fmtMonthYear = new Intl.DateTimeFormat("en-US", { year: "numeric", month: 
 						loading="eager"
 					/>
 				</a>
-				<div class="home-meta">
-					<h1>{photo.data.title}</h1>
-					<p class="verso">
-						{[
-							seriesEntry?.data.title,
-							photo.data.format && formatLabel(photo.data.format),
-							fmtMonthYear.format(photo.data.date),
-							photo.data.location,
-						]
-							.filter(Boolean)
-							.join(" · ")}
-					</p>
-				</div>
-			</article>
+				{versoLine && <figcaption class="verso">{versoLine}</figcaption>}
+			</figure>
 		) : (
 			<section class="intro">
 				<h1>Photographs</h1>
@@ -50,35 +47,29 @@ const fmtMonthYear = new Intl.DateTimeFormat("en-US", { year: "numeric", month: 
 </Layout>
 
 <style>
-	.home {
+	figure.home {
+		margin: 0;
 		display: flex;
 		flex-direction: column;
-		gap: var(--gap);
+		gap: 0.5rem;
 	}
 
-	.home > * {
-		margin: 0;
-	}
-
-	.home-figure {
+	figure.home a {
 		display: block;
+		line-height: 0;
 	}
 
-	.home-figure img {
+	figure.home img {
 		display: block;
 		width: 100%;
 		height: auto;
 	}
 
-	.home-meta h1 {
-		margin: 0.5rem 0 0;
-	}
-
-	.verso {
+	figure.home .verso {
 		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 		font-size: 0.72rem;
 		color: var(--ink-faint);
-		margin: 0.25rem 0 0;
+		margin: 0;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 	}

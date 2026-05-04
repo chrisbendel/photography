@@ -2,10 +2,10 @@
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 
-const allSeries = (await getCollection("series", ({ data }) => !data.draft)).sort(
+const allSeries = (await getCollection("series")).sort(
 	(a, b) => a.data.order - b.data.order,
 );
-const allPhotos = await getCollection("photos", ({ data }) => !data.draft);
+const allPhotos = await getCollection("photos");
 
 const seriesData = allSeries.map((series) => {
 	const photos = allPhotos.filter((p) => p.data.series?.id === series.id);

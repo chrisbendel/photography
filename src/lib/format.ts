@@ -1,8 +1,8 @@
-// Sort-by-recency key: prefer `published` (when added to site) over `date`
-// (when photograph was made). Old scans get current published date, so they
-// don't sink in "latest" sorts.
-export function sortKey(photo: { data: { published?: Date; date: Date } }): number {
-	return (photo.data.published ?? photo.data.date).valueOf();
+// Sort by entry id descending — newest add lands at top.
+// Numeric ids ("0001", "0002", …) sort lexically the same as numerically
+// because of zero-padding, so localeCompare is fine.
+export function byNewest<T extends { id: string }>(a: T, b: T): number {
+	return b.id.localeCompare(a.id);
 }
 
 // Print-format helpers. Used by series view to sort/group photos by paper size.

@@ -1,5 +1,4 @@
 ---
-title: "Bridge"
 date: 2025-09-03
 image: ./image.jpg
 alt: "Steel girders of a bridge against an overcast sky, vertical composition."
@@ -10,7 +9,6 @@ location: "Brooklyn, NY"
 format: "6x7"
 series: city
 tags: ["structure", "sky", "brooklyn", "looking-up"]
-draft: false
 ---
 
 I had walked under this bridge a hundred times before I noticed how the

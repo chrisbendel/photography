@@ -5,19 +5,15 @@ const photos = defineCollection({
 	loader: glob({
 		pattern: "**/*.md",
 		base: "./src/content/photos",
-		// Each photo lives in its own directory: src/content/photos/<slug>/index.md
-		// Strip the trailing `/index.md` so the entry id is just the slug.
+		// Each photo lives in its own directory: src/content/photos/<id>/index.md
+		// where <id> is a zero-padded numeric slug (e.g. "0042"). Strip the
+		// trailing `/index.md` so the entry id is just the directory name.
 		generateId: ({ entry }) =>
 			entry.replace(/\/?index\.md$/, "").replace(/\.md$/, ""),
 	}),
 	schema: ({ image }) =>
 		z.object({
-			title: z.string(),
-			date: z.coerce.date(),
-			// When the entry was added to the site. Used for "latest" sorts on
-			// /, /gallery, etc. Optional — falls back to `date` if absent so
-			// existing entries Just Work.
-			published: z.coerce.date().optional(),
+			date: z.coerce.date().optional(),
 			image: image(),
 			alt: z.string(),
 			caption: z.string().optional(),
@@ -27,7 +23,6 @@ const photos = defineCollection({
 			format: z.string().optional(),
 			series: reference("series").optional(),
 			tags: z.array(z.string()).default([]),
-			draft: z.boolean().default(false),
 		}),
 });
 
@@ -38,7 +33,6 @@ const series = defineCollection({
 		description: z.string().optional(),
 		cover: reference("photos"),
 		order: z.number().default(0),
-		draft: z.boolean().default(false),
 	}),
 });
 

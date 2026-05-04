@@ -2,7 +2,7 @@
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 
-const photos = await getCollection("photos", ({ data }) => !data.draft);
+const photos = await getCollection("photos");
 const counts = new Map<string, number>();
 for (const p of photos) {
 	for (const t of p.data.tags ?? []) {
@@ -140,19 +140,24 @@ const tags = [...counts.entries()].sort(
 		gap: 0.5rem;
 	}
 
+	/* Chip-style links: border conveys affordance (no underline needed),
+	   minimum 44px tap target per WCAG 2.2 AAA target-size guidance. */
 	ul.tag-cloud a {
-		display: inline-block;
-		padding: 0.35rem 0.7rem;
-		border: 1px solid var(--rule);
-		font-size: 0.85rem;
-		color: var(--ink-soft);
+		display: inline-flex;
+		align-items: center;
+		min-height: 44px;
+		padding: 0.5rem 0.9rem;
+		border: 1px solid var(--ink-soft);
+		font-size: 0.9rem;
+		color: var(--ink);
 		text-decoration: none;
 		letter-spacing: 0.04em;
 	}
 
 	ul.tag-cloud a:hover {
-		color: var(--ink);
 		border-color: var(--ink);
+		border-width: 2px;
+		padding: calc(0.5rem - 1px) calc(0.9rem - 1px);
 	}
 
 	ul.tag-cloud .count {

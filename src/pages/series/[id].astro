@@ -4,14 +4,19 @@ import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 
 export async function getStaticPaths() {
-	const allSeries = await getCollection("series", ({ data }) => !data.draft);
-	const allPhotos = await getCollection("photos", ({ data }) => !data.draft);
+	const allSeries = await getCollection("series");
+	const allPhotos = await getCollection("photos");
 
 	return allSeries.map((series) => {
-		// Newest first — top of the stack
+		// Newest first — by capture date when present, else by id desc.
 		const photos = allPhotos
 			.filter((p) => p.data.series?.id === series.id)
-			.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+			.sort((a, b) => {
+				const aD = a.data.date?.valueOf();
+				const bD = b.data.date?.valueOf();
+				if (aD != null && bD != null) return bD - aD;
+				return b.id.localeCompare(a.id);
+			});
 		return {
 			params: { id: series.id },
 			props: { series, photos },
@@ -20,17 +25,6 @@ export async function getStaticPaths() {
 }
 
 const { series, photos } = Astro.props;
-const fmtYear = new Intl.DateTimeFormat("en-US", { year: "numeric" });
-
-const dates = photos.map((p) => p.data.date.valueOf());
-const earliest = dates.length ? new Date(Math.min(...dates)) : null;
-const latest = dates.length ? new Date(Math.max(...dates)) : null;
-const range =
-	earliest && latest
-		? earliest.getFullYear() === latest.getFullYear()
-			? fmtYear.format(latest)
-			: `${fmtYear.format(earliest)}–${fmtYear.format(latest)}`
-		: "";
 ---
 
 <Layout title={`${series.data.title} — Chris Bendel`} description={series.data.description}>

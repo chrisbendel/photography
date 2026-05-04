@@ -1,5 +1,4 @@
 ---
-title: "Morning Window"
 date: 2025-10-12
 image: ./image.jpg
 alt: "Light falling through a tall window onto a bare wood floor."
@@ -10,7 +9,6 @@ location: "Brooklyn, NY"
 format: "6x7"
 series: city
 tags: ["light", "interior", "morning", "brooklyn", "stillness"]
-draft: false
 ---
 
 I wake earlier than I want to most days. This was one of the days I was glad

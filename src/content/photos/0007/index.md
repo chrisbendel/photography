@@ -1,5 +1,4 @@
 ---
-title: "Empty Chair"
 date: 2025-07-21
 image: ./image.jpg
 alt: "A wooden chair against a plain white wall."
@@ -10,7 +9,6 @@ location: "Studio"
 format: "6x6"
 series: city
 tags: ["interior", "stillness", "object", "minimal"]
-draft: false
 ---
 
 There's nothing to say about this one. The chair was there. I made a

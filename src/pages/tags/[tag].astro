@@ -4,7 +4,7 @@ import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 
 export async function getStaticPaths() {
-	const photos = await getCollection("photos", ({ data }) => !data.draft);
+	const photos = await getCollection("photos");
 	const byTag = new Map();
 	for (const p of photos) {
 		for (const t of p.data.tags ?? []) {
@@ -16,7 +16,7 @@ export async function getStaticPaths() {
 		params: { tag },
 		props: {
 			tag,
-			photos: ps.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf()),
+			photos: ps.sort((a, b) => b.id.localeCompare(a.id)),
 		},
 	}));
 }
@@ -30,12 +30,12 @@ const { tag, photos } = Astro.props;
 	<div class="sheet">
 		{
 			photos.map((photo) => (
-				<a href={`/photos/${photo.id}/`} class="cell" aria-label={photo.data.title}>
+				<a href={`/photos/${photo.id}/`} class="cell" aria-label={`Photograph ${photo.id}`}>
 					<Image
 						src={photo.data.image}
 						alt={photo.data.alt}
-						widths={[200, 400, 600]}
-						sizes="(min-width: 700px) 220px, 45vw"
+						widths={[400, 800, 1200]}
+						sizes="(min-width: 900px) 11rem, (min-width: 600px) 16rem, 90vw"
 						loading="lazy"
 					/>
 				</a>

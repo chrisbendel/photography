@@ -2,11 +2,9 @@
 import { Image, getImage } from "astro:assets";
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
-import { sortKey } from "../lib/format";
+import { byNewest } from "../lib/format";
 
-const allPhotos = (await getCollection("photos", ({ data }) => !data.draft)).sort(
-	(a, b) => sortKey(b) - sortKey(a),
-);
+const allPhotos = (await getCollection("photos")).sort(byNewest);
 
 // Build per-photo data + a 1600w large variant URL for the loupe
 const photoData = await Promise.all(
@@ -31,13 +29,13 @@ const loupeJson = JSON.stringify(photoData);
 					type="button"
 					class="cell"
 					data-loupe-id={photo.id}
-					aria-label={`Open ${photo.data.title}`}
+					aria-label={`Open photograph ${photo.id}`}
 				>
 					<Image
 						src={photo.data.image}
 						alt={photo.data.alt}
-						widths={[200, 400, 600]}
-						sizes="(min-width: 700px) 220px, 45vw"
+						widths={[400, 800, 1200]}
+						sizes="(min-width: 900px) 11rem, (min-width: 600px) 16rem, 90vw"
 						loading="lazy"
 					/>
 				</button>
@@ -156,12 +154,13 @@ const loupeJson = JSON.stringify(photoData);
 
 	.loupe-details {
 		color: var(--ink);
-		text-decoration: none;
-		border-bottom: 1px solid var(--ink-faint);
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.18em;
 	}
 
 	.loupe-details:hover {
-		border-bottom-color: var(--ink);
+		text-decoration-thickness: 2px;
 	}
 
 	.loupe-btn {

@@ -68,8 +68,8 @@ body {
 body {
 	background: var(--paper);
 	color: var(--ink);
-	font-family: ui-serif, "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-	line-height: 1.55;
+	font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+	line-height: 1.5;
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
 	position: relative;
@@ -148,16 +148,48 @@ p {
 	margin: 0 0 1rem;
 }
 
+/* Links: underlined by default at full ink weight (gov.uk practice).
+   Hover thickens; focus-visible inherits the global ring below. */
 a {
 	color: inherit;
 	text-decoration: underline;
-	text-decoration-color: var(--rule);
-	text-underline-offset: 0.2em;
+	text-decoration-color: currentColor;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.18em;
 }
 
 a:hover {
-	text-decoration-color: var(--ink);
 	color: var(--ink);
+	text-decoration-thickness: 2px;
+}
+
+/* Global keyboard-focus ring. Mouse clicks don't trigger :focus-visible,
+   so the dotted/border styles on individual elements remain for hover/idle. */
+:focus-visible {
+	outline: 3px solid var(--ink);
+	outline-offset: 2px;
+	text-decoration-thickness: 2px;
+}
+
+/* Skip link: hidden until keyboard-focused, then floats above the nav. */
+.skip-link {
+	position: absolute;
+	top: 0;
+	left: 0;
+	padding: 0.6rem 1rem;
+	background: var(--paper);
+	color: var(--ink);
+	font: inherit;
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	transform: translateY(-120%);
+	z-index: 100;
+}
+
+.skip-link:focus {
+	transform: translateY(0);
+	outline: 3px solid var(--ink);
+	outline-offset: 0;
 }
 
 hr {
@@ -186,26 +218,26 @@ figcaption {
 /* Used by /gallery and /tags/<tag>. Per-page additions live in those files. */
 
 .sheet {
-	column-count: 2;
-	column-gap: 0.5rem;
+	column-count: 1;
+	column-gap: 0.75rem;
 	margin: 0 calc(var(--gutter) * -0.5);
 }
 
 @media (min-width: 600px) {
 	.sheet {
-		column-count: 3;
+		column-count: 2;
 	}
 }
 
 @media (min-width: 900px) {
 	.sheet {
-		column-count: 4;
+		column-count: 3;
 	}
 }
 
 .sheet .cell {
 	display: block;
-	margin: 0 0 0.5rem;
+	margin: 0 0 0.75rem;
 	break-inside: avoid;
 	transition: opacity 0.15s ease;
 }

@@ -1,5 +1,4 @@
 ---
-title: "Field"
 date: 2024-06-22
 image: ./image.jpg
 alt: "A wide empty field under a bright sky."
@@ -10,7 +9,6 @@ location: "Berkshires, MA"
 format: "4x5"
 series: quiet
 tags: ["landscape", "field", "wind", "large-format"]
-draft: false
 ---
 
 First time using the 4x5. Ground glass is a different way of seeing — slower,

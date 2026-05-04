@@ -1,5 +1,4 @@
 ---
-title: "Window Light"
 date: 2024-01-17
 image: ./image.jpg
 alt: "A figure half-lit by light from a window."
@@ -10,7 +9,6 @@ location: "Brooklyn, NY"
 format: "6x7"
 series: city
 tags: ["light", "portrait", "interior", "stillness", "brooklyn"]
-draft: false
 ---
 
 Long exposure on a tripod. We had been talking about something else for an

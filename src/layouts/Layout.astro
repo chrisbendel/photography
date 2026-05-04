@@ -32,8 +32,9 @@ const { title = "Photography", description = "Selected film photography" } = Ast
 		</script>
 	</head>
 	<body>
+		<a class="skip-link" href="#main">Skip to content</a>
 		<Nav />
-		<main>
+		<main id="main" tabindex="-1">
 			<slot />
 		</main>
 		<script is:inline>

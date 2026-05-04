@@ -1,28 +1,21 @@
 #!/usr/bin/env node
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, extname, join } from "node:path";
 
-const [slug, imagePath] = process.argv.slice(2);
+const [imagePath] = process.argv.slice(2);
 
-if (!slug) {
-	console.error("Usage: npm run new-photo -- <slug> [path/to/image.jpg]");
-	console.error("Example: npm run new-photo -- morning-window ~/Desktop/scan.jpg");
-	process.exit(1);
-}
+const photosRoot = "src/content/photos";
+mkdirSync(photosRoot, { recursive: true });
 
-if (!/^[a-z0-9-]+$/.test(slug)) {
-	console.error(`Bad slug "${slug}". Use lowercase letters, digits, hyphens only.`);
-	process.exit(1);
-}
+// Find next id: scan for numeric directory names, pick max + 1, zero-pad to 4.
+const existingIds = readdirSync(photosRoot, { withFileTypes: true })
+	.filter((d) => d.isDirectory() && /^\d+$/.test(d.name))
+	.map((d) => parseInt(d.name, 10));
+const nextNum = existingIds.length === 0 ? 1 : Math.max(...existingIds) + 1;
+const id = String(nextNum).padStart(4, "0");
 
-// Each photo lives in its own folder: src/content/photos/<slug>/{index.md,image.<ext>}
-const photoDir = join("src/content/photos", slug);
+const photoDir = join(photosRoot, id);
 const mdPath = join(photoDir, "index.md");
-
-if (existsSync(photoDir)) {
-	console.error(`${photoDir} already exists. Pick a different slug.`);
-	process.exit(1);
-}
 
 mkdirSync(photoDir, { recursive: true });
 
@@ -44,9 +37,7 @@ if (imagePath) {
 const today = new Date().toISOString().slice(0, 10);
 
 const tpl = `---
-title: ""
-date: ${today}        # when the photograph was made
-published: ${today}   # when added to the site (drives "latest" sorts)
+date: ${today}
 image: ${imageRef}
 alt: ""
 caption: ""
@@ -56,7 +47,6 @@ location: ""
 format: ""
 # series: city  # optional — slug of a file in src/content/series/
 tags: []
-draft: true
 ---
 
 `;
@@ -66,4 +56,4 @@ writeFileSync(mdPath, tpl);
 console.log(`Created  ${mdPath}`);
 console.log(`         ${imageNote}`);
 console.log("");
-console.log("Next: fill frontmatter, write notes, flip draft: false to publish.");
+console.log("Next: fill frontmatter, write notes, commit, push.");

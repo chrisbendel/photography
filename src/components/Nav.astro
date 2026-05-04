@@ -161,16 +161,28 @@ const isCurrent = (href: string) => path.startsWith(href);
 		flex: 1;
 	}
 
+	/* Header nav: undecorated by default (chrome convention),
+	   underline on hover/focus per gov.uk header pattern. */
 	nav.site-nav ul a {
 		text-decoration: none;
 		color: var(--ink-soft);
 		letter-spacing: 0.06em;
 		text-transform: lowercase;
+		padding: 0.4rem 0;
 	}
 
-	nav.site-nav ul a:hover,
+	nav.site-nav ul a:hover {
+		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.25em;
+	}
+
 	nav.site-nav ul a[aria-current="page"] {
 		color: var(--ink);
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.25em;
 	}
 
 	/* ---------- Darkroom pull-cord light switch ---------- */
@@ -357,10 +369,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 		transform: translateY(0.6px);
 	}
 
-	button.darkroom-pull:focus-visible {
-		outline: 1px solid var(--ink);
-		outline-offset: 2px;
-	}
+	/* Inherits global :focus-visible ring. */
 
 	@media (prefers-reduced-motion: reduce) {
 		button.darkroom-pull.is-pulling .cord-group,

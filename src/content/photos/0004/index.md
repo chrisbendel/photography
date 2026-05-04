@@ -1,5 +1,4 @@
 ---
-title: "Hands"
 date: 2024-08-14
 image: ./image.jpg
 alt: "A pair of weathered hands resting on a tabletop."
@@ -10,7 +9,6 @@ location: "Maine"
 format: "6x7"
 series: people
 tags: ["portrait", "hands", "family", "memory"]
-draft: false
 ---
 
 My grandfather. He didn't like having his picture taken so I asked if I

@@ -1,5 +1,4 @@
 ---
-title: "Doorway"
 date: 2024-04-09
 image: ./image.jpg
 alt: "An open doorway viewed from inside a darkened room."
@@ -10,7 +9,6 @@ location: "Lisbon"
 format: "6x6"
 series: quiet
 tags: ["light", "doorway", "travel", "lisbon"]
-draft: false
 ---
 
 Travel photographs are a trap. I tried not to make any. This one I made

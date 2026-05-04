@@ -1,5 +1,4 @@
 ---
-title: "Winter Trees"
 date: 2025-02-08
 image: ./image.jpg
 alt: "Bare trees in a field on a grey winter morning."
@@ -10,7 +9,6 @@ location: "Catskills, NY"
 format: "6x7"
 series: quiet
 tags: ["landscape", "winter", "trees", "cold", "catskills"]
-draft: false
 ---
 
 Cold enough that the camera felt strange in my hands. I had been told the

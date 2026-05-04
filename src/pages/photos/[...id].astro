@@ -4,7 +4,7 @@ import { getCollection, getEntry, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 
 export async function getStaticPaths() {
-	const photos = await getCollection("photos", ({ data }) => !data.draft);
+	const photos = await getCollection("photos");
 	return photos.map((photo) => ({
 		params: { id: photo.id },
 		props: { photo },
@@ -13,20 +13,12 @@ export async function getStaticPaths() {
 
 const { photo } = Astro.props;
 const { Content } = await render(photo);
-const { title, date, image, alt, caption, camera, film, location, format, series, tags } = photo.data;
+const { date, image, alt, caption, camera, film, location, format, series, tags } = photo.data;
 const seriesEntry = series ? await getEntry(series) : null;
 const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
 ---
 
-<Layout title={`${title} — Chris Bendel`} description={alt}>
-	{
-		seriesEntry && (
-			<p class="eyebrow">
-				<a href={`/series/${seriesEntry.id}/`}>← {seriesEntry.data.title}</a>
-			</p>
-		)
-	}
-
+<Layout title={`#${photo.id} — Chris Bendel`} description={alt}>
 	<!-- DEMO: side-by-side comparison. Pick one, delete the other. -->
 	<p class="variant-label">Raw</p>
 	<figure class="print-figure" data-invert="false">
@@ -76,21 +68,26 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 		})();
 	</script>
 
-	<h1>{title}</h1>
-
 	<dl class="photo-meta">
-		<dt>Date</dt>
-		<dd>{fmt.format(date)}</dd>
+		{date && (<><dt>Date</dt><dd>{fmt.format(date)}</dd></>)}
 		{location && (<><dt>Location</dt><dd>{location}</dd></>)}
 		{camera && (<><dt>Camera</dt><dd>{camera}</dd></>)}
 		{film && (<><dt>Film</dt><dd>{film}</dd></>)}
 		{format && (<><dt>Format</dt><dd>{format.replace("x", "×")}</dd></>)}
+		{seriesEntry && (
+			<>
+				<dt>Series</dt>
+				<dd><a href={`/series/${seriesEntry.id}/`}>{seriesEntry.data.title}</a></dd>
+			</>
+		)}
 	</dl>
 
-	<section class="notes">
-		<h2>Notes</h2>
-		<Content />
-	</section>
+	{photo.body?.trim() && (
+		<section class="notes">
+			<h2>Notes</h2>
+			<Content />
+		</section>
+	)}
 
 	{
 		tags && tags.length > 0 && (
@@ -107,21 +104,6 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 </Layout>
 
 <style>
-	.eyebrow {
-		font-size: 0.8rem;
-		color: var(--ink-faint);
-		margin: 0 0 0.5rem;
-	}
-
-	.eyebrow a {
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.eyebrow a:hover {
-		color: var(--ink);
-	}
-
 	.variant-label {
 		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 		font-size: 0.7rem;
@@ -224,6 +206,11 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 		margin: 0;
 	}
 
+	/* Inherits global underline + hover thicken. */
+	dl.photo-meta dd a {
+		color: var(--ink);
+	}
+
 	section.notes h2 {
 		font-size: 1rem;
 		margin: 0 0 0.4rem;
@@ -236,13 +223,6 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 	}
 
 	.photo-tags a {
-		color: var(--ink-soft);
-		text-decoration: none;
-		border-bottom: 1px dotted var(--rule);
-	}
-
-	.photo-tags a:hover {
 		color: var(--ink);
-		border-bottom-color: var(--ink-faint);
 	}
 </style>

@@ -130,49 +130,56 @@ photographs — they frame them.
   real need arises.
 - **Plain CSS** in `src/styles/global.css`. No Tailwind. No CSS-in-JS. No
   preprocessors. Use CSS custom properties for the small set of design tokens.
-- **System fonts** (`ui-serif` stack). No web fonts.
+- **System fonts** (`system-ui` sans stack). No web fonts. Utilitarian and
+  legible on every screen, free on every OS. Mono kept for verso labels.
 
 ## Content model
 
-Each photograph lives in its own folder under `src/content/photos/<slug>/`,
-containing its markdown (`index.md`) and image (`image.jpg`). The markdown's
-`image:` field is a local relative path, `image: ./image.jpg`. Schema is in
-`src/content.config.ts`.
+Each photograph lives in its own folder under `src/content/photos/<id>/`,
+where `<id>` is a zero-padded numeric directory name (`0001`, `0042`, …).
+The folder contains its markdown (`index.md`) and image (`image.jpg`). The
+markdown's `image:` field is a local relative path, `image: ./image.jpg`.
+Schema is in `src/content.config.ts`.
 
 ```
 src/content/photos/
-  morning-window/
+  0001/
     index.md
     image.jpg
-  bridge/
+  0042/
     index.md
     image.jpg
 ```
 
-The slug for routing comes from the directory name. The content collection's
-`generateId` strips the trailing `/index.md` so the entry id is just `<slug>`,
-keeping URLs clean (`/photos/<slug>/`).
+The id for routing comes from the directory name (`/photos/0042/`). IDs are
+monotonic — assigned by `new-photo` as `max(existing) + 1`. They are stable:
+never renumber, leave gaps when a photo is deleted.
 
-Why this layout: each photo is a self-contained package — drop the folder,
-photo gone; share the folder, photo travels intact. Browsing `src/content/photos/`
-shows one row per photograph (the slug), not interleaved markdown and JPEGs.
+Why numeric ids: photographs don't need names. Naming each one is a tax on
+posting. Sorting by id desc is the same as "newest added first" — no
+`published` field needed. URLs become opaque (`/photos/0042/` vs
+`/photos/morning-window/`) but this site is a personal log first; opaque
+URLs are fine.
 
-Required frontmatter: `title`, `date`, `image`, `alt`.
-Optional: `published`, `caption`, `camera`, `film`, `location`, `format`,
-`series`, `tags`, `draft`.
+Why the per-folder layout: each photo is a self-contained package — drop the
+folder, photo gone; share the folder, photo travels intact. Browsing
+`src/content/photos/` shows one row per photograph (the id), not interleaved
+markdown and JPEGs.
 
-`draft: true` excludes the entry from the index and from `getStaticPaths`.
+Required frontmatter: `image`, `alt`.
+Optional: `date`, `caption`, `camera`, `film`, `location`, `format`,
+`series`, `tags`.
 
-### `date` vs `published`
+There is no `draft` field. Adding an entry and pushing the commit *is*
+publishing. Hold half-finished entries on a branch or in a stash, not in
+the working tree on `main`.
 
-- `date` — when the photograph was *made* (shutter clicked). Shown on the
-  photo's permalink as the date. Used to sort prints inside a series
-  (capture chronology is meaningful within a body of work).
-- `published` — when the entry was *added to the site*. Optional. Drives
-  "latest" sorts on `/` and `/gallery/`. Falls back to `date` if absent.
-  The `new-photo` script writes today's date here automatically. This way
-  scanning a 4-year-old negative today doesn't sink it to the bottom of the
-  homepage.
+### `date`
+
+`date` is the day the photograph was *made* (shutter clicked). Display only —
+shown on the permalink. Not used for sorting on `/` or `/gallery/` (id desc
+handles that). Granularity is your call: `2024`, `2024-03`, or full
+`2024-03-14` all parse. Optional — leave it off if you don't know.
 
 ### `caption` vs body
 
@@ -190,30 +197,32 @@ Posting is intentionally a deliberate act.
 
 ```
 1. Process the scan to a final JPEG (3000–4000px long edge, ~85 quality).
-2. Run: npm run new-photo -- <slug> path/to/image.jpg
-   (the script creates src/content/photos/<slug>/ with index.md (stub,
-    draft: true) and image.<ext> copied from your scan)
-3. Open src/content/photos/<slug>/index.md, fill the frontmatter and write notes.
-4. npm run dev — eyeball both the reading view (/) and the contact sheet (/sheet).
-5. Flip draft: false when you're ready to publish.
-6. npm run check-photos — validates alt text, image sizes, references, and bodies.
-7. git commit, git push.
-8. Cloudflare Pages rebuilds and deploys automatically.
+2. Run: npm run new-photo -- path/to/image.jpg
+   (the script picks the next id, creates src/content/photos/<id>/ with
+    index.md (stub) and image.<ext> copied from your scan)
+3. Open src/content/photos/<id>/index.md, fill the frontmatter and write notes.
+4. npm run dev — eyeball / and /gallery/ and /photos/<id>/.
+5. npm run check-photos — validates alt text, image sizes, references.
+6. git commit, git push.
+7. Cloudflare Pages rebuilds and deploys automatically.
 ```
 
-`npm run new-photo -- <slug>` (no image arg) is fine too — it just creates the
-markdown stub and tells you where to drop the image. Useful when scribbling
-down ideas before you've finished the scan.
+`npm run new-photo` with no image arg is fine too — it just creates the
+markdown stub at the next id and tells you where to drop the image.
+Useful when scribbling down ideas before you've finished the scan.
+
+There is no draft step. If you scaffold an entry and aren't ready to ship,
+hold it on a branch or stash; don't commit a half-baked entry to `main`.
 
 ### Helper scripts
 
-- `scripts/new-photo.mjs` — scaffolds a new entry. Slug must be
-  `[a-z0-9-]+`. Creates a stub with `draft: true` so half-finished entries
-  never accidentally publish.
-- `scripts/check.mjs` — lints the photos directory. Warns about missing alt
-  text, missing titles, oversized images (> 3 MB), unresolved image refs,
-  orphan images, and published entries with no body text. Non-blocking by
-  design — warnings only, never fails the build.
+- `scripts/new-photo.mjs` — scaffolds a new entry at the next available
+  numeric id (zero-padded to 4). Creates a stub `index.md` and copies the
+  image if provided.
+- `scripts/check.mjs` — lints the photos directory. Warns about non-numeric
+  directory names, missing alt text, oversized images (> 3 MB), unresolved
+  image refs, and orphan images. Non-blocking by design — warnings only,
+  never fails the build.
 - `scripts/suggest-tags.mjs` — sends a photograph to a local Ollama vision
   model and prints suggested tags. Suggestion only, never writes to the file.
   See "Tagging" below.
@@ -255,15 +264,15 @@ the background. You don't need an API key. Nothing leaves your machine.
 **Usage:**
 
 ```sh
-npm run suggest-tags -- morning-window     # one photo
-npm run suggest-tags -- --all              # every entry in src/content/photos/
+npm run suggest-tags -- 0042              # one photo by id
+npm run suggest-tags -- --all             # every entry in src/content/photos/
 ```
 
 The script reads the image, sends it (along with the title/caption/location
 from the markdown for context) to the model, and prints something like:
 
 ```
-  morning-window ... done
+  0042 ... done
     suggested: ["light", "interior", "morning", "wood-floor", "minimal", "stillness", "shadow", "brooklyn"]
 ```
 
@@ -278,7 +287,7 @@ run suggest-tags ...`.
 
 ## Image handling
 
-- For now, images are checked into git under `src/content/photos/<slug>/` and
+- For now, images are checked into git under `src/content/photos/<id>/` and
   served through Astro's asset pipeline (`<Image />` from `astro:assets`).
   This gives responsive `srcset`, format conversion (avif/webp), and content
   hashing for free.
@@ -309,7 +318,8 @@ each holding prints stacked by size. One front door, no view picker.
   lives in.
 
 - `/photos/<id>/` — **single print**. Permalink. Larger image, full
-  metadata as a verso label, notes, tag chips. Used for sharing.
+  metadata as a verso label, notes, tag chips. Used for sharing. The id
+  is the numeric directory name (e.g. `/photos/0042/`).
 
 - `/tags/` — index of every tag with a count.
 
@@ -338,13 +348,13 @@ adding a new route.
 Each series is a markdown file in `src/content/series/`. The schema is in
 `src/content.config.ts`.
 
-Required frontmatter: `title`, `cover` (slug of a photo).
-Optional: `description`, `order` (for sorting on `/`), `draft`.
+Required frontmatter: `title`, `cover` (id of a photo, e.g. `"0042"`).
+Optional: `description`, `order` (for sorting on `/`).
 
 A photograph joins a series by setting `series: <slug>` in its frontmatter,
 where `<slug>` matches the filename of a series markdown file. A photo in no
 series is fine — it simply won't appear on the front door, but it will still
-appear in `/read/`, `/sheet/`, and have a permalink.
+appear in `/gallery/` and have a permalink.
 
 The cover photo itself appears in the grid on `/`. Pick covers that *suggest*
 the series rather than dominate it — the cover is a poster, not the
