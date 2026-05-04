@@ -8,19 +8,26 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "yarn run build && wrangler dev",
     "astro": "astro",
     "new-photo": "node scripts/new-photo.mjs",
     "publish": "node scripts/publish.mjs",
     "check-photos": "node scripts/check.mjs",
-    "suggest-tags": "node scripts/suggest-tags.mjs"
+    "suggest-tags": "node scripts/suggest-tags.mjs",
+    "generate-types": "wrangler types",
+    "deploy": "yarn run build && wrangler deploy"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^13.3.1",
     "astro": "^6.1.10",
     "sharp": "^0.34.5"
   },
   "devDependencies": {
-    "ollama": "^0.6.3"
+    "ollama": "^0.6.3",
+    "wrangler": "^4.87.0"
   },
-  "packageManager": "yarn@4.9.1"
+  "packageManager": "yarn@4.9.1",
+  "overrides": {
+    "vite": "^7"
+  }
 }
