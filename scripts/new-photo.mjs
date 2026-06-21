@@ -2,8 +2,13 @@
 import { randomBytes } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readdirSync, writeFileSync } from "node:fs";
 import { basename, extname, join } from "node:path";
+import { tagImage } from "./suggest-tags.mjs";
 
-const [imagePath] = process.argv.slice(2);
+// `--no-tags` skips the (slowish) local vision tagging step.
+const rawArgs = process.argv.slice(2);
+const skipTags = rawArgs.includes("--no-tags");
+const [imagePath] = rawArgs.filter((a) => !a.startsWith("--"));
+const TAGGABLE = [".jpg", ".jpeg", ".png", ".webp"];
 
 const liveDir = "src/content/photos";
 const archiveDir = "archive";
@@ -42,6 +47,7 @@ mkdirSync(photoDir, { recursive: true });
 
 let imageRef = "./image.jpg";
 let imageNote = `Drop image at ${join(photoDir, "image.jpg")} when ready.`;
+let copiedImage = null; // path of the copied image, if any (for tagging)
 
 if (imagePath) {
 	if (!existsSync(imagePath)) {
@@ -53,6 +59,32 @@ if (imagePath) {
 	copyFileSync(imagePath, dest);
 	imageRef = `./image${ext}`;
 	imageNote = `Copied ${basename(imagePath)} → ${dest}`;
+	copiedImage = dest;
+}
+
+// Suggest tags from the image with the local vision model. Results go into the
+// frontmatter as a comment — never auto-applied, so you still review. Failures
+// (or non-taggable formats like TIFF) are non-fatal: the photo is created either
+// way. Skip with `--no-tags`.
+let tagComment = "";
+if (copiedImage && !skipTags) {
+	const ext = extname(copiedImage).toLowerCase();
+	if (!TAGGABLE.includes(ext)) {
+		console.log(`Skipping tag suggestions — ${ext} not supported (use jpg/png/webp).`);
+	} else {
+		try {
+			console.log("Suggesting tags (local vision model) ...");
+			const { caption, objectTags, captionTags } = await tagImage(copiedImage);
+			const suggested = [...new Set([...objectTags, ...captionTags])];
+			tagComment =
+				`# --- suggested by suggest-tags (review, move keepers into tags below) ---\n` +
+				`# caption: ${caption}\n` +
+				`# tags: ${suggested.join(", ")}\n`;
+			console.log(`  suggested: ${suggested.join(", ")}`);
+		} catch (err) {
+			console.log(`  (tag suggestion failed: ${err.message})`);
+		}
+	}
 }
 
 const today = new Date().toISOString().slice(0, 10);
@@ -68,7 +100,7 @@ film: ""
 location: ""
 format: ""
 # series: city         # optional — slug of a file in src/content/series/
-tags: []
+${tagComment}tags: []
 ---
 
 `;

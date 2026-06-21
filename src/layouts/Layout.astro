@@ -19,6 +19,12 @@ const { title = "Photography", description = "Selected film photography" } = Ast
 		<link rel="icon" href="/favicon.ico" />
 		<meta name="generator" content={Astro.generator} />
 		<meta name="description" content={description} />
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title="Chris Bendel — Photography"
+			href="/rss.xml"
+		/>
 		<title>{title}</title>
 		<script is:inline>
 			(function () {
