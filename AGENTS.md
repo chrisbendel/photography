@@ -1,442 +1,134 @@
 # AGENTS.md
 
-Guiding principles for any agent (human or AI) working in this repo.
-
-## Project
-
-Personal photography portfolio. Hosts selected scans of medium and large format
-black & white film photographs. Static site, deployed to Cloudflare Pages.
+Principles and concrete rules for working in this repo. Setup, commands, and
+the add-a-photo flow live in [`README.md`](./README.md) — not repeated here.
 
 ## Ethos
 
-- **Simple**. The site is a quiet portal to view photographs. Treat every
-  addition as a tax against that quietness.
-- **Plain HTML and typography**. Lean on semantic elements and the natural
-  cascade. No design system. No component libraries.
-- **Darkroom palette**. Warm Ilford-fiber off-white and deep warm black, never
-  pure RGB extremes. Dark mode is warm near-black, no blue. No accent color —
-  hover/focus states are conveyed by underline, weight, or border, not by a
-  splash of red. One subtle paper-grain SVG overlays the whole page.
-- **No dependencies unless necessary**. If a feature can be done with a few
-  lines of CSS or vanilla JS, do that.
-- **The site is also the photographer's filing system.** This is not just a
-  public portal — it is the way the photographer organizes his own work. The
-  layout, the schema, the routes, the categories all evolve as his
-  organizational instincts evolve. If the way he thinks about a photograph
-  changes (a new way of grouping, a new piece of metadata, a new view that
-  helps him *find* something he made), the site changes to reflect that.
-  Resist the urge to lock the structure in early. The structure is meant to
-  bend with the practice.
-- **And it is also a log book.** Each photograph is a dated entry —
-  stamped with when it was made, when it was added, what camera, what film,
-  where, and a written reflection. The site is the cumulative record of a
-  practice over years. Read forward, you see what's new; read backward, you
-  see how the work has changed. Treat each entry like an entry — not like a
-  product page. Quiet, dated, complete, sequential.
-
-## Grug-brained development
-
-This project is built in the spirit of [the grug-brained developer](https://grugbrain.dev/).
-A working translation, applied here:
-
-- **Complexity is the demon.** Every dependency, every abstraction, every clever
-  trick is a tax on future-grug. Refuse complexity loudly; pay it only when
-  forced.
-- **"No" is grug's most powerful word.** Each "yes" is permanent. This site does
-  not need: a CMS, comments, an analytics dashboard, a search box that fights
-  the existing tag pages, a custom build pipeline, image-recognition auto-tags,
-  a microservice for anything. Most feature ideas are best declined or
-  deferred.
-- **Boring beats shiny.** Astro + plain CSS + markdown frontmatter is the
-  correct stack precisely because it is boring. No bundler tweaks, no design
-  system, no framework du jour. A 20-line script beats a dependency.
-- **Avoid premature abstraction.** Duplication is cheap and reversible; the
-  wrong abstraction is expensive and stuck. Repeat code three times before
-  extracting a helper. (`src/lib/format.ts` was extracted only after Astro's
-  `getStaticPaths` couldn't see module-level helpers — not because it might
-  one day be reused.)
-- **Hide complexity at the seams.** When something *does* get complex (e.g.
-  the gallery loupe), keep it inside one file with one job. Don't sprawl.
-- **Don't fight the framework.** Astro wants content collections,
-  `getStaticPaths`, `<Image>`. Use those. Don't reinvent routing, don't build
-  a homemade markdown parser, don't replace the asset pipeline.
-- **Tests where the joints are.** No test framework yet. The
-  `npm run check-photos` script is the only test that earns its keep —
-  it catches publishing mistakes (missing alt, oversized images, orphan
-  files). When a real bug class appears, write a test for *that*, not for a
-  coverage target.
-- **Closure beats novelty.** Finish what you start. Demo routes are allowed
-  during exploration; they must be deleted once a direction is picked.
-  Open loops accumulate weight.
-- **Premature optimization is bad. Ignorant non-optimization is worse.** No
-  need for a CDN, a service worker, or a Cloudflare Worker for 9 photos. Do
-  need to keep image sizes in check (`scripts/check.mjs` warns past 3MB).
-- **"We should rewrite this" is almost always wrong.** When the site feels
-  broken, the answer is usually to delete code, not add a new layer.
-
-The recurring question for every change: not "can we?" but "would removing
-this leave something missing?" If no, don't ship it.
+- **Simple.** A quiet portal to view photographs. Every addition is a tax
+  against that quietness — the question for any change is "would removing this
+  leave something missing?" If no, don't ship it.
+- **Boring stack, no dependencies unless forced.** Astro + plain CSS + markdown
+  is correct *because* it's boring. A 20-line script beats a dependency. Don't
+  fight the framework — use content collections, `getStaticPaths`, `<Image>`.
+- **No premature abstraction.** Duplicate three times before extracting. The
+  wrong abstraction is more expensive than repetition.
+- **The site is the photographer's filing system and log book.** Structure bends
+  with the practice — schema, routes, and categories evolve as his
+  organizational instincts do. Each photo is a dated entry (made, added, camera,
+  film, place, reflection), not a product page.
+- **Declined by default:** CMS, comments, analytics, search, custom build
+  pipeline, microservices. Most feature ideas are best deferred.
 
 ## Tactile details
 
-The site is a quiet photo viewer first. Within that quiet, small tactile
-details — borrowed from the analog process of making and printing
-photographs — are what separate the site from a generic gallery template.
-They reward attention without demanding it.
+Small analog-process details — borrowed from making and printing photographs —
+separate this from a generic gallery. They reward attention without demanding
+it. Existing: pull-cord light switch (theme toggle), paper-grain overlay,
+verso metadata treatment, print invert-to-negative button, format-grouped
+series view.
 
-Existing details:
+When adding one, ask: is there a real-world analog? Rules:
 
-- **Pull-cord light switch** (nav). An Edison bulb on a cord. Pull it to
-  flip the theme. Cord stretches, bulb dips and rebounds, halo blooms.
-  Mirrors the actual fixture in the photographer's darkroom.
-- **Paper-grain overlay**. A near-imperceptible noise SVG over the page,
-  multiply-blended in light mode, screen-blended in dark. Page reads like
-  fiber paper, not screen.
-- **Verso treatment**. Per-photo metadata as small uppercase monospace —
-  evokes pencil notes on the back of a print.
-- **Print invert button**. A small overlay on the photo flips the scan to
-  negative. Mirrors holding a real negative up to the light.
-- **Format-grouped series view**. Prints sorted largest first within each
-  series, mirroring how prints physically stack in a paper box.
-
-When adding a feature, ask: is there a real-world analog to what this is
-doing? If yes, can the interaction feel a little more like that real
-thing — without becoming kitsch, slow, or skeuomorphic theater?
-
-Rules:
-
-1. **Restraint over elaboration.** A 0.4s animation that *suggests* an
-   action beats a 2s animation that *performs* it.
-2. **Never block the user.** Animations may not delay critical interaction
-   beyond ~400ms total.
-3. **Always degrade gracefully.** Honor `prefers-reduced-motion`. The site
-   must function without animation.
-4. **No skeuomorphism for its own sake.** Wood-grain page background = cosplay.
-   Paper grain that disappears at normal viewing distance = texture.
-5. **CSS-first.** If a tactile detail can be done with CSS animations and a
-   few lines of vanilla JS, do that. Avoid libraries.
-6. **Discoverable, not required.** A user who never notices the pull-cord
-   still has a working theme toggle. Tactile details supplement function;
-   they never replace it.
-
-These small things, accumulated, are the work. They don't compete with the
-photographs — they frame them.
+1. Restraint over elaboration; never block interaction beyond ~400ms.
+2. Honor `prefers-reduced-motion` — the site must work without animation.
+3. No skeuomorphism for its own sake (paper grain = texture; wood-grain bg = cosplay).
+4. CSS-first, no animation libraries.
+5. Discoverable, not required — they supplement function, never replace it.
 
 ## Stack
 
-- **Astro** — static output, content collections.
-- **TypeScript** — strict, the Astro default. Use it for any non-trivial JS.
-- **Markdown** for photo entries (frontmatter + optional body). MDX only if a
-  real need arises.
-- **Plain CSS** in `src/styles/global.css`. No Tailwind. No CSS-in-JS. No
-  preprocessors. Use CSS custom properties for the small set of design tokens.
-- **System fonts** (`system-ui` sans stack). No web fonts. Utilitarian and
-  legible on every screen, free on every OS. Mono kept for verso labels.
+- **Astro**, static output, content collections.
+- **TypeScript** strict (Astro default) for any non-trivial JS.
+- **Markdown** for photo entries (frontmatter + optional body). MDX only if needed.
+- **Plain CSS** in `src/styles/global.css` — no Tailwind, no CSS-in-JS, no
+  preprocessors. CSS custom properties for design tokens.
+- **System fonts** only (`system-ui`; mono for verso labels). No web fonts.
 
 ## Content model
 
-Two directories, both in the repo:
+Schema: `src/content.config.ts`.
 
 ```
-src/content/photos/   ← published. Astro reads these. Live on the site.
-archive/              ← scanned but unpublished. NOT in the build. Staging.
+src/content/photos/<id>/   ← published. Astro reads these.
+archive/<id>/              ← scanned, unpublished. NOT in the build.
 ```
 
-Each photograph lives in its own folder named by a 6-character lowercase
-hex hash (e.g. `a3f4c1`). The folder contains its markdown (`index.md`)
-and image (`image.jpg`). The markdown's `image:` field is a local relative
-path, `image: ./image.jpg`. Schema is in `src/content.config.ts`.
+Each photo is a self-contained folder named by a 6-char lowercase hex hash
+(e.g. `a3f4c1`), containing `index.md` + `image.<ext>` (`image:` is a relative
+path, `./image.jpg`). Hash ids: stable forever, no implied ordering, no
+collisions across parallel scans. Ordering comes from the `added` field, never
+the id.
 
-```
-archive/
-  a3f4c1/                    ← scanned, drafted, awaiting promotion
-    index.md
-    image.jpg
+- Required frontmatter: `added`, `image`, `alt`.
+- Optional: `date`, `caption`, `camera`, `film`, `location`, `format`, `series`, `tags`.
+- **No `draft` field.** Live = published; unfinished entries stay in `archive/`.
+- `added` — machine-stamped scaffold date; drives newest-first sorts. `date` —
+  when the shutter clicked; display only, optional granularity.
+- `caption` — one short label line in `<figcaption>`. Body markdown → the
+  **Notes** section (reflection, no length limit).
 
-src/content/photos/
-  d7677a/                    ← live
-    index.md
-    image.jpg
-  e91baf/
-    index.md
-    image.jpg
-```
-
-The id is generated by `new-photo` from `crypto.randomBytes(3)`. 6 hex chars
-gives a 16M id space (birthday collision after ~4k entries — fine forever
-for this use). IDs are stable forever — never rename, never collide, never
-imply ordering.
-
-Why hash ids (not names, not numbers):
-
-- **Names don't scale.** "Lake Champlain Sunrise" can recur. Numbering
-  collisions (`-2`, `-3`) is clerical and lies.
-- **Numbers imply ordering you don't actually want.** Promote-out-of-order
-  with sequential ids gives a feed where id ≠ recency. Hashes have no order
-  baked in, so order comes from the explicit `added` field instead.
-- **Hashes parallelize.** Scan from two devices, no id-allocation conflict.
-
-Why the per-folder layout: each photo is a self-contained package — drop the
-folder, photo gone; share the folder, photo travels intact. Browsing
-`src/content/photos/` or `archive/` shows one row per photograph (the id),
-not interleaved markdown and JPEGs.
-
-Why split live vs archive: scanning is its own session ("sit down and do
-10–20 negatives at a time"). Archive holds the backlog — committed, backed
-up, not yet published. Promotion to live is `npm run publish -- <id>`,
-which `mv`s the folder. Astro never sees archive, so build time and feed
-chronology stay clean.
-
-Required frontmatter: `added`, `image`, `alt`.
-Optional: `date`, `caption`, `camera`, `film`, `location`, `format`,
-`series`, `tags`.
-
-There is no `draft` field. Live = published. Half-finished entries stay
-in `archive/` until they're ready.
-
-### `added` vs `date`
-
-- `added` — when the entry was scaffolded by `new-photo`. Machine-stamped,
-  never user-edited. Drives "newest first" sorts on `/` and `/gallery/`.
-  Keeps the homepage coherent regardless of when each archived entry gets
-  promoted to live.
-- `date` — when the photograph was *made* (shutter clicked). Display only —
-  shown on the permalink. Used inside a series for capture-chronology sort.
-  Granularity your call: `2024`, `2024-03`, or full `2024-03-14`. Optional.
-
-### `caption` vs body
-
-- `caption` (frontmatter) → rendered in `<figcaption>` directly under the
-  image. Keep it to one short line. It is a label, not prose.
-- Markdown body → rendered as the **Notes** section below the metadata. This
-  is the place for reflection on the photograph: what you saw, what you
-  remember, what you learned. No length limit. Write slowly. The point of
-  this project is to slow down, not to ship.
-
-## Workflow — adding a photograph
-
-The site is git-managed. There is no admin UI and there will not be one.
-The flow has two acts: **scanning** (batch, in `archive/`) and
-**publishing** (one at a time, when each entry is ready).
-
-### Scanning a batch
-
-```
-1. Process scans to final JPEGs (3000–4000px long edge, ~85 quality).
-2. For each: npm run new-photo -- path/to/image.jpg
-   (the script picks a fresh hash id, creates archive/<id>/ with
-    index.md (stub) and image.<ext> copied from your scan)
-3. git commit -m "scans <date>" && git push
-   (the archive is now safely off your laptop, in version control)
-```
-
-`npm run new-photo` with no image arg is fine — it just creates the markdown
-stub at a fresh id and tells you where to drop the image.
-
-### Publishing a single entry
-
-```
-1. Open archive/<id>/index.md, fill the frontmatter and write notes.
-2. npm run publish -- <id>
-   (script moves archive/<id>/ → src/content/photos/<id>/ after validating
-    alt + image are present)
-3. npm run dev — eyeball / and /gallery/ and /photos/<id>/.
-4. npm run check-photos — validates alt, image size, references.
-5. git commit, git push.
-6. Cloudflare Pages rebuilds and deploys automatically.
-```
-
-There is no draft step. Live = published. Anything not yet ready to share
-stays in `archive/`.
-
-### Helper scripts
-
-- `scripts/new-photo.mjs` — scaffolds a new entry in `archive/`. Generates
-  a fresh 6-hex-char hash id, scans both `archive/` and `src/content/photos/`
-  for collisions (vanishingly rare). Stamps `added: <today>`. Optionally
-  copies a source image into the folder.
-- `scripts/publish.mjs` — promotes `archive/<id>/` → `src/content/photos/<id>/`.
-  Refuses to promote if `alt` or `image` are missing, or if the entry already
-  exists live.
-- `scripts/check.mjs` — lints the live photos directory. Warns about
-  non-hash directory names, missing `added`/`alt`, oversized images (> 3 MB),
-  unresolved image refs, and orphan images. Non-blocking — warnings only.
-- `scripts/suggest-tags.mjs` — sends a photograph to a local Ollama vision
-  model and prints suggested tags. Suggestion only, never writes to the file.
-  See "Tagging" below.
-
-If a step starts feeling repetitive, add it to a script. The goal is that
-adding a photograph requires only writing — no clerical work.
+Helper scripts: `new-photo.mjs` (scaffold in `archive/`), `publish.mjs`
+(promote `archive/<id>/` → live, validates alt + image), `check.mjs` (lint
+live photos — non-blocking warnings), `suggest-tags.mjs` (tag suggestions; see
+below). If a step feels repetitive, add it to a script.
 
 ## Tagging
 
-Photographs can be tagged with arbitrary lowercase strings (kebab-case for
-multi-word). Tags are written by hand, mostly while writing the notes —
-they're whatever felt true when the photograph was made or edited.
+Lowercase strings, kebab-case for multi-word, any number including zero.
+Written by hand while writing notes. Tags create implicit views (`/tags/`,
+`/tags/<tag>/`).
 
-```yaml
-tags: ["light", "morning", "interior", "stillness", "brooklyn"]
-```
-
-A photograph can have any number of tags, including zero. Tags create
-implicit views:
-
-- `/tags/` — index of all tags with counts
-- `/tags/<tag>/` — mosaic of photographs with that tag
-
-### AI-assisted tagging (optional)
-
-A local vision model can suggest tags for you to review. Output is *only* a
-suggestion — the script never writes to your markdown.
-
-**One-time setup:**
-
-```sh
-brew install ollama          # or download from https://ollama.com
-ollama pull moondream        # ~1.7GB, fast. Or `llava:7b` for better quality.
-```
-
-The Ollama macOS app starts a local daemon at `http://127.0.0.1:11434` in
-the background. You don't need an API key. Nothing leaves your machine.
-
-**Usage:**
-
-```sh
-npm run suggest-tags -- a3f4c1            # one photo by id
-npm run suggest-tags -- --all             # every entry in src/content/photos/
-```
-
-The script reads the image, sends it (along with the title/caption/location
-from the markdown for context) to the model, and prints something like:
-
-```
-  a3f4c1 ... done
-    suggested: ["light", "interior", "morning", "wood-floor", "minimal", "stillness", "shadow", "brooklyn"]
-```
-
-You then copy what resonates into the `.md` file. The model is scaffolding,
-not an editor. The whole point of this project is that *you* are the one
-deciding what a photograph means.
-
-**Why local Ollama and not a cloud API:** privacy, no key management, free,
-offline, fits a static site that has no server. If you outgrow Moondream's
-quality, swap to `llava:7b` or `qwen2.5vl:3b` via `OLLAMA_MODEL=llava:7b npm
-run suggest-tags ...`.
-
-## Image handling
-
-- For now, images are checked into git under `src/content/photos/<id>/` and
-  served through Astro's asset pipeline (`<Image />` from `astro:assets`).
-  This gives responsive `srcset`, format conversion (avif/webp), and content
-  hashing for free.
-- Keep source files reasonable. A 3000–4000px long edge JPEG at quality ~85 is
-  plenty for web.
-- When the repo gets uncomfortable (rough rule: > 500 MB), migrate to
-  Cloudflare R2 or similar object storage. Update the schema to accept a URL
-  and write a small custom loader.
+A local vision model (Florence-2 via transformers.js) can suggest tags —
+in-process, no API, offline after the first model download. Runs automatically
+in `new-photo` (suggestions written as frontmatter comments), or standalone via
+`yarn suggest-tags <slug>|--all`. **Suggestions only — never written to `tags:`
+automatically.** You decide what a photograph means.
 
 ## Routing & views
 
-The site borrows the metaphor of a darkroom shelf: a few labeled paper boxes,
-each holding prints stacked by size. One front door, no view picker.
+Routes are listed in README. Constraints:
 
-- `/` — **front door**. Each series rendered as a typographic paper-box label
-  (uppercase title, small monospace stat line, italic description, tiny cover
-  thumb). Stacked vertically with thin rules between. Click = open the box.
-
-- `/series/<slug>/` — **open the box**. Stack of prints in that series,
-  grouped by format (largest first: 4×5 → 6×7 → 6×6 → 35mm). Within each
-  format group, newest first. Mirrors how prints physically stack in a paper
-  box, sorted by size.
-
-- `/gallery/` — **everything at a glance**. CSS-column mosaic of every
-  published photograph, mixed aspects packing naturally via `column-count` +
-  `break-inside: avoid`. Click any thumb → permalink. The cross-cutting
-  alternative to series — useful when you don't know which box something
-  lives in.
-
-- `/photos/<id>/` — **single print**. Permalink. Larger image, full
-  metadata as a verso label, notes, tag chips. Used for sharing. The id
-  is the 6-char hex hash directory name (e.g. `/photos/a3f4c1/`).
-
-- `/tags/` — index of every tag with a count.
-
-- `/tags/<tag>/` — small mosaic of photographs with that tag. Cross-cutting
-  alternative to series. The only place a mosaic appears, and only because
-  tags are inherently cross-cutting.
-
-### Verso treatment
-
-Per-photo metadata (camera, film, format, date, location) is rendered like a
-museum label or pencil notes on the back of a print: small, uppercase,
-monospace, faint. In the in-stream views (series, tag) it's a single comma-
-separated line. On the permalink it expands to a definition list with the
-same monospace treatment. The format strings render with `×` not `x`
-(`6×7`, `4×5`).
-
-### When to add views
-
-Resist adding more views. The constraint is the point — a darkroom doesn't
-have ten ways to view the same print. If a need shows up (e.g. "by year" or
-"by camera"), prefer adding it as a section within an existing view before
-adding a new route.
+- Resist adding views — a darkroom doesn't have ten ways to view one print. If a
+  need shows up ("by year", "by camera"), add it as a section in an existing
+  view before adding a route.
+- Mosaics appear only on `/gallery/` and `/tags/<tag>/` (tags are inherently
+  cross-cutting). Series views group by format, largest first, then newest.
+- **Verso treatment:** per-photo metadata renders small/uppercase/monospace/faint
+  like pencil notes on the back of a print. Formats use `×` not `x` (`6×7`).
 
 ## Series
 
-Each series is a markdown file in `src/content/series/`. The schema is in
-`src/content.config.ts`.
-
-Required frontmatter: `title`.
-Optional: `description`, `cover` (id of a photo, e.g. `"a3f4c1"`),
-`order` (for sorting on `/`).
-
-A photograph joins a series by setting `series: <slug>` in its frontmatter,
-where `<slug>` matches the filename of a series markdown file. A photo in no
-series is fine — it simply won't appear on the front door, but it will still
-appear in `/gallery/` and have a permalink.
-
-The cover photo itself appears in the grid on `/`. Pick covers that *suggest*
-the series rather than dominate it — the cover is a poster, not the
-masterwork.
+Markdown files in `src/content/series/`. Required: `title`. Optional:
+`description`, `cover` (a photo id), `order`. A photo joins via `series: <slug>`
+matching a series filename. No series is fine (still in `/gallery/` + permalink).
 
 ## Styling rules
 
-- Use semantic elements (`main`, `header`, `footer`, `figure`, `figcaption`,
-  `dl`).
-- Layout with flexbox or basic block flow. Avoid grid unless the layout
-  genuinely requires two-dimensional alignment.
-- One `max-width` for the page measure (`--measure`), defined in
-  `:root`.
-- No hardcoded colors. Reference CSS variables.
+- Semantic elements (`main`, `header`, `figure`, `figcaption`, `dl`).
+- Flexbox/block flow; grid only for genuine 2D alignment.
+- One page measure (`--measure` in `:root`).
+- No hardcoded colors — reference CSS variables. Darkroom palette: warm
+  off-white / warm near-black, no pure RGB, no accent color (state via
+  underline/weight/border).
 
 ## What NOT to do
 
 - No build steps beyond `astro build`.
-- No analytics, no trackers, no cookie banners.
-- No client-side JS frameworks (React, Svelte, Vue) unless a feature genuinely
-  needs interactivity that can't be done with `<details>`, anchor links, or
-  a few lines of vanilla JS.
-- No commented-out code. No "todo" comments without an issue.
+- No analytics, trackers, or cookie banners.
+- No client-side JS frameworks unless a feature truly needs interactivity beyond
+  `<details>`, anchor links, or a few lines of vanilla JS.
+- No commented-out code; no TODO comments without an issue.
 
-## Future, not now
+## Image handling
 
-- Print sales — likely Stripe Checkout or a static integration. Defer until the
-  catalogue justifies it.
-- Custom domain — pick one when it picks itself.
-- R2 for image hosting — only once git size hurts.
+Images checked into git under `src/content/photos/<id>/`, served via Astro's
+asset pipeline (`<Image />`). Keep sources ~3000–4000px long edge, quality ~85,
+under 3 MB (`check.mjs` warns past 3 MB). Migrate to R2/object storage only once
+git size hurts (~rough rule: > 500 MB).
 
-## Open questions
+## Deferred (not now)
 
-Decisions deliberately deferred — sit with them through real use, then revisit.
-
-- **Homepage shape.** Currently `/` shows a single featured photograph
-  (latest-published). Considered: a small grid of recent photos, a
-  text-only "portal" listing sections, status quo. Sit with the single-photo
-  approach for at least ~10 real posts before changing. The friction will
-  name itself in actual use; right now it's just imagined.
-
-## Hosting
-
-Cloudflare Pages free tier is more than sufficient for a personal photo site.
-Build output is `dist/`. Set the framework preset to "Astro" in the Pages UI;
-build command `npm run build`, output directory `dist`.
+Print sales (Stripe, once the catalogue justifies it), R2 hosting (once git
+size hurts), homepage shape (sit with the single-featured-photo `/` for ~10 real
+posts before reconsidering).
