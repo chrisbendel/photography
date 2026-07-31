@@ -95,22 +95,38 @@ Then, in the Cloudflare dashboard:
 
 ### API tokens
 
-Two tokens, from **My Profile → API Tokens → Create Token → Custom token**. These
-permissions are all *Account* scoped.
+Three tokens, one permission each, from **My Profile → API Tokens → Create Token
+→ Custom token**. All are *Account* scoped — set Account Resources to your
+account and leave Zone Resources alone.
 
-| Token | Permissions | Lives in | Used by |
-| --- | --- | --- | --- |
-| Data | D1 → Edit, Workers R2 Storage → Read | `.env`, GitHub secrets | Build loader, `migrate-to-d1`, nightly backup |
-| Worker | Workers AI → Read | `wrangler secret put` | `/studio` caption and tag suggestions |
+| Env var | Permission | Goes where |
+| --- | --- | --- |
+| `CF_D1_TOKEN` | Account » **D1** » **Edit** | `.env`, GitHub secrets, Workers Builds vars |
+| `CF_AI_TOKEN` | Account » **Workers AI** » **Read** | Worker secret only |
+| `CLOUDFLARE_API_TOKEN` | Account » **Workers R2 Storage** » **Read** | GitHub secrets only |
 
-Use the data token's value for both `CF_D1_TOKEN` and `CLOUDFLARE_API_TOKEN`; the
-worker token is `CF_AI_TOKEN`.
+`D1 → Edit` rather than `Read` because `migrate-to-d1` writes rows.
 
-Don't fold them into one. The `DB` and `BUCKET` bindings scope the Worker to this
-one database and this one bucket, but these token permissions are account-wide —
-handing the Worker the data token would let a bug in `/studio` reach every D1
-database and every R2 bucket in the account. `D1 → Edit` rather than `Read`
-because `migrate-to-d1` writes rows.
+**`CLOUDFLARE_API_TOKEN` must not go in `.env`.** wrangler prefers it over your
+`wrangler login` session, so a read-only R2 token there would break the
+`r2 object put` calls in `yarn migrate-to-d1`. Locally, wrangler's own login
+handles R2; the token exists so the backup Action can read objects in CI.
+
+Keep them separate rather than combining. The `DB` and `BUCKET` bindings scope the
+Worker to this one database and this one bucket, but token permissions are
+account-wide — giving the Worker anything beyond Workers AI would let a bug in
+`/studio` reach every D1 database and every R2 bucket in the account.
+
+Where each one is read from:
+
+- **`.env`** — `CF_ACCOUNT_ID`, `CF_D1_DATABASE_ID`, `CF_D1_TOKEN`,
+  `PUBLIC_IMAGE_BASE`, `PUBLIC_IMAGE_TRANSFORM`. Vite loads these into
+  `import.meta.env` for the build; the node scripts get them via
+  `node --env-file-if-exists=.env`.
+- **Workers Builds → build variables** — the same five. The deployed build has no
+  `.env`, and without them it builds an empty site rather than failing.
+- **GitHub secrets** — `CF_ACCOUNT_ID`, `CF_D1_DATABASE_ID`, `CF_D1_TOKEN`,
+  `CLOUDFLARE_API_TOKEN`, for the nightly backup.
 
 Worker secrets — `DEPLOY_HOOK_URL` lets /studio trigger a rebuild, the other two
 are for caption and tag suggestions:

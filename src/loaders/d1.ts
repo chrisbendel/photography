@@ -10,6 +10,16 @@
 import type { Loader } from "astro/loaders";
 import { d1Query, hasD1Credentials } from "../lib/d1.mjs";
 
+// Vite loads `.env` into `import.meta.env`, not `process.env`, so the credentials
+// have to be handed to d1Query explicitly — it defaults to process.env for the
+// node scripts, which get theirs via `node --env-file-if-exists`. Falling back to
+// process.env covers CI, where these are real environment variables.
+const CREDENTIALS = {
+	CF_ACCOUNT_ID: import.meta.env.CF_ACCOUNT_ID ?? process.env.CF_ACCOUNT_ID,
+	CF_D1_DATABASE_ID: import.meta.env.CF_D1_DATABASE_ID ?? process.env.CF_D1_DATABASE_ID,
+	CF_D1_TOKEN: import.meta.env.CF_D1_TOKEN ?? process.env.CF_D1_TOKEN,
+};
+
 /** Rows are stringly-typed coming out of D1; "" and NULL both mean absent. */
 function optional(value: unknown): string | undefined {
 	if (value == null) return undefined;
@@ -23,7 +33,7 @@ export function photosLoader(): Loader {
 		async load({ store, parseData, generateDigest, renderMarkdown, logger }) {
 			store.clear();
 
-			if (!hasD1Credentials()) {
+			if (!hasD1Credentials(CREDENTIALS)) {
 				logger.warn("No D1 credentials — photos collection will be empty.");
 				return;
 			}
@@ -32,8 +42,10 @@ export function photosLoader(): Loader {
 				`SELECT id, added, date, alt, caption, camera, film, location, format,
 				        series, notes, image_key, width, height
 				 FROM photos WHERE published = 1 ORDER BY added DESC`,
+				[],
+				CREDENTIALS,
 			);
-			const tagRows = await d1Query(`SELECT photo_id, tag FROM photo_tags ORDER BY tag`);
+			const tagRows = await d1Query(`SELECT photo_id, tag FROM photo_tags ORDER BY tag`, [], CREDENTIALS);
 
 			const tagsByPhoto = new Map<string, string[]>();
 			for (const { photo_id, tag } of tagRows) {
@@ -83,13 +95,15 @@ export function seriesLoader(): Loader {
 		async load({ store, parseData, generateDigest, logger }) {
 			store.clear();
 
-			if (!hasD1Credentials()) {
+			if (!hasD1Credentials(CREDENTIALS)) {
 				logger.warn("No D1 credentials — series collection will be empty.");
 				return;
 			}
 
 			const rows = await d1Query(
 				`SELECT slug, title, description, cover, sort_order FROM series ORDER BY sort_order, title`,
+				[],
+				CREDENTIALS,
 			);
 
 			for (const row of rows) {
