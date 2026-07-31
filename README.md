@@ -17,15 +17,15 @@ yarn install
 | `yarn dev` | Dev server at `localhost:4321` |
 | `yarn build` | Build to `./dist/` |
 | `yarn preview` | Preview the production build |
-| `yarn new-photo <image> [--no-tags]` | New draft entry in `archive/` (auto-suggests tags) |
-| `yarn publish <id>` | Promote `archive/<id>/` → live |
+| `yarn photo <image> [--no-tags]` | New draft entry in `archive/` (auto-suggests tags) |
+| `yarn publish [id]` | Promote `archive/<id>/` → live (id optional if archive holds one entry; creates a missing `series:` file) |
 | `yarn check-photos` | Lint live photos: alt text, sizes, refs |
 | `yarn suggest-tags <slug>\|--all` | Re-tag existing photos |
 
 ## Adding a photograph
 
 1. **Scan** → JPEG, long edge ~3000–4000px, under 3 MB.
-2. **Scaffold** — `yarn new-photo path/to/scan.jpg`. Creates `archive/<id>/` and writes tag suggestions as comments in the frontmatter.
+2. **Scaffold** — `yarn photo path/to/scan.jpg`. Creates `archive/<id>/` and writes tag suggestions as comments in the frontmatter.
 3. **Fill frontmatter** — `alt` (required), camera, film, format, location, optional caption/series. Move any suggested tags you like into `tags:`.
 4. **Write the notes.** What you saw, remember, learned. The point of the project — don't rush.
 5. **Preview** — `yarn dev`, walk `/photos/<id>/` and the gallery.

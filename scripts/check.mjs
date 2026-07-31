@@ -49,9 +49,16 @@ for (const id of ids) {
 	const added = get("added");
 	const alt = get("alt");
 	const image = get("image");
+	const series = get("series");
 
 	if (!added) warn(`${id}: missing required 'added' date`);
 	if (!alt) warn(`${id}: missing alt text`);
+
+	// Dangling series ref: Astro drops the photo from the series and warns at
+	// build. `yarn publish` scaffolds these, so this only catches hand edits.
+	if (series && !existsSync(join("src/content/series", `${series}.md`))) {
+		warn(`${id}: series "${series}" has no file at src/content/series/${series}.md`);
+	}
 
 	// Image checks: ref + existence + size
 	if (!image) {

@@ -1,15 +1,33 @@
 #!/usr/bin/env node
 // Promote a photo from archive/ to src/content/photos/.
-// Usage: npm run publish -- <id>
-import { existsSync, readFileSync, renameSync } from "node:fs";
+// Usage: yarn publish [id]   — id optional when archive/ holds exactly one entry.
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const [id] = process.argv.slice(2);
+// A bare `--` is dropped: yarn passes it through where npm eats it.
+const args = process.argv.slice(2).filter((a) => a !== "--");
 
+function archiveIds() {
+	if (!existsSync("archive")) return [];
+	return readdirSync("archive", { withFileTypes: true })
+		.filter((d) => d.isDirectory())
+		.map((d) => d.name);
+}
+
+// No id given: the common case is one photo in flight, so publish it.
+let [id] = args;
 if (!id) {
-	console.error("Usage: npm run publish -- <id>");
-	console.error("       (id is the 6-hex-char folder name in archive/)");
-	process.exit(1);
+	const ids = archiveIds();
+	if (ids.length === 1) {
+		id = ids[0];
+		console.log(`Only one entry in archive/ — publishing ${id}.`);
+	} else {
+		console.error("Usage: yarn publish <id>");
+		console.error(
+			ids.length === 0 ? "  archive/ is empty." : `  In archive/: ${ids.join(", ")}`,
+		);
+		process.exit(1);
+	}
 }
 
 if (!/^[0-9a-f]{6}$/.test(id)) {
@@ -22,10 +40,8 @@ const livePath = join("src/content/photos", id);
 
 if (!existsSync(archivePath)) {
 	console.error(`Not found: ${archivePath}`);
-	console.error("Available in archive/:");
-	try {
-		const list = readFileSync; // noop reference to keep import slim
-	} catch {}
+	const ids = archiveIds();
+	console.error(ids.length === 0 ? "archive/ is empty." : `In archive/: ${ids.join(", ")}`);
 	process.exit(1);
 }
 
@@ -53,6 +69,7 @@ const get = (k) => {
 };
 const alt = get("alt");
 const image = get("image");
+const series = get("series");
 
 const issues = [];
 if (!alt) issues.push("alt text is empty — fill it before publishing");
@@ -65,6 +82,26 @@ if (issues.length > 0) {
 	console.error(`Cannot publish ${id} yet:`);
 	for (const i of issues) console.error(`  ✗ ${i}`);
 	process.exit(1);
+}
+
+// A `series:` naming a file that doesn't exist yet is a dangling reference —
+// Astro drops the photo from the series and warns at build. Scaffold it instead,
+// so naming a new series in frontmatter is all it takes to start one. Existing
+// series need nothing: the photo joins by matching the filename.
+if (series) {
+	const seriesDir = "src/content/series";
+	const seriesPath = join(seriesDir, `${series}.md`);
+	if (existsSync(seriesPath)) {
+		console.log(`Joined series "${series}" (${seriesPath}).`);
+	} else {
+		const title = series
+			.split("-")
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(" ");
+		mkdirSync(seriesDir, { recursive: true });
+		writeFileSync(seriesPath, `---\ntitle: "${title}"\n# description: ""\n# cover: ${id}\n---\n\n`);
+		console.log(`Created series "${series}" → ${seriesPath} (edit title/description).`);
+	}
 }
 
 renameSync(archivePath, livePath);

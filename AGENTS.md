@@ -68,7 +68,7 @@ the id.
 - `caption` — one short label line in `<figcaption>`. Body markdown → the
   **Notes** section (reflection, no length limit).
 
-Helper scripts: `new-photo.mjs` (scaffold in `archive/`), `publish.mjs`
+Helper scripts: `photo.mjs` (scaffold in `archive/`), `publish.mjs`
 (promote `archive/<id>/` → live, validates alt + image), `check.mjs` (lint
 live photos — non-blocking warnings), `suggest-tags.mjs` (tag suggestions; see
 below). If a step feels repetitive, add it to a script.
@@ -81,7 +81,7 @@ Written by hand while writing notes. Tags create implicit views (`/tags/`,
 
 A local vision model (Florence-2 via transformers.js) can suggest tags —
 in-process, no API, offline after the first model download. Runs automatically
-in `new-photo` (suggestions written as frontmatter comments), or standalone via
+in `yarn photo` (suggestions written as frontmatter comments), or standalone via
 `yarn suggest-tags <slug>|--all`. **Suggestions only — never written to `tags:`
 automatically.** You decide what a photograph means.
 
@@ -102,6 +102,11 @@ Routes are listed in README. Constraints:
 Markdown files in `src/content/series/`. Required: `title`. Optional:
 `description`, `cover` (a photo id), `order`. A photo joins via `series: <slug>`
 matching a series filename. No series is fine (still in `/gallery/` + permalink).
+
+Naming a series that has no file yet is how you start one: `publish.mjs`
+scaffolds `<slug>.md` with a title inferred from the slug (`north-shore` →
+"North Shore"), then you edit it. `check.mjs` warns on dangling refs from hand
+edits.
 
 ## Styling rules
 
@@ -132,3 +137,8 @@ git size hurts (~rough rule: > 500 MB).
 Print sales (Stripe, once the catalogue justifies it), R2 hosting (once git
 size hurts), homepage shape (sit with the single-featured-photo `/` for ~10 real
 posts before reconsidering).
+
+Browser-based content management on R2 + D1, replacing the CLI: planned and
+shelved, see [`docs/r2-d1-cms.md`](./docs/r2-d1-cms.md) for the design, the
+corrected cost/effort assessment, and the conditions that would justify picking
+it up.
