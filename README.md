@@ -29,8 +29,6 @@ One-time Cloudflare provisioning is in [Provisioning](#provisioning) below.
 | `yarn deploy` | Build and deploy |
 | `yarn d1:migrate` | Apply `migrations/` to the remote database |
 | `yarn d1:migrate:local` | Apply them to the local emulated database |
-| `yarn export-to-git` | Back up D1 + R2 to markdown under `backups/` |
-| `yarn migrate-to-d1` | One-time import of the old `src/content/photos/` folders |
 
 ## Adding a photograph
 
@@ -46,15 +44,15 @@ All of it happens at `/studio`, from any device that can sign in:
 
 Drafts are invisible to the public site — the build only selects `published = 1`.
 
-## Backups
+## Recovering from a mistake
 
-Git is no longer the source of truth, so it's kept as a restore point instead.
-`yarn export-to-git` regenerates the old markdown folder layout under `backups/`,
-and [`.github/workflows/backup.yml`](.github/workflows/backup.yml) runs it nightly
-and commits any change.
+D1 and R2 are the only copies — content is not mirrored into git.
 
-To restore: copy `backups/photos/` to `src/content/photos/`, and swap the D1
-loader in `src/content.config.ts` back to a `glob()` loader.
+- **Metadata:** D1 Time Travel keeps 30 days of point-in-time restores.
+  `yarn wrangler d1 time-travel info photography` to see the window, then
+  `... time-travel restore photography --timestamp <ISO>`.
+- **Images:** no safety net. Deleting a photo in `/studio` deletes the R2 object,
+  and nothing else holds it. Keep your scans.
 
 ## Provisioning
 
@@ -101,16 +99,11 @@ account and leave Zone Resources alone.
 
 | Env var | Permission | Goes where |
 | --- | --- | --- |
-| `CLOUDFLARE_D1_TOKEN` | Account » **D1** » **Edit** | `.env`, GitHub secrets, Workers Builds vars |
+| `CLOUDFLARE_D1_TOKEN` | Account » **D1** » **Read** | `.env`, Workers Builds vars |
 | `CLOUDFLARE_AI_TOKEN` | Account » **Workers AI** » **Read** | Worker secret only |
-| `CLOUDFLARE_API_TOKEN` | Account » **Workers R2 Storage** » **Read** | GitHub secrets only |
 
-`D1 → Edit` rather than `Read` because `migrate-to-d1` writes rows.
-
-**`CLOUDFLARE_API_TOKEN` must not go in `.env`.** wrangler prefers it over your
-`wrangler login` session, so a read-only R2 token there would break the
-`r2 object put` calls in `yarn migrate-to-d1`. Locally, wrangler's own login
-handles R2; the token exists so the backup Action can read objects in CI.
+Neither is named `CLOUDFLARE_API_TOKEN` on purpose — wrangler picks that up and
+prefers it over your `wrangler login` session.
 
 Keep them separate rather than combining. The `DB` and `BUCKET` bindings scope the
 Worker to this one database and this one bucket, but token permissions are
@@ -119,14 +112,11 @@ account-wide — giving the Worker anything beyond Workers AI would let a bug in
 
 Where each one is read from:
 
-- **`.env`** — `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_DATABASE_ID`, `CLOUDFLARE_D1_TOKEN`,
-  `PUBLIC_IMAGE_BASE`, `PUBLIC_IMAGE_TRANSFORM`. Vite loads these into
-  `import.meta.env` for the build; the node scripts get them via
-  `node --env-file-if-exists=.env`.
+- **`.env`** — `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_DATABASE_ID`,
+  `CLOUDFLARE_D1_TOKEN`, `PUBLIC_IMAGE_BASE`, `PUBLIC_IMAGE_TRANSFORM`. Vite loads
+  these into `import.meta.env` for the build.
 - **Workers Builds → build variables** — the same five. The deployed build has no
   `.env`, and without them it builds an empty site rather than failing.
-- **GitHub secrets** — `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_DATABASE_ID`, `CLOUDFLARE_D1_TOKEN`,
-  `CLOUDFLARE_API_TOKEN`, for the nightly backup.
 
 Worker secrets — `DEPLOY_HOOK_URL` lets /studio trigger a rebuild, the other two
 are for caption and tag suggestions:
@@ -142,9 +132,6 @@ yarn wrangler secret put CLOUDFLARE_ACCOUNT_ID
 ```bash
 yarn wrangler secret put CLOUDFLARE_AI_TOKEN
 ```
-
-GitHub repo secrets, for the nightly backup: `CLOUDFLARE_ACCOUNT_ID`,
-`CLOUDFLARE_D1_DATABASE_ID`, `CLOUDFLARE_D1_TOKEN`, `CLOUDFLARE_API_TOKEN`.
 
 ## Routes
 

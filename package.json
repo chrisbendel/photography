@@ -11,8 +11,6 @@
     "preview": "yarn run build && wrangler dev",
     "dev:worker": "yarn run build && wrangler dev --var STUDIO_DEV_BYPASS:1",
     "astro": "astro",
-    "migrate-to-d1": "node --env-file-if-exists=.env scripts/migrate-to-d1.mjs",
-    "export-to-git": "node --env-file-if-exists=.env scripts/export-to-git.mjs",
     "d1:migrate": "wrangler d1 migrations apply photography --remote",
     "d1:migrate:local": "wrangler d1 migrations apply photography --local",
     "generate-types": "wrangler types",
@@ -21,8 +19,7 @@
   "dependencies": {
     "@astrojs/cloudflare": "^13.3.1",
     "@astrojs/rss": "^4.0.18",
-    "astro": "^6.1.10",
-    "sharp": "^0.34.5"
+    "astro": "^6.1.10"
   },
   "devDependencies": {
     "wrangler": "^4.87.0"

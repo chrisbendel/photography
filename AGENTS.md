@@ -59,8 +59,10 @@ the site reads through).
 ```
 D1 photos / series / photo_tags   ← metadata, edited at /studio
 R2 photos/<id>/<hash>.<ext>       ← images, content-addressed
-backups/photos/<id>/index.md      ← nightly export; a restore point, not a source
 ```
+
+These are the only copies. Content is not mirrored into git: D1 Time Travel covers
+metadata for 30 days, and images have no safety net beyond your own scans.
 
 Photo ids are still 6-char lowercase hex hashes (e.g. `a3f4c1`): stable forever,
 no implied ordering, no collisions across parallel scans. Ordering comes from
@@ -81,12 +83,11 @@ no implied ordering, no collisions across parallel scans. Ordering comes from
   and cacheable forever, and re-uploading never needs a cache purge.
 
 Two paths reach the same database, because builds run outside the Worker:
-`src/lib/d1.mjs` (REST API — build-time loader and the node scripts) and
-`src/lib/studio.ts` (the `DB` binding — /studio only).
+`src/loaders/d1.ts` (REST API, build time) and `src/lib/studio.ts` (the `DB`
+binding, /studio only).
 
-Scripts: `migrate-to-d1.mjs` (one-time import from the markdown era),
-`export-to-git.mjs` (the backup path, and the rollback). If a step feels
-repetitive, add it to a script.
+No helper scripts. `/studio` is the interface; if something feels repetitive,
+it belongs there, not in a `scripts/` directory.
 
 ## Tagging
 

@@ -1,7 +1,7 @@
 // D1 access for /studio, over the Worker's `DB` binding.
 //
 // The public site never calls any of this — it reads the same tables through the
-// REST API at build time (src/lib/d1.mjs). Two paths to one database, because
+// REST API at build time (src/loaders/d1.ts). Two paths to one database, because
 // builds run outside the Worker runtime.
 
 export type PhotoRow = {

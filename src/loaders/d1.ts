@@ -8,17 +8,44 @@
 // fresh clone can still build (you get the "no photographs yet" states).
 
 import type { Loader } from "astro/loaders";
-import { d1Query, hasD1Credentials } from "../lib/d1.mjs";
 
-// Vite loads `.env` into `import.meta.env`, not `process.env`, so the credentials
-// have to be handed to d1Query explicitly — it defaults to process.env for the
-// node scripts, which get theirs via `node --env-file-if-exists`. Falling back to
-// process.env covers CI, where these are real environment variables.
-const CREDENTIALS = {
-	CLOUDFLARE_ACCOUNT_ID: import.meta.env.CLOUDFLARE_ACCOUNT_ID ?? process.env.CLOUDFLARE_ACCOUNT_ID,
-	CLOUDFLARE_D1_DATABASE_ID: import.meta.env.CLOUDFLARE_D1_DATABASE_ID ?? process.env.CLOUDFLARE_D1_DATABASE_ID,
-	CLOUDFLARE_D1_TOKEN: import.meta.env.CLOUDFLARE_D1_TOKEN ?? process.env.CLOUDFLARE_D1_TOKEN,
-};
+// Vite loads `.env` into `import.meta.env`, not `process.env`. The process.env
+// fallback covers CI (Workers Builds), where these arrive as real environment
+// variables and no `.env` file exists.
+const ACCOUNT_ID = import.meta.env.CLOUDFLARE_ACCOUNT_ID ?? process.env.CLOUDFLARE_ACCOUNT_ID;
+const DATABASE_ID =
+	import.meta.env.CLOUDFLARE_D1_DATABASE_ID ?? process.env.CLOUDFLARE_D1_DATABASE_ID;
+const TOKEN = import.meta.env.CLOUDFLARE_D1_TOKEN ?? process.env.CLOUDFLARE_D1_TOKEN;
+
+const hasCredentials = Boolean(ACCOUNT_ID && DATABASE_ID && TOKEN);
+
+/**
+ * One statement against D1's REST API. The Worker uses its `DB` binding instead;
+ * this exists because the build runs outside the Worker runtime.
+ */
+async function d1Query(sql: string, params: unknown[] = []): Promise<Record<string, any>[]> {
+	const res = await fetch(
+		`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`,
+		{
+			method: "POST",
+			headers: { Authorization: `Bearer ${TOKEN}`, "Content-Type": "application/json" },
+			body: JSON.stringify({ sql, params }),
+		},
+	);
+
+	const json = (await res.json()) as {
+		success?: boolean;
+		result?: { results?: Record<string, any>[] }[];
+		errors?: { message: string }[];
+	};
+
+	if (!res.ok || !json.success) {
+		const detail = (json.errors ?? []).map((e) => e.message).join("; ");
+		throw new Error(`D1 query failed (${res.status}): ${detail || res.statusText}`);
+	}
+
+	return json.result?.[0]?.results ?? [];
+}
 
 /** Rows are stringly-typed coming out of D1; "" and NULL both mean absent. */
 function optional(value: unknown): string | undefined {
@@ -33,7 +60,7 @@ export function photosLoader(): Loader {
 		async load({ store, parseData, generateDigest, renderMarkdown, logger }) {
 			store.clear();
 
-			if (!hasD1Credentials(CREDENTIALS)) {
+			if (!hasCredentials) {
 				logger.warn("No D1 credentials — photos collection will be empty.");
 				return;
 			}
@@ -42,10 +69,8 @@ export function photosLoader(): Loader {
 				`SELECT id, added, date, alt, caption, camera, film, location, format,
 				        series, notes, image_key, width, height
 				 FROM photos WHERE published = 1 ORDER BY added DESC`,
-				[],
-				CREDENTIALS,
 			);
-			const tagRows = await d1Query(`SELECT photo_id, tag FROM photo_tags ORDER BY tag`, [], CREDENTIALS);
+			const tagRows = await d1Query(`SELECT photo_id, tag FROM photo_tags ORDER BY tag`);
 
 			const tagsByPhoto = new Map<string, string[]>();
 			for (const { photo_id, tag } of tagRows) {
@@ -95,15 +120,13 @@ export function seriesLoader(): Loader {
 		async load({ store, parseData, generateDigest, logger }) {
 			store.clear();
 
-			if (!hasD1Credentials(CREDENTIALS)) {
+			if (!hasCredentials) {
 				logger.warn("No D1 credentials — series collection will be empty.");
 				return;
 			}
 
 			const rows = await d1Query(
 				`SELECT slug, title, description, cover, sort_order FROM series ORDER BY sort_order, title`,
-				[],
-				CREDENTIALS,
 			);
 
 			for (const row of rows) {

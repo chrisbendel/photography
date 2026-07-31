@@ -40,13 +40,20 @@ upload, save, publish/unpublish, delete, validation, the auth gate, tag
 normalisation, series auto-creation. What could not be tested without Cloudflare
 credentials, and should be checked on first run:
 
-- The build-time loader against real D1 (the REST query, and `reference("series")`
-  resolving across collections).
-- Cloudflare Images transformation URLs actually resolving on the R2 custom
-  domain. `PUBLIC_IMAGE_TRANSFORM=0` is the fallback if not.
-- `migrate-to-d1.mjs` and `export-to-git.mjs` end to end.
+Since verified against real Cloudflare resources:
+
+- ✅ The build-time loader against real D1, `reference("series")` resolving across
+  collections, 11 pages prerendered.
+- ✅ Cloudflare Images transformations on the R2 custom domain —
+  `cf-resized: internal=ok`, 2.9 MB original to 206 KB at 1600w.
+- ✅ Migration and export round-tripped with a byte-identical image (both scripts
+  since removed).
+
+Still unverified:
+
 - Workers AI returning a parseable caption/tag response from llava.
 - Access issuing the headers the middleware expects.
+- Workers Builds running the build with variables set from the dashboard.
 
 ## Corrected assessment
 
@@ -73,9 +80,10 @@ decision isn't re-litigated on bad facts:
 
 What genuinely does cost something:
 
-- **Git stops being the backup.** Previously versioned, diffable, offline, and
-  free. Now it's yours to run — `yarn export-to-git` plus a nightly Action. Still
-  a thing you own rather than a thing you get.
+- **Git stops being the backup**, and after the export job was removed, nothing
+  replaced it for images. Previously the backup was versioned, diffable, offline
+  and free. Now metadata leans on D1 Time Travel and images lean on your scans.
+  This is the cost that was accepted rather than avoided.
 - **Dev diverges from prod — avoided.** The build-time loader reads *remote* D1
   over the REST API in both local dev and CI, so `yarn dev` shows real content and
   there's one code path. The local emulated D1 is only used for `/studio` testing
@@ -198,17 +206,22 @@ not the whole app. Do not hand-roll a password check.
 
 ## Backups
 
-This is the part to actually solve, not hand-wave:
+Originally planned as an export-to-git job — regenerate the markdown folders from
+D1 + R2 and commit them, so git stayed a full offline restore point and
+`git revert` still meant something for content. It was built, verified to
+round-trip with a byte-identical image, and then **deliberately removed**: the
+owner didn't want the extra machinery in the repo, having decided the redundancy
+wasn't worth what it cost to keep around.
 
-- Cron-triggered Worker, nightly: `wrangler d1 export` equivalent via the D1 REST
-  API, written to a `backups/` prefix in R2.
-- Better: an **export-to-git** job that regenerates `src/content/photos/<id>/` from
-  D1 + R2 and commits it. Git then remains a full, diffable, offline backup even
-  though it's no longer the source of truth — the current setup inverted, and it
-  keeps `git revert` meaningful for content.
+What covers the gap now:
 
-The export-to-git job is what makes this plan safe. Build it in the same pass as
-the studio, not later.
+- **Metadata:** D1 Time Travel, 30 days of point-in-time restore. No setup needed.
+- **Images:** nothing. Deleting a photo in `/studio` deletes the R2 object and
+  that's the only copy. The original scans on disk are the backup.
+
+If that ever bites, `git log` has the deleted `scripts/export-to-git.mjs` and the
+nightly Action alongside it — restoring the pair is a `git show` away, and this is
+the reason to reach for it.
 
 ## Tag suggestions
 
@@ -235,14 +248,15 @@ Single route, no framework, progressive enhancement:
 
 ## Migration and rollback
 
-Migration: script walks `src/content/photos/*/index.md`, parses frontmatter,
-uploads images to R2, inserts rows. Idempotent, keyed by id. Trivial at current
-scale — the value is that it's re-runnable while iterating on the schema.
+Migration is done and the script is gone. It walked `src/content/photos/*/index.md`,
+uploaded images to R2 and upserted rows keyed by id — which is what made it safe to
+re-run after a transient D1 500 killed the first attempt halfway through. One photo
+moved across; the content was then cleared for a fresh start, and the script was
+deleted rather than left lying around for a job it will never do again.
 
-Rollback: the export-to-git job *is* the rollback. Run it, and the repo is back to
-being the source of truth; delete the studio routes and the D1 binding. Keeping
-that job working means this decision stays reversible, which is the main reason to
-build it early.
+Rollback is no longer a prepared path. With the export job removed, reverting to
+markdown-in-git means reading content back out of D1 and R2 by hand, or recovering
+the deleted scripts from `git log`.
 
 ## Cost
 
