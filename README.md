@@ -82,17 +82,34 @@ Then, in the Cloudflare dashboard:
 
 - **R2 → photography → Settings**: add a custom domain (e.g.
   `img.photos.cbendel.me`) and set it as `PUBLIC_IMAGE_BASE`.
-- **Images**: enable transformations on the zone. Free tier covers 5,000 unique
-  transformations a month; set `PUBLIC_IMAGE_TRANSFORM=0` to bypass it and serve
-  originals if you'd rather not.
+- **Images → Transformations**: select the zone the custom domain sits under
+  (`cbendel.me`) and enable transformations. Cloudflare only accepts source images
+  from the same zone that serves the transformation, which is why the R2 custom
+  domain has to be on this zone. Free tier covers 5,000 unique transformations a
+  month; `PUBLIC_IMAGE_TRANSFORM=0` bypasses it and serves originals.
 - **Zero Trust → Access → Applications**: add a self-hosted app covering
   `photos.cbendel.me/studio*`, policy = your email. Without this `/studio`
   returns 404 by design — the middleware fails closed.
 - **Workers → Builds**: connect the GitHub repo so pushes deploy, and copy the
   deploy hook URL. Set the build-time variables from `.env`.
 
+### API tokens
+
+Two tokens, kept separate so the one the Worker can read stays minimal. Create
+them under **My Profile → API Tokens → Create Token → Custom token**; all of
+these are *Account* scoped.
+
+| Token | Permissions | Used by |
+| --- | --- | --- |
+| `CF_D1_TOKEN` | D1 → Edit | The build's content loader (read), `migrate-to-d1` (write) |
+| `CF_AI_TOKEN` | Workers AI → Read | `/studio` caption and tag suggestions |
+| `CLOUDFLARE_API_TOKEN` | Workers R2 Storage → Read | The nightly backup Action, fetching images |
+
+D1 → Edit rather than Read because `migrate-to-d1` writes rows. If you'd rather
+scope the build tightly, make a second D1 → Read token for CI and keep Edit local.
+
 Worker secrets — `DEPLOY_HOOK_URL` lets /studio trigger a rebuild, the other two
-are for caption/tag suggestions (token needs Workers AI:read):
+are for caption and tag suggestions:
 
 ```bash
 yarn wrangler secret put DEPLOY_HOOK_URL
