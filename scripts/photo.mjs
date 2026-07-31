@@ -5,7 +5,9 @@ import { basename, extname, join } from "node:path";
 import { tagImage } from "./suggest-tags.mjs";
 
 // `--no-tags` skips the (slowish) local vision tagging step.
-const rawArgs = process.argv.slice(2);
+// A bare `--` is dropped: yarn passes it straight through (npm eats it), so
+// `yarn photo -- x.jpg` and `yarn photo x.jpg` both work.
+const rawArgs = process.argv.slice(2).filter((a) => a !== "--");
 const skipTags = rawArgs.includes("--no-tags");
 const [imagePath] = rawArgs.filter((a) => !a.startsWith("--"));
 const TAGGABLE = [".jpg", ".jpeg", ".png", ".webp"];
@@ -39,7 +41,7 @@ function newId() {
 
 const id = newId();
 
-// New entries land in archive/ — promote to live with `npm run publish`.
+// New entries land in archive/ — promote to live with `yarn publish`.
 const photoDir = join(archiveDir, id);
 const mdPath = join(photoDir, "index.md");
 
@@ -110,4 +112,4 @@ writeFileSync(mdPath, tpl);
 console.log(`Created  ${mdPath}`);
 console.log(`         ${imageNote}`);
 console.log("");
-console.log(`Next: fill frontmatter. When ready: npm run publish -- ${id}`);
+console.log(`Next: fill frontmatter. When ready: yarn publish ${id}`);
