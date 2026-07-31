@@ -66,7 +66,7 @@ export function photosLoader(): Loader {
 			}
 
 			const rows = await d1Query(
-				`SELECT id, added, date, alt, caption, camera, film, location, format,
+				`SELECT id, added, date, alt, caption, lens, film, location, format,
 				        series, notes, image_key, width, height
 				 FROM photos WHERE published = 1 ORDER BY added DESC`,
 			);
@@ -88,7 +88,7 @@ export function photosLoader(): Loader {
 						date: optional(row.date),
 						alt: row.alt,
 						caption: optional(row.caption),
-						camera: optional(row.camera),
+						lens: optional(row.lens),
 						film: optional(row.film),
 						location: optional(row.location),
 						format: optional(row.format),

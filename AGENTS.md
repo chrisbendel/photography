@@ -15,7 +15,7 @@ the add-a-photo flow live in [`README.md`](./README.md) — not repeated here.
   wrong abstraction is more expensive than repetition.
 - **The site is the photographer's filing system and log book.** Structure bends
   with the practice — schema, routes, and categories evolve as his
-  organizational instincts do. Each photo is a dated entry (made, added, camera,
+  organizational instincts do. Each photo is a dated entry (made, added, lens,
   film, place, reflection), not a product page.
 - **Declined by default:** CMS, comments, analytics, search, custom build
   pipeline, microservices. Most feature ideas are best deferred.
@@ -69,7 +69,7 @@ no implied ordering, no collisions across parallel scans. Ordering comes from
 `added`, never the id.
 
 - Required: `added`, `alt`, `image_key`.
-- Optional: `date`, `caption`, `camera`, `film`, `location`, `format`, `series`,
+- Optional: `date`, `caption`, `lens`, `film`, `location`, `format`, `series`,
   `notes`, `width`/`height`, tags.
 - `published` is a column, and it is the one thing the old model did better —
   a directory move was self-evident where a flag is not. It exists because
@@ -77,7 +77,9 @@ no implied ordering, no collisions across parallel scans. Ordering comes from
   drafts are still genuinely absent from the site rather than hidden by CSS.
 - `added` — stamped at upload; drives newest-first sorts. `date` — when the
   shutter clicked; display only, optional granularity.
-- `caption` — one short label line in `<figcaption>`. `notes` is markdown,
+- `caption` — plain text in `<figcaption>`, usually a line but a short blurb is
+  fine; line breaks are honoured. It sits under the print, so it stays shorter
+  than the notes and carries no markdown. `notes` is markdown,
   rendered at build by the loader's `renderMarkdown()` → the **Notes** section.
 - Image keys are content-addressed (`sha256` prefix), so every URL is immutable
   and cacheable forever, and re-uploading never needs a cache purge.
@@ -107,7 +109,7 @@ You decide what a photograph means.
 Routes are listed in README. Constraints:
 
 - Resist adding views — a darkroom doesn't have ten ways to view one print. If a
-  need shows up ("by year", "by camera"), add it as a section in an existing
+  need shows up ("by year", "by lens"), add it as a section in an existing
   view before adding a route.
 - Mosaics appear only on `/gallery/` and `/tags/<tag>/` (tags are inherently
   cross-cutting). Series views group by format, largest first, then newest.

@@ -10,7 +10,7 @@ export type PhotoRow = {
 	date: string | null;
 	alt: string;
 	caption: string | null;
-	camera: string | null;
+	lens: string | null;
 	film: string | null;
 	location: string | null;
 	format: string | null;
@@ -34,7 +34,7 @@ const PHOTO_FIELDS = [
 	"date",
 	"alt",
 	"caption",
-	"camera",
+	"lens",
 	"film",
 	"location",
 	"format",

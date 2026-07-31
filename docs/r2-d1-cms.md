@@ -143,7 +143,7 @@ CREATE TABLE photos (
   date        TEXT,                    -- when the shutter clicked
   alt         TEXT NOT NULL,
   caption     TEXT,
-  camera      TEXT,
+  lens      TEXT,
   film        TEXT,
   location    TEXT,
   format      TEXT,

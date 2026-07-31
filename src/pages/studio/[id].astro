@@ -60,8 +60,8 @@ const isPublished = photo.published === 1;
 			</label>
 
 			<label>
-				Caption
-				<input name="caption" value={photo.caption ?? ""} />
+				Caption <span class="hint">a line, or a few</span>
+				<textarea name="caption" rows="4">{photo.caption ?? ""}</textarea>
 			</label>
 
 			<div class="pair">
@@ -77,8 +77,8 @@ const isPublished = photo.published === 1;
 
 			<div class="pair">
 				<label>
-					Camera
-					<input name="camera" value={photo.camera ?? ""} />
+					Lens
+					<input name="lens" value={photo.lens ?? ""} />
 				</label>
 				<label>
 					Film
