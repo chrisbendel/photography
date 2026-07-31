@@ -17,7 +17,7 @@ import { extname, join } from "node:path";
 import sharp from "sharp";
 import { d1Query, hasD1Credentials } from "../src/lib/d1.mjs";
 
-const BUCKET = "photography-photos";
+const BUCKET = "photography";
 const dryRun = process.argv.includes("--dry-run");
 
 if (!hasD1Credentials()) {

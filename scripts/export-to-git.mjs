@@ -16,7 +16,7 @@ import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { extname, join } from "node:path";
 import { d1Query, hasD1Credentials } from "../src/lib/d1.mjs";
 
-const BUCKET = "photography-photos";
+const BUCKET = "photography";
 const withImages = !process.argv.includes("--no-images");
 const OUT = "backups";
 

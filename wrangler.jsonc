@@ -35,7 +35,7 @@
 	"r2_buckets": [
 		{
 			"binding": "BUCKET",
-			"bucket_name": "photography-photos"
+			"bucket_name": "photography"
 		}
 	]
 	// No `ai` binding on purpose: Workers AI has no local emulation, so binding it

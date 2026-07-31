@@ -71,7 +71,7 @@ yarn wrangler d1 create photography
 Put the printed `database_id` into [`wrangler.jsonc`](./wrangler.jsonc), then:
 
 ```bash
-yarn wrangler r2 bucket create photography-photos
+yarn wrangler r2 bucket create photography
 ```
 
 ```bash
@@ -80,7 +80,7 @@ yarn d1:migrate
 
 Then, in the Cloudflare dashboard:
 
-- **R2 → photography-photos → Settings**: add a custom domain (e.g.
+- **R2 → photography → Settings**: add a custom domain (e.g.
   `img.photos.cbendel.me`) and set it as `PUBLIC_IMAGE_BASE`.
 - **Images**: enable transformations on the zone. Free tier covers 5,000 unique
   transformations a month; set `PUBLIC_IMAGE_TRANSFORM=0` to bypass it and serve
