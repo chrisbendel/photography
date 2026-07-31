@@ -15,9 +15,9 @@ import { d1Query, hasD1Credentials } from "../lib/d1.mjs";
 // node scripts, which get theirs via `node --env-file-if-exists`. Falling back to
 // process.env covers CI, where these are real environment variables.
 const CREDENTIALS = {
-	CF_ACCOUNT_ID: import.meta.env.CF_ACCOUNT_ID ?? process.env.CF_ACCOUNT_ID,
-	CF_D1_DATABASE_ID: import.meta.env.CF_D1_DATABASE_ID ?? process.env.CF_D1_DATABASE_ID,
-	CF_D1_TOKEN: import.meta.env.CF_D1_TOKEN ?? process.env.CF_D1_TOKEN,
+	CLOUDFLARE_ACCOUNT_ID: import.meta.env.CLOUDFLARE_ACCOUNT_ID ?? process.env.CLOUDFLARE_ACCOUNT_ID,
+	CLOUDFLARE_D1_DATABASE_ID: import.meta.env.CLOUDFLARE_D1_DATABASE_ID ?? process.env.CLOUDFLARE_D1_DATABASE_ID,
+	CLOUDFLARE_D1_TOKEN: import.meta.env.CLOUDFLARE_D1_TOKEN ?? process.env.CLOUDFLARE_D1_TOKEN,
 };
 
 /** Rows are stringly-typed coming out of D1; "" and NULL both mean absent. */

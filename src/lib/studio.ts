@@ -196,19 +196,19 @@ export async function deletePhoto(
  * Suggestions only. You decide what a photograph means.
  */
 export async function suggestFromImage(
-	env: { CF_ACCOUNT_ID?: string; CF_AI_TOKEN?: string },
+	env: { CLOUDFLARE_ACCOUNT_ID?: string; CLOUDFLARE_AI_TOKEN?: string },
 	bytes: ArrayBuffer,
 ): Promise<{ caption: string; tags: string[] }> {
-	if (!env.CF_ACCOUNT_ID || !env.CF_AI_TOKEN) {
-		throw new Error("Suggestions need CF_ACCOUNT_ID and CF_AI_TOKEN set as secrets.");
+	if (!env.CLOUDFLARE_ACCOUNT_ID || !env.CLOUDFLARE_AI_TOKEN) {
+		throw new Error("Suggestions need CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_AI_TOKEN set as secrets.");
 	}
 
 	const res = await fetch(
-		`https://api.cloudflare.com/client/v4/accounts/${env.CF_ACCOUNT_ID}/ai/run/@cf/llava-hf/llava-1.5-7b-hf`,
+		`https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/ai/run/@cf/llava-hf/llava-1.5-7b-hf`,
 		{
 			method: "POST",
 			headers: {
-				Authorization: `Bearer ${env.CF_AI_TOKEN}`,
+				Authorization: `Bearer ${env.CLOUDFLARE_AI_TOKEN}`,
 				"Content-Type": "application/json",
 			},
 			body: JSON.stringify({

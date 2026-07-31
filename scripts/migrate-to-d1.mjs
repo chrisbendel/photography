@@ -5,7 +5,7 @@
 // uploads images to R2, and inserts rows. Idempotent — keyed by photo id, so
 // it's safe to re-run while iterating on the schema.
 //
-// Needs: CF_ACCOUNT_ID, CF_D1_DATABASE_ID, CF_D1_TOKEN, and a logged-in wrangler
+// Needs: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_DATABASE_ID, CLOUDFLARE_D1_TOKEN, and a logged-in wrangler
 // (`wrangler login`) for the R2 uploads.
 //
 // Usage: yarn migrate-to-d1 [--dry-run]
@@ -21,7 +21,7 @@ const BUCKET = "photography";
 const dryRun = process.argv.includes("--dry-run");
 
 if (!hasD1Credentials()) {
-	console.error("Missing CF_ACCOUNT_ID / CF_D1_DATABASE_ID / CF_D1_TOKEN.");
+	console.error("Missing CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_D1_DATABASE_ID / CLOUDFLARE_D1_TOKEN.");
 	console.error("See docs/r2-d1-cms.md for where these come from.");
 	process.exit(1);
 }

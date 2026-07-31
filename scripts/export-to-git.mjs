@@ -6,7 +6,7 @@
 // means copying backups/photos/ back to src/content/photos/ and reverting the
 // loader. Run nightly in CI (.github/workflows/backup.yml) and by hand any time.
 //
-// Needs: CF_ACCOUNT_ID, CF_D1_DATABASE_ID, CF_D1_TOKEN, and a logged-in wrangler
+// Needs: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_D1_DATABASE_ID, CLOUDFLARE_D1_TOKEN, and a logged-in wrangler
 // for the R2 downloads.
 //
 // Usage: yarn export-to-git [--no-images]
@@ -21,7 +21,7 @@ const withImages = !process.argv.includes("--no-images");
 const OUT = "backups";
 
 if (!hasD1Credentials()) {
-	console.error("Missing CF_ACCOUNT_ID / CF_D1_DATABASE_ID / CF_D1_TOKEN.");
+	console.error("Missing CLOUDFLARE_ACCOUNT_ID / CLOUDFLARE_D1_DATABASE_ID / CLOUDFLARE_D1_TOKEN.");
 	process.exit(1);
 }
 

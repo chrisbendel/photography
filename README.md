@@ -101,8 +101,8 @@ account and leave Zone Resources alone.
 
 | Env var | Permission | Goes where |
 | --- | --- | --- |
-| `CF_D1_TOKEN` | Account » **D1** » **Edit** | `.env`, GitHub secrets, Workers Builds vars |
-| `CF_AI_TOKEN` | Account » **Workers AI** » **Read** | Worker secret only |
+| `CLOUDFLARE_D1_TOKEN` | Account » **D1** » **Edit** | `.env`, GitHub secrets, Workers Builds vars |
+| `CLOUDFLARE_AI_TOKEN` | Account » **Workers AI** » **Read** | Worker secret only |
 | `CLOUDFLARE_API_TOKEN` | Account » **Workers R2 Storage** » **Read** | GitHub secrets only |
 
 `D1 → Edit` rather than `Read` because `migrate-to-d1` writes rows.
@@ -119,13 +119,13 @@ account-wide — giving the Worker anything beyond Workers AI would let a bug in
 
 Where each one is read from:
 
-- **`.env`** — `CF_ACCOUNT_ID`, `CF_D1_DATABASE_ID`, `CF_D1_TOKEN`,
+- **`.env`** — `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_DATABASE_ID`, `CLOUDFLARE_D1_TOKEN`,
   `PUBLIC_IMAGE_BASE`, `PUBLIC_IMAGE_TRANSFORM`. Vite loads these into
   `import.meta.env` for the build; the node scripts get them via
   `node --env-file-if-exists=.env`.
 - **Workers Builds → build variables** — the same five. The deployed build has no
   `.env`, and without them it builds an empty site rather than failing.
-- **GitHub secrets** — `CF_ACCOUNT_ID`, `CF_D1_DATABASE_ID`, `CF_D1_TOKEN`,
+- **GitHub secrets** — `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_D1_DATABASE_ID`, `CLOUDFLARE_D1_TOKEN`,
   `CLOUDFLARE_API_TOKEN`, for the nightly backup.
 
 Worker secrets — `DEPLOY_HOOK_URL` lets /studio trigger a rebuild, the other two
@@ -136,15 +136,15 @@ yarn wrangler secret put DEPLOY_HOOK_URL
 ```
 
 ```bash
-yarn wrangler secret put CF_ACCOUNT_ID
+yarn wrangler secret put CLOUDFLARE_ACCOUNT_ID
 ```
 
 ```bash
-yarn wrangler secret put CF_AI_TOKEN
+yarn wrangler secret put CLOUDFLARE_AI_TOKEN
 ```
 
-GitHub repo secrets, for the nightly backup: `CF_ACCOUNT_ID`,
-`CF_D1_DATABASE_ID`, `CF_D1_TOKEN`, `CLOUDFLARE_API_TOKEN`.
+GitHub repo secrets, for the nightly backup: `CLOUDFLARE_ACCOUNT_ID`,
+`CLOUDFLARE_D1_DATABASE_ID`, `CLOUDFLARE_D1_TOKEN`, `CLOUDFLARE_API_TOKEN`.
 
 ## Routes
 
