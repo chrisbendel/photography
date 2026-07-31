@@ -22,13 +22,39 @@ One-time Cloudflare provisioning is in [Provisioning](#provisioning) below.
 
 | Command | What it does |
 | --- | --- |
-| `yarn dev` | Dev server at `localhost:4321`, reading live D1 content |
-| `yarn dev:worker` | Production build under `wrangler dev`, with `/studio` unlocked locally |
+| `yarn dev` | Dev server at `localhost:4321`, reading live production content |
+| `yarn dev:local` | The whole site and studio against local emulated D1 + R2 |
 | `yarn build` | Build to `./dist/` |
 | `yarn preview` | Preview the production build (`/studio` locked) |
 | `yarn deploy` | Build and deploy |
 | `yarn d1:migrate` | Apply `migrations/` to the remote database |
 | `yarn d1:migrate:local` | Apply them to the local emulated database |
+
+## Working locally
+
+```bash
+yarn dev:local
+```
+
+Everything at `localhost:8787` — `/studio` unlocked, and the public pages built
+from the *local* emulated database rather than production. Nothing you do here
+touches live content.
+
+Three env flags make that work, all set by the script and never in production:
+
+- `LOCAL_D1=1` — the content loader reads the emulated database (via
+  `wrangler d1 execute --local`) instead of production over REST.
+- `PUBLIC_IMAGE_LOCAL=1` — image URLs go through the Worker's own R2 binding, since
+  objects in the local emulator don't exist on the public image domain.
+- `STUDIO_DEV_BYPASS:1` — skips the Cloudflare Access check, which can't apply
+  locally. `wrangler dev` runs a production build, so `import.meta.env.DEV` is
+  false and the gate would otherwise 404.
+
+Publishing locally needs a rebuild to show up, exactly as in production — re-run
+`yarn dev:local`. There's no deploy hook locally, so the studio says as much.
+
+`yarn dev` is the other mode: fast Astro dev server showing *production* content,
+with no studio and no bindings. Useful for layout work, not for content.
 
 ## Adding a photograph
 

@@ -7,7 +7,13 @@
 // Without D1 credentials the collections load empty rather than failing, so a
 // fresh clone can still build (you get the "no photographs yet" states).
 
+import { execFileSync } from "node:child_process";
 import type { Loader } from "astro/loaders";
+
+// LOCAL_D1=1 reads the emulated database that `wrangler dev` writes to, instead of
+// production over REST. Without it, a local /studio would be editing one database
+// while the pages around it were built from another. Set by `yarn dev:local`.
+const LOCAL = (process.env.LOCAL_D1 ?? import.meta.env.LOCAL_D1) === "1";
 
 // Vite loads `.env` into `import.meta.env`, not `process.env`. The process.env
 // fallback covers CI (Workers Builds), where these arrive as real environment
@@ -17,13 +23,31 @@ const DATABASE_ID =
 	import.meta.env.CLOUDFLARE_D1_DATABASE_ID ?? process.env.CLOUDFLARE_D1_DATABASE_ID;
 const TOKEN = import.meta.env.CLOUDFLARE_D1_TOKEN ?? process.env.CLOUDFLARE_D1_TOKEN;
 
-const hasCredentials = Boolean(ACCOUNT_ID && DATABASE_ID && TOKEN);
+const hasCredentials = LOCAL || Boolean(ACCOUNT_ID && DATABASE_ID && TOKEN);
+
+/**
+ * The emulated database, via wrangler rather than by opening miniflare's SQLite
+ * file directly — wrangler owns that path, and it moves between versions.
+ */
+function localQuery(sql: string): Record<string, any>[] {
+	const out = execFileSync(
+		"npx",
+		["wrangler", "d1", "execute", "photography", "--local", "--json", "--command", sql],
+		{ encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+	);
+	return JSON.parse(out)[0]?.results ?? [];
+}
 
 /**
  * One statement against D1's REST API. The Worker uses its `DB` binding instead;
  * this exists because the build runs outside the Worker runtime.
  */
 async function d1Query(sql: string, params: unknown[] = []): Promise<Record<string, any>[]> {
+	if (LOCAL) {
+		if (params.length > 0) throw new Error("Local D1 reads don't support parameters.");
+		return localQuery(sql);
+	}
+
 	const res = await fetch(
 		`https://api.cloudflare.com/client/v4/accounts/${ACCOUNT_ID}/d1/database/${DATABASE_ID}/query`,
 		{
