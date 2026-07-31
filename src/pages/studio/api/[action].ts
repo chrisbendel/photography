@@ -15,12 +15,25 @@ import {
 
 export const prerender = false;
 
-const ACCEPTED = new Map([
-	["image/jpeg", "jpg"],
-	["image/png", "png"],
-	["image/webp", "webp"],
-]);
 const MAX_BYTES = 25 * 1024 * 1024;
+
+const MIME = { jpg: "image/jpeg", png: "image/png", webp: "image/webp" } as const;
+type ImageKind = keyof typeof MIME;
+
+/**
+ * Identify the format from the bytes rather than the browser's Content-Type,
+ * which is trivially wrong — an SVG labelled image/png would otherwise be stored
+ * as a PNG and render broken everywhere.
+ */
+function sniffImageKind(bytes: ArrayBuffer): ImageKind | null {
+	const b = new Uint8Array(bytes);
+	if (b.length < 12) return null;
+	if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "jpg";
+	if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return "png";
+	const ascii = (start: number, end: number) => String.fromCharCode(...b.slice(start, end));
+	if (ascii(0, 4) === "RIFF" && ascii(8, 12) === "WEBP") return "webp";
+	return null;
+}
 
 /** Content-addressed key: the same bytes always land on the same URL, so every
  * variant is safe to cache forever and re-uploading never needs a purge. */
@@ -40,6 +53,34 @@ const problem = (message: string, status = 400) =>
 		headers: { "content-type": "text/plain; charset=utf-8" },
 	});
 
+/**
+ * Studio previews stream from the R2 binding rather than the public custom domain.
+ * Two reasons: the local emulator's objects aren't on that domain at all, so dev
+ * would show broken thumbnails; and a draft's bytes stay off the public host until
+ * it's actually published.
+ *
+ * GET /studio/api/image?key=photos/<id>/<hash>.<ext>
+ */
+export const GET: APIRoute = async ({ params, url }) => {
+	if (params.action !== "image") return problem(`Unknown action "${params.action}".`, 404);
+
+	const key = url.searchParams.get("key") ?? "";
+	if (!/^photos\/[0-9a-f]{6}\/[0-9a-f]+\.(jpg|png|webp)$/.test(key)) {
+		return problem(`Invalid key "${key}".`);
+	}
+
+	const object = await env.BUCKET.get(key);
+	if (!object) return problem("Not found.", 404);
+
+	return new Response(object.body, {
+		headers: {
+			"content-type": object.httpMetadata?.contentType ?? "application/octet-stream",
+			// Keys are content-addressed, so a given key's bytes never change.
+			"cache-control": "private, max-age=31536000, immutable",
+		},
+	});
+};
+
 export const POST: APIRoute = async ({ params, request }) => {
 	const db = env.DB;
 	const form = await request.formData();
@@ -55,20 +96,20 @@ export const POST: APIRoute = async ({ params, request }) => {
 		case "upload": {
 			const file = form.get("file");
 			if (!(file instanceof File) || file.size === 0) return problem("No file uploaded.");
-
-			const ext = ACCEPTED.get(file.type);
-			if (!ext) return problem(`Unsupported type ${file.type} — use jpg, png, or webp.`);
 			if (file.size > MAX_BYTES) {
 				return problem(`${(file.size / 1024 / 1024).toFixed(1)} MB exceeds the 25 MB limit.`);
 			}
 
 			const bytes = await file.arrayBuffer();
+			const kind = sniffImageKind(bytes);
+			if (!kind) return problem(`${file.name} isn't a jpg, png, or webp.`);
+
 			const newId = await newPhotoId(db);
-			const key = await contentKey(newId, bytes, ext);
+			const key = await contentKey(newId, bytes, kind);
 
 			await env.BUCKET.put(key, bytes, {
 				httpMetadata: {
-					contentType: file.type,
+					contentType: MIME[kind],
 					cacheControl: "public, max-age=31536000, immutable",
 				},
 			});

@@ -42,6 +42,15 @@ const PHOTO_FIELDS = [
 	"notes",
 ] as const;
 
+/**
+ * URL for a studio preview. Goes through the Worker's R2 binding rather than the
+ * public image domain, so previews work against the local emulator and a draft's
+ * bytes stay off the public host until it's published.
+ */
+export function studioPreview(imageKey: string): string {
+	return `/studio/api/image?key=${encodeURIComponent(imageKey)}`;
+}
+
 /** 6 lowercase hex chars — the id format from the markdown era, kept. */
 export function isPhotoId(id: string): boolean {
 	return /^[0-9a-f]{6}$/.test(id);

@@ -1,8 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import Layout from "../../layouts/Layout.astro";
-import { photoSrc } from "../../lib/images";
-import { allTags, getPhoto, getTags, isPhotoId, listSeries } from "../../lib/studio";
+import { allTags, getPhoto, getTags, isPhotoId, listSeries, studioPreview } from "../../lib/studio";
 
 export const prerender = false;
 
@@ -44,7 +43,7 @@ const isPublished = photo.published === 1;
 	}
 
 	<div class="edit">
-		<img src={photoSrc(photo.image_key, 800)} alt={photo.alt} />
+		<img src={studioPreview(photo.image_key)} alt={photo.alt} />
 
 		<form method="POST" action="/studio/api/save" class="fields">
 			<input type="hidden" name="id" value={id} />

@@ -1,8 +1,7 @@
 ---
 import { env } from "cloudflare:workers";
 import Layout from "../../layouts/Layout.astro";
-import { photoSrc } from "../../lib/images";
-import { listPhotos } from "../../lib/studio";
+import { listPhotos, studioPreview } from "../../lib/studio";
 
 export const prerender = false;
 
@@ -28,6 +27,7 @@ const rebuild = Astro.url.searchParams.get("rebuild");
 		<input type="hidden" name="width" id="width" />
 		<input type="hidden" name="height" id="height" />
 		<button type="submit">Upload</button>
+		<p id="drop-status" class="drop-status" aria-live="polite"></p>
 	</form>
 
 	<h2>Drafts <span class="count">{drafts.length}</span></h2>
@@ -39,7 +39,7 @@ const rebuild = Astro.url.searchParams.get("rebuild");
 				{drafts.map((p) => (
 					<li>
 						<a href={`/studio/${p.id}/`}>
-							<img src={photoSrc(p.image_key, 400)} alt="" loading="lazy" />
+							<img src={studioPreview(p.image_key)} alt="" loading="lazy" />
 							<span class="row-meta">
 								<code>{p.id}</code>
 								<span>{p.alt?.trim() ? p.alt : "no alt text yet"}</span>
@@ -60,7 +60,7 @@ const rebuild = Astro.url.searchParams.get("rebuild");
 				{published.map((p) => (
 					<li>
 						<a href={`/studio/${p.id}/`}>
-							<img src={photoSrc(p.image_key, 400)} alt="" loading="lazy" />
+							<img src={studioPreview(p.image_key)} alt="" loading="lazy" />
 							<span class="row-meta">
 								<code>{p.id}</code>
 								<span>{p.caption?.trim() || p.alt}</span>
@@ -83,19 +83,31 @@ const rebuild = Astro.url.searchParams.get("rebuild");
 		const input = document.getElementById("file");
 		if (!form || !input) return;
 
-		// Read intrinsic dimensions before upload — the Worker can't, since sharp
-		// doesn't run there. Purely to reserve layout space; failure is harmless.
+		// Read intrinsic dimensions, then submit. The Worker can't measure the image
+		// itself — sharp doesn't run there — and the values only reserve layout
+		// space, so a failed probe still uploads.
+		//
+		// Submitting from here rather than making you press the button is the whole
+		// point of a drop zone; the button stays for keyboard and no-JS use.
 		input.addEventListener("change", () => {
 			const file = input.files && input.files[0];
 			if (!file) return;
+
+			const status = document.getElementById("drop-status");
+			if (status) status.textContent = "Uploading " + file.name + "…";
+
 			const url = URL.createObjectURL(file);
 			const probe = new Image();
+			const submit = () => {
+				URL.revokeObjectURL(url);
+				form.submit();
+			};
 			probe.onload = () => {
 				document.getElementById("width").value = probe.naturalWidth;
 				document.getElementById("height").value = probe.naturalHeight;
-				URL.revokeObjectURL(url);
+				submit();
 			};
-			probe.onerror = () => URL.revokeObjectURL(url);
+			probe.onerror = submit;
 			probe.src = url;
 		});
 
@@ -150,6 +162,18 @@ const rebuild = Astro.url.searchParams.get("rebuild");
 	.drop label span {
 		color: var(--ink-faint);
 		font-size: 0.85rem;
+	}
+
+	.drop-status {
+		margin: 0;
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-size: 0.72rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--ink-faint);
+	}
+	.drop-status:empty {
+		display: none;
 	}
 
 	h2 .count {
