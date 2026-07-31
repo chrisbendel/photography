@@ -1,6 +1,8 @@
 {
 	"compatibility_date": "2026-05-04",
-	"compatibility_flags": ["global_fetch_strictly_public"],
+	"compatibility_flags": [
+		"global_fetch_strictly_public"
+	],
 	"name": "photography",
 	"main": "@astrojs/cloudflare/entrypoints/server",
 	// Off deliberately. The Access policy protecting /studio is scoped to the
@@ -17,12 +19,16 @@
 	},
 	// Public pages are prerendered against D1 at build time (src/loaders/d1.ts).
 	// These bindings serve /studio, which is the only on-demand route.
+	// Deliberately not `"remote": true`. Marking a binding remote pushes every
+	// build and `wrangler dev` into a remote proxy session — network and login
+	// required — and points a locally-running /studio at production data, where a
+	// test upload or delete is a real one. Local dev uses the emulated database;
+	// `yarn wrangler dev --remote` opts in per session when you actually want prod.
 	"d1_databases": [
 		{
 			"binding": "DB",
 			"database_name": "photography",
-			// Fill in from `wrangler d1 create photography`.
-			"database_id": "REPLACE_WITH_D1_DATABASE_ID",
+			"database_id": "b5a7867c-2afa-490f-b7af-cc034655a182",
 			"migrations_dir": "migrations"
 		}
 	],
