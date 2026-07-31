@@ -9,17 +9,13 @@
 // PUBLIC_IMAGE_TRANSFORM — "0" to bypass transformations and serve originals.
 // Bypassing is the escape hatch if Images isn't enabled on the zone: pages still
 // work, they just download full-size files.
-// PUBLIC_IMAGE_LOCAL — "1" routes every URL through the Worker's own R2 binding
-// instead of the public domain, because objects uploaded to the local emulator
-// don't exist on that domain. Set by `yarn dev:local`; never in production.
 
-const LOCAL = import.meta.env.PUBLIC_IMAGE_LOCAL === "1";
 const BASE = (import.meta.env.PUBLIC_IMAGE_BASE ?? "").replace(/\/$/, "");
-const TRANSFORM = !LOCAL && import.meta.env.PUBLIC_IMAGE_TRANSFORM !== "0";
+const TRANSFORM = import.meta.env.PUBLIC_IMAGE_TRANSFORM !== "0";
 
 // A base without a scheme yields relative URLs — images silently break on every
 // page except the root, and the RSS feed emits unusable links. Fail loudly.
-if (!LOCAL && BASE && !/^https?:\/\//.test(BASE)) {
+if (BASE && !/^https?:\/\//.test(BASE)) {
 	throw new Error(
 		`PUBLIC_IMAGE_BASE must include a scheme, e.g. https://${BASE} — got "${BASE}".`,
 	);
@@ -30,7 +26,6 @@ const QUALITY = 85;
 
 /** Original object, no transformation. */
 export function photoOriginal(key: string): string {
-	if (LOCAL) return `/studio/api/image?key=${encodeURIComponent(key)}`;
 	return `${BASE}/${key}`;
 }
 
