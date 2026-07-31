@@ -1,8 +1,8 @@
 ---
-import { Image } from "astro:assets";
 import { getCollection, getEntry } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import { byNewest, formatLabel } from "../lib/format";
+import { photoImg } from "../lib/images";
 
 const allPhotos = (await getCollection("photos")).sort(byNewest);
 
@@ -27,11 +27,12 @@ const versoLine = photo
 		photo ? (
 			<figure class="home">
 				<a href={`/photos/${photo.id}/`}>
-					<Image
-						src={photo.data.image}
+					<img
+						{...photoImg(photo.data, {
+							widths: [640, 960, 1280, 1600],
+							sizes: "(min-width: 700px) 36rem, 100vw",
+						})}
 						alt={photo.data.alt}
-						widths={[640, 960, 1280, 1600]}
-						sizes="(min-width: 700px) 36rem, 100vw"
 						loading="eager"
 					/>
 				</a>

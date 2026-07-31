@@ -1,0 +1,215 @@
+---
+import { env } from "cloudflare:workers";
+import Layout from "../../layouts/Layout.astro";
+import { photoSrc } from "../../lib/images";
+import { listPhotos } from "../../lib/studio";
+
+export const prerender = false;
+
+const db = env.DB;
+const photos = await listPhotos(db);
+const drafts = photos.filter((p) => p.published === 0);
+const published = photos.filter((p) => p.published === 1);
+const rebuild = Astro.url.searchParams.get("rebuild");
+---
+
+<Layout title="Studio" description="Manage photographs.">
+	<h1>Studio</h1>
+
+	{rebuild === "building" && <p class="note">Rebuild triggered — live in a minute or two.</p>}
+	{rebuild === "pending" && <p class="note">No deploy hook configured; nothing was rebuilt.</p>}
+
+	<form class="drop" id="drop" method="POST" action="/studio/api/upload" enctype="multipart/form-data">
+		<label for="file">
+			<strong>Drop a scan here</strong>
+			<span>or choose a file — jpg, png, or webp, up to 25 MB</span>
+		</label>
+		<input id="file" name="file" type="file" accept="image/jpeg,image/png,image/webp" required />
+		<input type="hidden" name="width" id="width" />
+		<input type="hidden" name="height" id="height" />
+		<button type="submit">Upload</button>
+	</form>
+
+	<h2>Drafts <span class="count">{drafts.length}</span></h2>
+	{
+		drafts.length === 0 ? (
+			<p><em>Nothing in progress.</em></p>
+		) : (
+			<ul class="rows">
+				{drafts.map((p) => (
+					<li>
+						<a href={`/studio/${p.id}/`}>
+							<img src={photoSrc(p.image_key, 400)} alt="" loading="lazy" />
+							<span class="row-meta">
+								<code>{p.id}</code>
+								<span>{p.alt?.trim() ? p.alt : "no alt text yet"}</span>
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		)
+	}
+
+	<h2>Published <span class="count">{published.length}</span></h2>
+	{
+		published.length === 0 ? (
+			<p><em>Nothing published.</em></p>
+		) : (
+			<ul class="rows">
+				{published.map((p) => (
+					<li>
+						<a href={`/studio/${p.id}/`}>
+							<img src={photoSrc(p.image_key, 400)} alt="" loading="lazy" />
+							<span class="row-meta">
+								<code>{p.id}</code>
+								<span>{p.caption?.trim() || p.alt}</span>
+							</span>
+						</a>
+					</li>
+				))}
+			</ul>
+		)
+	}
+
+	<form method="POST" action="/studio/api/rebuild" class="rebuild">
+		<button type="submit">Rebuild site</button>
+	</form>
+</Layout>
+
+<script is:inline>
+	(function () {
+		const form = document.getElementById("drop");
+		const input = document.getElementById("file");
+		if (!form || !input) return;
+
+		// Read intrinsic dimensions before upload — the Worker can't, since sharp
+		// doesn't run there. Purely to reserve layout space; failure is harmless.
+		input.addEventListener("change", () => {
+			const file = input.files && input.files[0];
+			if (!file) return;
+			const url = URL.createObjectURL(file);
+			const probe = new Image();
+			probe.onload = () => {
+				document.getElementById("width").value = probe.naturalWidth;
+				document.getElementById("height").value = probe.naturalHeight;
+				URL.revokeObjectURL(url);
+			};
+			probe.onerror = () => URL.revokeObjectURL(url);
+			probe.src = url;
+		});
+
+		["dragenter", "dragover"].forEach((evt) =>
+			form.addEventListener(evt, (e) => {
+				e.preventDefault();
+				form.classList.add("over");
+			}),
+		);
+		["dragleave", "drop"].forEach((evt) =>
+			form.addEventListener(evt, () => form.classList.remove("over")),
+		);
+		form.addEventListener("drop", (e) => {
+			e.preventDefault();
+			const files = e.dataTransfer && e.dataTransfer.files;
+			if (!files || files.length === 0) return;
+			input.files = files;
+			input.dispatchEvent(new Event("change"));
+		});
+	})();
+</script>
+
+<style>
+	.note {
+		border-left: 2px solid var(--ink-faint);
+		padding-left: 0.75rem;
+		color: var(--ink-soft);
+		font-size: 0.9rem;
+	}
+
+	.drop {
+		border: 1px dashed var(--rule);
+		padding: 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		align-items: flex-start;
+		margin: 1.5rem 0 2rem;
+	}
+
+	.drop.over {
+		border-color: var(--ink);
+		border-style: solid;
+	}
+
+	.drop label {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.drop label span {
+		color: var(--ink-faint);
+		font-size: 0.85rem;
+	}
+
+	h2 .count {
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-size: 0.75rem;
+		color: var(--ink-faint);
+		font-weight: normal;
+	}
+
+	ul.rows {
+		list-style: none;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	ul.rows a {
+		display: flex;
+		gap: 1rem;
+		align-items: center;
+		text-decoration: none;
+		color: inherit;
+		padding: 0.4rem;
+	}
+
+	ul.rows a:hover {
+		background: color-mix(in srgb, var(--ink) 5%, transparent);
+	}
+
+	ul.rows img {
+		width: 4rem;
+		height: 4rem;
+		object-fit: cover;
+		display: block;
+		background: color-mix(in srgb, var(--ink) 8%, transparent);
+	}
+
+	.row-meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+		min-width: 0;
+	}
+
+	.row-meta code {
+		font-size: 0.72rem;
+		color: var(--ink-faint);
+		letter-spacing: 0.06em;
+	}
+
+	.row-meta span {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.rebuild {
+		margin-top: 3rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--rule);
+	}
+</style>

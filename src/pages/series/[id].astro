@@ -1,7 +1,7 @@
 ---
-import { Image } from "astro:assets";
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import { photoImg } from "../../lib/images";
 
 export async function getStaticPaths() {
 	const allSeries = await getCollection("series");
@@ -41,7 +41,14 @@ const { series, photos } = Astro.props;
 					<a class="print-entry" href={`/photos/${photo.id}/`} id={photo.id}>
 						<div class="print-mount">
 							<figure>
-								<Image src={photo.data.image} alt={photo.data.alt} loading="lazy" />
+								<img
+									{...photoImg(photo.data, {
+										widths: [800, 1200, 1600],
+										sizes: "(min-width: 700px) 36rem, 100vw",
+									})}
+									alt={photo.data.alt}
+									loading="lazy"
+								/>
 								{photo.data.caption && <figcaption>{photo.data.caption}</figcaption>}
 							</figure>
 						</div>

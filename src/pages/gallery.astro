@@ -1,24 +1,23 @@
 ---
-import { Image, getImage } from "astro:assets";
 import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import { byNewest } from "../lib/format";
+import { photoImg, photoSrc } from "../lib/images";
 
 const allPhotos = (await getCollection("photos")).sort(byNewest);
 
-// Build per-photo data + a 1600w large variant URL for the loupe
-const photoData = await Promise.all(
-	allPhotos.map(async (p) => {
-		const large = await getImage({ src: p.data.image, width: 1600 });
-		return {
-			id: p.id,
-			alt: p.data.alt,
-			largeSrc: large.src,
-		};
-	}),
-);
+// Per-photo data + a 1600w variant URL for the loupe
+const photoData = allPhotos.map((p) => ({
+	id: p.id,
+	alt: p.data.alt,
+	largeSrc: photoSrc(p.data.imageKey, 1600),
+}));
 
 const loupeJson = JSON.stringify(photoData);
+const THUMB = {
+	widths: [400, 800, 1200],
+	sizes: "(min-width: 900px) 11rem, (min-width: 600px) 16rem, 90vw",
+};
 ---
 
 <Layout title="Gallery — Chris Bendel" description="Every photograph, at a glance.">
@@ -31,13 +30,7 @@ const loupeJson = JSON.stringify(photoData);
 					data-loupe-id={photo.id}
 					aria-label={`Open photograph ${photo.id}`}
 				>
-					<Image
-						src={photo.data.image}
-						alt={photo.data.alt}
-						widths={[400, 800, 1200]}
-						sizes="(min-width: 900px) 11rem, (min-width: 600px) 16rem, 90vw"
-						loading="lazy"
-					/>
+					<img {...photoImg(photo.data, THUMB)} alt={photo.data.alt} loading="lazy" />
 				</button>
 			))
 		}

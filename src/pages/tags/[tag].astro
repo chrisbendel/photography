@@ -1,8 +1,8 @@
 ---
-import { Image } from "astro:assets";
 import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import { byNewest } from "../../lib/format";
+import { photoImg } from "../../lib/images";
 
 export async function getStaticPaths() {
 	const photos = await getCollection("photos");
@@ -29,11 +29,12 @@ const { tag, photos } = Astro.props;
 		{
 			photos.map((photo) => (
 				<a href={`/photos/${photo.id}/`} class="cell" aria-label={`Photograph ${photo.id}`}>
-					<Image
-						src={photo.data.image}
+					<img
+						{...photoImg(photo.data, {
+							widths: [400, 800, 1200],
+							sizes: "(min-width: 900px) 11rem, (min-width: 600px) 16rem, 90vw",
+						})}
 						alt={photo.data.alt}
-						widths={[400, 800, 1200]}
-						sizes="(min-width: 900px) 11rem, (min-width: 600px) 16rem, 90vw"
 						loading="lazy"
 					/>
 				</a>

@@ -1,7 +1,7 @@
 ---
-import { Image } from "astro:assets";
 import { getCollection, getEntry, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import { photoImg } from "../../lib/images";
 
 export async function getStaticPaths() {
 	const photos = await getCollection("photos");
@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 
 const { photo } = Astro.props;
 const { Content } = await render(photo);
-const { date, image, alt, caption, camera, film, location, format, series, tags } = photo.data;
+const { date, alt, caption, camera, film, location, format, series, tags } = photo.data;
 const seriesEntry = series ? await getEntry(series) : null;
 const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
 ---
@@ -21,7 +21,12 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 <Layout title={`#${photo.id} — Chris Bendel`} description={alt}>
 	<figure class="print-figure" data-invert="false">
 		<div class="print-frame">
-			<Image src={image} alt={alt} loading="eager" class="print-img" />
+			<img
+				{...photoImg(photo.data, { sizes: "(min-width: 700px) 36rem, 100vw" })}
+				alt={alt}
+				loading="eager"
+				class="print-img"
+			/>
 			<button
 				type="button"
 				class="invert-btn"

@@ -3,11 +3,36 @@
 	"compatibility_flags": ["global_fetch_strictly_public"],
 	"name": "photography",
 	"main": "@astrojs/cloudflare/entrypoints/server",
+	// Off deliberately. The Access policy protecting /studio is scoped to the
+	// custom domain; a live workers.dev URL would be a second door onto the same
+	// Worker that the policy doesn't cover, and the middleware header check alone
+	// is spoofable if a request ever reaches the Worker without passing Access.
+	"workers_dev": false,
 	"assets": {
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	// Public pages are prerendered against D1 at build time (src/loaders/d1.ts).
+	// These bindings serve /studio, which is the only on-demand route.
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "photography",
+			// Fill in from `wrangler d1 create photography`.
+			"database_id": "REPLACE_WITH_D1_DATABASE_ID",
+			"migrations_dir": "migrations"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "BUCKET",
+			"bucket_name": "photography-photos"
+		}
+	]
+	// No `ai` binding on purpose: Workers AI has no local emulation, so binding it
+	// forces every build into a remote proxy session (and a wrangler login). The
+	// studio calls the Workers AI REST API instead — see lib/studio.ts.
 }
