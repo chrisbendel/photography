@@ -95,18 +95,22 @@ Then, in the Cloudflare dashboard:
 
 ### API tokens
 
-Two tokens, kept separate so the one the Worker can read stays minimal. Create
-them under **My Profile → API Tokens → Create Token → Custom token**; all of
-these are *Account* scoped.
+Two tokens, from **My Profile → API Tokens → Create Token → Custom token**. These
+permissions are all *Account* scoped.
 
-| Token | Permissions | Used by |
-| --- | --- | --- |
-| `CF_D1_TOKEN` | D1 → Edit | The build's content loader (read), `migrate-to-d1` (write) |
-| `CF_AI_TOKEN` | Workers AI → Read | `/studio` caption and tag suggestions |
-| `CLOUDFLARE_API_TOKEN` | Workers R2 Storage → Read | The nightly backup Action, fetching images |
+| Token | Permissions | Lives in | Used by |
+| --- | --- | --- | --- |
+| Data | D1 → Edit, Workers R2 Storage → Read | `.env`, GitHub secrets | Build loader, `migrate-to-d1`, nightly backup |
+| Worker | Workers AI → Read | `wrangler secret put` | `/studio` caption and tag suggestions |
 
-D1 → Edit rather than Read because `migrate-to-d1` writes rows. If you'd rather
-scope the build tightly, make a second D1 → Read token for CI and keep Edit local.
+Use the data token's value for both `CF_D1_TOKEN` and `CLOUDFLARE_API_TOKEN`; the
+worker token is `CF_AI_TOKEN`.
+
+Don't fold them into one. The `DB` and `BUCKET` bindings scope the Worker to this
+one database and this one bucket, but these token permissions are account-wide —
+handing the Worker the data token would let a bug in `/studio` reach every D1
+database and every R2 bucket in the account. `D1 → Edit` rather than `Read`
+because `migrate-to-d1` writes rows.
 
 Worker secrets — `DEPLOY_HOOK_URL` lets /studio trigger a rebuild, the other two
 are for caption and tag suggestions:
