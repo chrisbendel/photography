@@ -58,16 +58,23 @@ loader in `src/content.config.ts` back to a `glob()` loader.
 
 ## Provisioning
 
-Needs a logged-in `wrangler` (`wrangler login`).
+wrangler is a devDependency, not a global — run it as `yarn wrangler`.
 
 ```bash
-wrangler d1 create photography
+yarn wrangler login
+```
+
+```bash
+yarn wrangler d1 create photography
 ```
 
 Put the printed `database_id` into [`wrangler.jsonc`](./wrangler.jsonc), then:
 
 ```bash
-wrangler r2 bucket create photography-photos
+yarn wrangler r2 bucket create photography-photos
+```
+
+```bash
 yarn d1:migrate
 ```
 
@@ -84,12 +91,19 @@ Then, in the Cloudflare dashboard:
 - **Workers → Builds**: connect the GitHub repo so pushes deploy, and copy the
   deploy hook URL. Set the build-time variables from `.env`.
 
-Worker secrets:
+Worker secrets — `DEPLOY_HOOK_URL` lets /studio trigger a rebuild, the other two
+are for caption/tag suggestions (token needs Workers AI:read):
 
 ```bash
-wrangler secret put DEPLOY_HOOK_URL   # from Workers Builds; lets /studio trigger a rebuild
-wrangler secret put CF_ACCOUNT_ID     # for caption/tag suggestions
-wrangler secret put CF_AI_TOKEN       # API token with Workers AI:read
+yarn wrangler secret put DEPLOY_HOOK_URL
+```
+
+```bash
+yarn wrangler secret put CF_ACCOUNT_ID
+```
+
+```bash
+yarn wrangler secret put CF_AI_TOKEN
 ```
 
 GitHub repo secrets, for the nightly backup: `CF_ACCOUNT_ID`,
