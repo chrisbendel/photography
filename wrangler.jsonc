@@ -37,6 +37,16 @@
 			"binding": "BUCKET",
 			"bucket_name": "photography"
 		}
+	],
+	// Astro sessions, which @astrojs/cloudflare wires up unconditionally — there's
+	// no option to turn them off, and nothing here uses them. `wrangler deploy`
+	// provisions this namespace on its own, but `wrangler dev --remote` fails with
+	// "SESSION bindings must have an id field" unless it's declared explicitly.
+	"kv_namespaces": [
+		{
+			"binding": "SESSION",
+			"id": "660cc075d9c94ee9ba996d52dea50aa7"
+		}
 	]
 	// No `ai` binding on purpose: Workers AI has no local emulation, so binding it
 	// forces every build into a remote proxy session (and a wrangler login). The
