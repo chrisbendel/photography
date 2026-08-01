@@ -8,7 +8,6 @@ export type Series = {
 	photos: Photo[];
 };
 
-// "north-shore" → "North Shore".
 export function titleFromSlug(slug: string): string {
 	return slug
 		.split("-")
@@ -16,9 +15,7 @@ export function titleFromSlug(slug: string): string {
 		.join(" ");
 }
 
-// A series exists because photographs name it, and that is the whole of it —
-// there is no series collection. Writing `series: north-shore` in frontmatter
-// creates it, writing it again joins it, and the last photo to leave removes it.
+// A series exists only because photographs name it — there is no collection.
 export async function getSeries(): Promise<Series[]> {
 	const photos = await getCollection("photos");
 
@@ -31,8 +28,7 @@ export async function getSeries(): Promise<Series[]> {
 		.map((slug) => ({
 			slug,
 			title: titleFromSlug(slug),
-			// Capture chronology matters more than add order here, so `year` wins
-			// when both have one; `added` breaks ties within a year.
+			// Capture chronology beats add order: `year` wins, `added` breaks ties.
 			photos: photos
 				.filter((p) => p.data.series === slug)
 				.sort((a, b) => {

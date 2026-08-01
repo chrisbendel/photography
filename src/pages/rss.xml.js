@@ -3,8 +3,7 @@ import { getCollection } from "astro:content";
 import { getImage } from "astro:assets";
 import { byNewest } from "../lib/format";
 
-// Items embed an 800w variant so readers show the print, not just text.
-// URLs are absolutised against `site` (astro.config.mjs), as RSS requires.
+// 800w variant embedded so readers show the print; URLs absolutised via `site`.
 export async function GET(context) {
 	const photos = (await getCollection("photos")).sort(byNewest);
 

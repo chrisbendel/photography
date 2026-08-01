@@ -1,15 +1,11 @@
 #!/usr/bin/env node
-// Tag suggestions from a local vision model (Florence-2 via transformers.js) —
-// no API, offline once the weights download. Suggestions only, never written to
-// frontmatter. Usage: yarn suggest-tags <slug>|--all.
-// Env: TAGGER_MODEL, TAGGER_DTYPE, TAGGER_MAX.
+// Local tag suggestions (Florence-2 via transformers.js) — no API, offline
+// after the first download. Suggestions only, never written to frontmatter.
+// Usage: yarn suggest-tags <slug>|--all. Env: TAGGER_MODEL, TAGGER_DTYPE, TAGGER_MAX.
 //
-// Three captions at increasing detail, then rank words by how many of them
-// agree. Measured on a 4x5 landscape: the terse caption names only the subject,
-// the longest one wanders into composition ("on the left side", "in the
-// middle"), and words appearing in all three are the ones worth keeping.
-// <OD> is not used — it is COCO-trained, so on landscape work it returns
-// nothing useful (a lone hallucinated "bird" on the first real photo).
+// Three captions at rising detail, ranked by how many agree: the terse one names
+// the subject, the longest wanders into composition. <OD> is unused — COCO-trained,
+// so on landscapes it returns noise (one hallucinated "bird" on the first photo).
 
 import { existsSync, readdirSync } from "node:fs";
 import { extname, join } from "node:path";
@@ -21,10 +17,8 @@ import {
 } from "@huggingface/transformers";
 import { cliArgs, frontmatter, idsIn, LIVE_DIR } from "./lib/entries.mjs";
 
-// Large at 8-bit beats base at full precision on every axis that matters here:
-// 821 MB vs 1.0 GB on disk, and it reads black-and-white correctly where base
-// guesses. Base called a frame of snow-capped rocks "ice formations floating on
-// a body of water"; large got it right. Costs ~3s more per photo.
+// Large at q8 beats base at fp32: smaller (821 MB vs 1.0 GB) and reads
+// black-and-white correctly where base guesses. ~3s more per photo.
 const MODEL = process.env.TAGGER_MODEL || "onnx-community/Florence-2-large";
 const DTYPE = process.env.TAGGER_DTYPE || "q8";
 const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
@@ -49,8 +43,7 @@ const STOP = new Set(
 		),
 );
 
-// Mood and light words earn their place from a single mention — they are the
-// reason to read the caption at all, and no object detector will ever supply them.
+// Mood and light words earn their place from a single mention.
 const MOOD = new Set(
 	("calm still quiet peaceful serene stark bleak soft harsh bright dark moody " +
 		"misty foggy hazy overcast stormy golden empty desolate lonely wintry " +
@@ -69,8 +62,7 @@ export function findImage(slug) {
 	return img ? join(dir, img) : null;
 }
 
-// Hyphens split rather than survive: "snow-covered" contributes "snow" (real)
-// and "covered" (stopped), instead of a compound that duplicates an existing tag.
+// Hyphens split: "snow-covered" gives "snow" (real) and "covered" (stopped).
 function words(text) {
 	return text
 		.toLowerCase()
@@ -79,9 +71,7 @@ function words(text) {
 		.filter((w) => w.length > 2 && !STOP.has(w));
 }
 
-// Every tag already used on the site. The model has no idea how this
-// photographer talks; the existing corpus does, and it's the one source of
-// vocabulary that improves as the catalogue grows.
+// Tags already used on the site — the vocabulary that improves as it grows.
 function corpusTags() {
 	const tags = new Set();
 	for (const id of idsIn(LIVE_DIR)) {
@@ -94,10 +84,7 @@ function corpusTags() {
 	return tags;
 }
 
-// Suggest an existing series by overlap between a photo's tags and what that
-// series already stands for — its slug, plus the tags of the photos in it.
-// Never invents a name: starting a series is a decision, and a wrong guess
-// here would quietly found one (see src/lib/series.ts).
+// Match against existing series only — a wrong guess would found a real one.
 export function suggestSeries(tags, minOverlap = 2) {
 	const candidates = new Set();
 	for (const id of idsIn(LIVE_DIR)) {
@@ -124,8 +111,7 @@ export function suggestSeries(tags, minOverlap = 2) {
 	return best.score >= minOverlap ? best.slug : "";
 }
 
-// Fold a candidate onto an established tag when they differ only by a plural.
-// `/tags/tree/` and `/tags/trees/` as separate pages is the failure mode.
+// Fold onto an established tag by plural — `/tags/tree/` vs `/tags/trees/`.
 function canonical(word, corpus) {
 	if (corpus.has(word)) return word;
 	for (const variant of [`${word}s`, word.replace(/s$/, "")]) {
@@ -134,9 +120,7 @@ function canonical(word, corpus) {
 	return word;
 }
 
-// Agreement across captions is the main signal, raw frequency the tiebreak.
-// Gerunds ("reflecting") are penalised — they read as verbs, and the tag index
-// wants nouns.
+// Caption agreement is the signal, frequency the tiebreak; gerunds penalised.
 function rank(captions, corpus) {
 	const stats = new Map();
 	for (const text of captions) {
@@ -183,8 +167,7 @@ async function runTask(image, task) {
 	const { model, processor } = await loadModel();
 	const prompts = processor.construct_prompts(task);
 	const inputs = await processor(image, prompts);
-	// 128 truncates the longest caption mid-sentence on the large model, which
-	// loses the closing mood clause — the most useful part for tagging.
+	// 128 truncates the large model mid-sentence, losing the closing mood clause.
 	const ids = await model.generate({ ...inputs, max_new_tokens: 256 });
 	const text = processor.batch_decode(ids, { skip_special_tokens: false })[0];
 	return processor.post_process_generation(text, task, image.size);

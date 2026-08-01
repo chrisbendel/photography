@@ -30,8 +30,7 @@ mkdirSync(photoDir, { recursive: true });
 let imageRef = "./image.jpg";
 let imageNote = `Drop image at ${join(photoDir, "image.jpg")} when ready.`;
 let copiedImage = null;
-// The scan filename is the only human handle on an entry until alt is filled
-// in — kept as a comment so `yarn entries` has something to show next to the hash.
+// The only human handle on an entry until alt is filled in.
 let scanNote = "";
 
 if (imagePath) {
@@ -47,8 +46,7 @@ if (imagePath) {
 	scanNote = `# scan: ${basename(imagePath)}\n`;
 }
 
-// Suggestions land as frontmatter comments, never in `tags:`. A failure here
-// (or a format the model can't read, like TIFF) must not lose the scaffold.
+// Comments only, never `tags:`. A failure here must not lose the scaffold.
 let tagComment = "";
 let series = "";
 if (copiedImage && !skipTags) {
@@ -77,9 +75,7 @@ if (copiedImage && !skipTags) {
 	}
 }
 
-// Every field is present and blank rather than commented out — filling one in
-// is less friction than remembering it exists. Blank `year:`/`series:` parse as
-// null, which the schema accepts.
+// Fields blank, not commented out — filling one in beats remembering it exists.
 const mdPath = join(photoDir, "index.md");
 writeFileSync(
 	mdPath,

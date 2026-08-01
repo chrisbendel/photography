@@ -64,9 +64,9 @@ See `src/lib/series.ts`.
 
 Consequences, accepted knowingly:
 
-- A typo founds a series instead of erroring. `check-photos` catches it by edit
-  distance, exempting numbered pairs (`winter-2025` / `winter-2026`), and fails
-  on slugs that aren't lowercase kebab-case.
+- A typo founds a series instead of erroring. Nothing checks for this on
+  purpose — write the slug carefully; `yarn entries` shows what each photo is
+  in. Slugs become URLs, so keep them lowercase kebab-case.
 - Titles are always the slug in Title Case, so `nyc` → "Nyc". If that matters, or
   a series wants a description, reintroduce a small collection merged in
   `getSeries()` (~15 lines). Not before — it was removed for doing nothing.

@@ -46,8 +46,8 @@ Notes go in the markdown body, below the frontmatter.
 | `yarn check-photos` | Pre-merge gate (see below) |
 | `yarn suggest-tags <slug>\|--all` | Re-tag an existing photo (~10s each) |
 
-`check-photos` **fails** on empty alt and malformed series slugs; **warns** on
-near-duplicate series, images over 3 MB, and orphan files.
+`check-photos` **fails** on empty alt; **warns** on images over 3 MB and orphan
+files.
 
 ## Routes
 

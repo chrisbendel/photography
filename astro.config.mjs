@@ -3,7 +3,6 @@ import { defineConfig } from 'astro/config';
 
 import cloudflare from '@astrojs/cloudflare';
 
-// https://astro.build/config
 export default defineConfig({
   site: 'https://photos.cbendel.me',
   // /gallery/ was the mosaic before it became the homepage.

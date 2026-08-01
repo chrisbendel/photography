@@ -7,8 +7,7 @@
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
-	// Per-PR preview URLs live under workers.dev, so workers_dev has to stay on.
-	// Both set explicitly — preview_urls otherwise just inherits workers_dev.
+	// Per-PR previews live under workers.dev, so both must be set explicitly.
 	"workers_dev": true,
 	"preview_urls": true,
 	"observability": {

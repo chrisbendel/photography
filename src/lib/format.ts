@@ -1,5 +1,4 @@
-// Newest `added` first, id as tiebreak. `added` is machine-stamped, never
-// hand-edited, so it's safe to sort on.
+// Newest `added` first, id as tiebreak.
 export function byNewest<T extends { id: string; data: { added: Date } }>(
 	a: T,
 	b: T,
