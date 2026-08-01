@@ -1,23 +1,20 @@
-import { defineCollection, reference, z } from "astro:content";
+import { defineCollection, z } from "astro:content";
 import { glob } from "astro/loaders";
 
 const photos = defineCollection({
 	loader: glob({
 		pattern: "**/*.md",
 		base: "./src/content/photos",
-		// Each photo lives in its own directory: src/content/photos/<id>/index.md
-		// where <id> is a 6-char hex hash (e.g. "a3f4c1"). Strip the trailing
-		// `/index.md` so the entry id is just the directory name.
+		// Entries are <id>/index.md — strip the filename so the id is the folder.
 		generateId: ({ entry }) =>
 			entry.replace(/\/?index\.md$/, "").replace(/\.md$/, ""),
 	}),
 	schema: ({ image }) =>
 		z.object({
-			// When the entry was added to the site (machine-stamped by
-			// `new-photo`). Drives "newest" sorts.
+			// Machine-stamped at scaffold; drives "newest" sorts.
 			added: z.coerce.date(),
-			// When the photograph was made (shutter clicked). Display only.
-			date: z.coerce.date().optional(),
+			// A year, not a date — no month to misremember, no timezone to get wrong.
+			year: z.number().int().min(1800).nullish(),
 			image: image(),
 			alt: z.string(),
 			caption: z.string().optional(),
@@ -25,20 +22,10 @@ const photos = defineCollection({
 			film: z.string().optional(),
 			location: z.string().optional(),
 			format: z.string().optional(),
-			series: reference("series").optional(),
+			// A slug, not a reference: naming one creates it (src/lib/series.ts).
+			series: z.string().nullish(),
 			tags: z.array(z.string()).default([]),
 		}),
 });
 
-const series = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./src/content/series" }),
-	schema: z.object({
-		title: z.string(),
-		description: z.string().optional(),
-		// Optional — a series may exist without a chosen cover photo.
-		cover: reference("photos").optional(),
-		order: z.number().default(0),
-	}),
-});
-
-export const collections = { photos, series };
+export const collections = { photos };

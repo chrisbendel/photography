@@ -1,14 +1,38 @@
 # photography
 
-Personal photography site. Astro, plain CSS, deploys to Cloudflare Pages.
+Personal photography site. Astro, plain CSS, deploys to Cloudflare Workers.
+Conventions and rationale: [`AGENTS.md`](./AGENTS.md).
 
-Ethos and content model: [`AGENTS.md`](./AGENTS.md).
-
-## Setup
+## Add a photograph
 
 ```sh
-yarn install
+yarn photo ~/scans/011.jpg     # scaffold; prints a `code <path>` to open
+# fill in alt (required), year, lens, film, format, location, tags, notes
+yarn dev                       # walk it at /
+yarn check-photos              # must pass
+# commit, open a PR, merge
 ```
+
+Entries are live the moment they're scaffolded — the branch is the draft,
+merging to `main` is publishing. To abandon one, delete the folder.
+
+## Frontmatter
+
+```yaml
+added: 2026-08-01     # stamped for you; drives newest-first order
+year: 2026            # optional
+image: ./image.jpg
+alt: ""               # required, non-empty
+caption: ""           # one line under the print
+lens: ""
+film: ""
+location: ""
+format: "4x5"         # renders as 4×5
+series: winter        # optional; naming one creates it
+tags: [water, snow]
+```
+
+Notes go in the markdown body, below the frontmatter.
 
 ## Commands
 
@@ -16,28 +40,25 @@ yarn install
 | --- | --- |
 | `yarn dev` | Dev server at `localhost:4321` |
 | `yarn build` | Build to `./dist/` |
-| `yarn preview` | Preview the production build |
-| `yarn photo <image> [--no-tags]` | New draft entry in `archive/` (auto-suggests tags) |
-| `yarn publish [id]` | Promote `archive/<id>/` → live (id optional if archive holds one entry; creates a missing `series:` file) |
-| `yarn check-photos` | Lint live photos: alt text, sizes, refs |
-| `yarn suggest-tags <slug>\|--all` | Re-tag existing photos |
+| `yarn preview` | Build, then serve through wrangler |
+| `yarn photo <image> [--no-tags]` | New entry, with suggested tags + series |
+| `yarn entries` | List entries with a readable label per hash |
+| `yarn check-photos` | Pre-merge gate (see below) |
+| `yarn suggest-tags <slug>\|--all` | Re-tag an existing photo (~10s each) |
 
-## Adding a photograph
-
-1. **Scan** → JPEG, long edge ~3000–4000px, under 3 MB.
-2. **Scaffold** — `yarn photo path/to/scan.jpg`. Creates `archive/<id>/` and writes tag suggestions as comments in the frontmatter.
-3. **Fill frontmatter** — `alt` (required), lens, film, format, location, optional caption/series. Move any suggested tags you like into `tags:`.
-4. **Write the notes.** What you saw, remember, learned. The point of the project — don't rush.
-5. **Preview** — `yarn dev`, walk `/photos/<id>/` and the gallery.
-6. **Publish** — `yarn publish <id>`, then `yarn check-photos`, commit, push. Cloudflare rebuilds.
-
-Tags come from a local vision model (Florence-2 via transformers.js) — no API, offline after the first run downloads the model. Suggestions only; never written to `tags:` automatically.
+`check-photos` **fails** on empty alt; **warns** on images over 3 MB and orphan
+files.
 
 ## Routes
 
-- `/` latest published photograph
-- `/gallery/` every print, with loupe view
-- `/series/` and `/series/<slug>/`
-- `/photos/<slug>/` single print permalink
-- `/tags/` and `/tags/<tag>/`
-- `/rss.xml` feed of every photograph
+| Route | |
+| --- | --- |
+| `/` | every print, loupe view (`/gallery` redirects here) |
+| `/photos/<id>/` | single print |
+| `/series/`, `/series/<slug>/` | |
+| `/tags/`, `/tags/<tag>/` | |
+| `/rss.xml` | feed |
+
+## Scanning
+
+JPEG, long edge ~3000–4000px, quality ~85, under 3 MB.

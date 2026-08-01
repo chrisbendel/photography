@@ -3,9 +3,7 @@ import { getCollection } from "astro:content";
 import { getImage } from "astro:assets";
 import { byNewest } from "../lib/format";
 
-// RSS feed of every photograph, newest first. Each item embeds an 800w
-// variant so feed readers show the print, not just text. `site` (set in
-// astro.config.mjs) makes every link/image absolute, as RSS requires.
+// 800w variant embedded so readers show the print; URLs absolutised via `site`.
 export async function GET(context) {
 	const photos = (await getCollection("photos")).sort(byNewest);
 

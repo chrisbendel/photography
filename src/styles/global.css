@@ -12,7 +12,8 @@
 	--ink-faint: #8a8278;
 	--rule: #d8d2c4;
 
-	--measure: 36rem;
+	/* One measure for every page — nav and content share it. */
+	--measure: 48rem;
 	--gutter: 1.5rem;
 	--gap: 1rem;
 
@@ -148,8 +149,7 @@ p {
 	margin: 0 0 1rem;
 }
 
-/* Links: underlined by default at full ink weight (gov.uk practice).
-   Hover thickens; focus-visible inherits the global ring below. */
+/* Underlined by default at full ink weight (gov.uk practice); hover thickens. */
 a {
 	color: inherit;
 	text-decoration: underline;
@@ -163,8 +163,7 @@ a:hover {
 	text-decoration-thickness: 2px;
 }
 
-/* Global keyboard-focus ring. Mouse clicks don't trigger :focus-visible,
-   so the dotted/border styles on individual elements remain for hover/idle. */
+/* Keyboard-focus ring; mouse clicks don't trigger :focus-visible. */
 :focus-visible {
 	outline: 3px solid var(--ink);
 	outline-offset: 2px;
@@ -215,7 +214,7 @@ figcaption {
 }
 
 /* ---------- Shared mosaic grid ---------- */
-/* Used by /gallery and /tags/<tag>. Per-page additions live in those files. */
+/* Used by / and /tags/<tag>. Per-page additions live in those files. */
 
 .sheet {
 	column-count: 1;
@@ -223,15 +222,10 @@ figcaption {
 	margin: 0 calc(var(--gutter) * -0.5);
 }
 
+/* Two columns at most: inside a 48rem measure a third only shrinks the prints. */
 @media (min-width: 600px) {
 	.sheet {
 		column-count: 2;
-	}
-}
-
-@media (min-width: 900px) {
-	.sheet {
-		column-count: 3;
 	}
 }
 

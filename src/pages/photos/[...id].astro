@@ -1,7 +1,9 @@
 ---
 import { Image } from "astro:assets";
-import { getCollection, getEntry, render } from "astro:content";
+import { getCollection, render } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import { formatLabel } from "../../lib/format";
+import { titleFromSlug } from "../../lib/series";
 
 export async function getStaticPaths() {
 	const photos = await getCollection("photos");
@@ -13,9 +15,8 @@ export async function getStaticPaths() {
 
 const { photo } = Astro.props;
 const { Content } = await render(photo);
-const { date, image, alt, caption, lens, film, location, format, series, tags } = photo.data;
-const seriesEntry = series ? await getEntry(series) : null;
-const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
+const { year, image, alt, caption, lens, film, location, format, series, tags } = photo.data;
+const seriesLabel = series ? titleFromSlug(series) : null;
 ---
 
 <Layout title={`#${photo.id} — Chris Bendel`} description={alt}>
@@ -59,15 +60,15 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 	</script>
 
 	<dl class="photo-meta">
-		{date && (<><dt>Date</dt><dd>{fmt.format(date)}</dd></>)}
+		{year && (<><dt>Year</dt><dd>{year}</dd></>)}
 		{location && (<><dt>Location</dt><dd>{location}</dd></>)}
 		{lens && (<><dt>Lens</dt><dd>{lens}</dd></>)}
 		{film && (<><dt>Film</dt><dd>{film}</dd></>)}
-		{format && (<><dt>Format</dt><dd>{format.replace("x", "×")}</dd></>)}
-		{seriesEntry && (
+		{format && (<><dt>Format</dt><dd>{formatLabel(format)}</dd></>)}
+		{series && seriesLabel && (
 			<>
 				<dt>Series</dt>
-				<dd><a href={`/series/${seriesEntry.id}/`}>{seriesEntry.data.title}</a></dd>
+				<dd><a href={`/series/${series}/`}>{seriesLabel}</a></dd>
 			</>
 		)}
 	</dl>
@@ -170,9 +171,13 @@ const fmt = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" })
 		margin: 0;
 	}
 
-	/* Inherits global underline + hover thicken. */
 	dl.photo-meta dd a {
 		color: var(--ink);
+	}
+
+	/* Running prose wants a shorter line than the page measure. */
+	section.notes {
+		max-width: 34rem;
 	}
 
 	section.notes h2 {

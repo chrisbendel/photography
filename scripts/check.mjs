@@ -1,100 +1,48 @@
 #!/usr/bin/env node
-import { readdirSync, readFileSync, statSync, existsSync } from "node:fs";
-import { dirname, extname, join, resolve } from "node:path";
+// Pre-merge gate for what the build won't catch. Errors exit non-zero, warnings don't.
+import { readdirSync, statSync } from "node:fs";
+import { extname, join } from "node:path";
+import { frontmatter, ID_RE, idsIn, LIVE_DIR } from "./lib/entries.mjs";
 
-const photosDir = "src/content/photos";
 const MAX_MB = 3;
 const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".avif"];
 
+let errors = 0;
 let warnings = 0;
+const fail = (msg) => {
+	console.log(`  ✗ ${msg}`);
+	errors++;
+};
 const warn = (msg) => {
 	console.log(`  ⚠ ${msg}`);
 	warnings++;
 };
 
-// Each photo lives in its own folder: <id>/index.md (+ image.<ext>)
-// where <id> is a 6-char lowercase hex hash (e.g. a3f4c1).
-const ids = readdirSync(photosDir, { withFileTypes: true })
-	.filter((d) => d.isDirectory())
-	.map((d) => d.name);
-
-console.log(`Checking ${ids.length} photo entries in ${photosDir}/\n`);
+const ids = idsIn(LIVE_DIR);
+console.log(`Checking ${ids.length} photo entries in ${LIVE_DIR}/\n`);
 
 for (const id of ids) {
-	if (!/^[0-9a-f]{6}$/.test(id)) {
-		warn(`${id}/: directory name is not a 6-char hex hash`);
-	}
+	if (!ID_RE.test(id)) warn(`${id}/: not a 6-char hex hash`);
 
-	const photoDir = join(photosDir, id);
-	const mdPath = join(photoDir, "index.md");
+	const photoDir = join(LIVE_DIR, id);
+	const get = frontmatter(join(photoDir, "index.md"));
+	if (!get) continue;
 
-	if (!existsSync(mdPath)) {
-		warn(`${id}/: missing index.md`);
-		continue;
-	}
+	// `alt: ""` satisfies the schema but fails a screen reader.
+	if (!get("alt")) fail(`${id}: empty alt text — not ready to ship`);
 
-	const body = readFileSync(mdPath, "utf8");
-	const fmMatch = body.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-	if (!fmMatch) {
-		warn(`${id}/index.md: missing frontmatter`);
-		continue;
-	}
-	const fm = fmMatch[1];
-
-	const get = (key) => {
-		const m = fm.match(new RegExp(`^${key}:\\s*(.*)$`, "m"));
-		return m ? m[1].trim().replace(/^["']|["']$/g, "") : "";
-	};
-
-	const added = get("added");
-	const alt = get("alt");
-	const image = get("image");
-	const series = get("series");
-
-	if (!added) warn(`${id}: missing required 'added' date`);
-	if (!alt) warn(`${id}: missing alt text`);
-
-	// Dangling series ref: Astro drops the photo from the series and warns at
-	// build. `yarn publish` scaffolds these, so this only catches hand edits.
-	if (series && !existsSync(join("src/content/series", `${series}.md`))) {
-		warn(`${id}: series "${series}" has no file at src/content/series/${series}.md`);
-	}
-
-	// Image checks: ref + existence + size
-	if (!image) {
-		warn(`${id}: missing image`);
-	} else {
-		const resolved = resolve(dirname(mdPath), image);
-		if (!existsSync(resolved)) {
-			warn(`${id}: image not found at ${resolved}`);
-		} else {
-			const sizeMb = statSync(resolved).size / 1024 / 1024;
-			if (sizeMb > MAX_MB) {
-				warn(
-					`${id}: ${sizeMb.toFixed(1)} MB > ${MAX_MB} MB. Consider re-exporting smaller.`,
-				);
-			}
+	const image = get("image").replace(/^\.\//, "");
+	for (const file of readdirSync(photoDir)) {
+		if (!IMAGE_EXTS.includes(extname(file).toLowerCase())) continue;
+		if (file !== image) {
+			warn(`${id}/${file}: orphan image, frontmatter references ${image || "(none)"}`);
+			continue;
 		}
-	}
-
-	// Orphan asset detection: any image files in the photo dir not referenced
-	const dirFiles = readdirSync(photoDir);
-	const imgFiles = dirFiles.filter((f) =>
-		IMAGE_EXTS.includes(extname(f).toLowerCase()),
-	);
-	const refBase = image ? image.replace(/^\.\//, "") : "";
-	for (const img of imgFiles) {
-		if (img !== refBase) {
-			warn(`${id}/${img}: orphan image, frontmatter references ${refBase || "(none)"}`);
-		}
+		const mb = statSync(join(photoDir, file)).size / 1024 / 1024;
+		if (mb > MAX_MB) warn(`${id}: ${mb.toFixed(1)} MB > ${MAX_MB} MB — re-export smaller`);
 	}
 }
 
-console.log("");
-if (warnings === 0) {
-	console.log("✓ All photos pass.");
-	process.exit(0);
-} else {
-	console.log(`${warnings} warning(s).`);
-	process.exit(0);
-}
+if (errors === 0 && warnings === 0) console.log("\n✓ All photos pass.");
+else console.log(`\n${errors} error(s), ${warnings} warning(s).`);
+process.exit(errors > 0 ? 1 : 0);

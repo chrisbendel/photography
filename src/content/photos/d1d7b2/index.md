@@ -1,6 +1,6 @@
 ---
 added: 2026-07-31
-date: 2025-03-01
+year: 2025
 image: ./image.jpg
 alt: "Snow capped rocks"
 caption: "Snow capped rocks"
