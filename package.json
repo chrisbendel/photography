@@ -9,17 +9,21 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "yarn run build && wrangler dev",
-    "dev:local": "yarn run d1:migrate:local && LOCAL_D1=1 PUBLIC_IMAGE_LOCAL=1 astro build && wrangler dev --var STUDIO_DEV_BYPASS:1",
     "astro": "astro",
-    "d1:migrate": "wrangler d1 migrations apply photography --remote",
-    "d1:migrate:local": "wrangler d1 migrations apply photography --local",
+    "photo": "node scripts/photo.mjs",
+    "publish": "node scripts/publish.mjs",
+    "unpublish": "node scripts/unpublish.mjs",
+    "check-photos": "node scripts/check.mjs",
+    "suggest-tags": "node scripts/suggest-tags.mjs",
     "generate-types": "wrangler types",
     "deploy": "yarn run build && wrangler deploy"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.3.1",
     "@astrojs/rss": "^4.0.18",
-    "astro": "^6.1.10"
+    "@huggingface/transformers": "^4.2.0",
+    "astro": "^6.1.10",
+    "sharp": "^0.34.5"
   },
   "devDependencies": {
     "wrangler": "^4.87.0"

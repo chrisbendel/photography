@@ -1,54 +1,20 @@
 {
 	"compatibility_date": "2026-05-04",
-	"compatibility_flags": [
-		"global_fetch_strictly_public"
-	],
+	"compatibility_flags": ["global_fetch_strictly_public"],
 	"name": "photography",
 	"main": "@astrojs/cloudflare/entrypoints/server",
-	// Off deliberately. The Access policy protecting /studio is scoped to the
-	// custom domain; a live workers.dev URL would be a second door onto the same
-	// Worker that the policy doesn't cover, and the middleware header check alone
-	// is spoofable if a request ever reaches the Worker without passing Access.
-	"workers_dev": false,
 	"assets": {
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
+	// Per-PR preview URLs. Workers Builds runs `versions upload` on non-production
+	// branches, and each uploaded version gets a URL under workers.dev — which is
+	// also why workers.dev itself has to be on: previews can't live anywhere else.
+	// Both are set explicitly rather than left to default, since preview_urls
+	// otherwise just inherits whatever workers_dev happens to be.
+	"workers_dev": true,
+	"preview_urls": true,
 	"observability": {
 		"enabled": true
-	},
-	// Public pages are prerendered against D1 at build time (src/loaders/d1.ts).
-	// These bindings serve /studio, which is the only on-demand route.
-	// Deliberately not `"remote": true`. Marking a binding remote pushes every
-	// build and `wrangler dev` into a remote proxy session — network and login
-	// required — and points a locally-running /studio at production data, where a
-	// test upload or delete is a real one. Local dev uses the emulated database;
-	// `yarn wrangler dev --remote` opts in per session when you actually want prod.
-	"d1_databases": [
-		{
-			"binding": "DB",
-			"database_name": "photography",
-			"database_id": "b5a7867c-2afa-490f-b7af-cc034655a182",
-			"migrations_dir": "migrations"
-		}
-	],
-	"r2_buckets": [
-		{
-			"binding": "BUCKET",
-			"bucket_name": "photography"
-		}
-	],
-	// Astro sessions, which @astrojs/cloudflare wires up unconditionally — there's
-	// no option to turn them off, and nothing here uses them. `wrangler deploy`
-	// provisions this namespace on its own, but `wrangler dev --remote` fails with
-	// "SESSION bindings must have an id field" unless it's declared explicitly.
-	"kv_namespaces": [
-		{
-			"binding": "SESSION",
-			"id": "660cc075d9c94ee9ba996d52dea50aa7"
-		}
-	]
-	// No `ai` binding on purpose: Workers AI has no local emulation, so binding it
-	// forces every build into a remote proxy session (and a wrangler login). The
-	// studio calls the Workers AI REST API instead — see lib/studio.ts.
+	}
 }

@@ -1,35 +1,37 @@
 import { defineCollection, reference, z } from "astro:content";
-import { photosLoader, seriesLoader } from "./loaders/d1";
+import { glob } from "astro/loaders";
 
-// Entries come from D1 at build time (see src/loaders/d1.ts). The schema is
-// unchanged from the markdown era apart from images: `image()` validated a file
-// on disk, where `imageKey` points at an R2 object served through Cloudflare
-// Images (see src/lib/images.ts). Drafts never reach the loader — it selects
-// `published = 1` only.
 const photos = defineCollection({
-	loader: photosLoader(),
-	schema: z.object({
-		// When the entry was added to the site. Drives "newest" sorts.
-		added: z.coerce.date(),
-		// When the photograph was made (shutter clicked). Display only.
-		date: z.coerce.date().optional(),
-		imageKey: z.string(),
-		// Intrinsic dimensions, captured at upload, to reserve layout space.
-		width: z.number().optional(),
-		height: z.number().optional(),
-		alt: z.string(),
-		caption: z.string().optional(),
-		lens: z.string().optional(),
-		film: z.string().optional(),
-		location: z.string().optional(),
-		format: z.string().optional(),
-		series: reference("series").optional(),
-		tags: z.array(z.string()).default([]),
+	loader: glob({
+		pattern: "**/*.md",
+		base: "./src/content/photos",
+		// Each photo lives in its own directory: src/content/photos/<id>/index.md
+		// where <id> is a 6-char hex hash (e.g. "a3f4c1"). Strip the trailing
+		// `/index.md` so the entry id is just the directory name.
+		generateId: ({ entry }) =>
+			entry.replace(/\/?index\.md$/, "").replace(/\.md$/, ""),
 	}),
+	schema: ({ image }) =>
+		z.object({
+			// When the entry was added to the site (machine-stamped by
+			// `new-photo`). Drives "newest" sorts.
+			added: z.coerce.date(),
+			// When the photograph was made (shutter clicked). Display only.
+			date: z.coerce.date().optional(),
+			image: image(),
+			alt: z.string(),
+			caption: z.string().optional(),
+			lens: z.string().optional(),
+			film: z.string().optional(),
+			location: z.string().optional(),
+			format: z.string().optional(),
+			series: reference("series").optional(),
+			tags: z.array(z.string()).default([]),
+		}),
 });
 
 const series = defineCollection({
-	loader: seriesLoader(),
+	loader: glob({ pattern: "**/*.md", base: "./src/content/series" }),
 	schema: z.object({
 		title: z.string(),
 		description: z.string().optional(),
