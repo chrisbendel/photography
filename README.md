@@ -26,7 +26,7 @@ yarn install
 
 1. **Scan** → JPEG, long edge ~3000–4000px, under 3 MB.
 2. **Scaffold** — `yarn photo path/to/scan.jpg`. Creates `archive/<id>/` and writes tag suggestions as comments in the frontmatter.
-3. **Fill frontmatter** — `alt` (required), camera, film, format, location, optional caption/series. Move any suggested tags you like into `tags:`.
+3. **Fill frontmatter** — `alt` (required), lens, film, format, location, optional caption/series. Move any suggested tags you like into `tags:`.
 4. **Write the notes.** What you saw, remember, learned. The point of the project — don't rush.
 5. **Preview** — `yarn dev`, walk `/photos/<id>/` and the gallery.
 6. **Publish** — `yarn publish <id>`, then `yarn check-photos`, commit, push. Cloudflare rebuilds.

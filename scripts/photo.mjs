@@ -97,7 +97,7 @@ added: ${today}
 image: ${imageRef}
 alt: ""
 caption: ""
-camera: ""
+lens: ""
 film: ""
 location: ""
 format: ""
