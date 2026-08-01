@@ -12,7 +12,10 @@
 	--ink-faint: #8a8278;
 	--rule: #d8d2c4;
 
-	--measure: 36rem;
+	/* One measure for every page — nav and content share it, so nothing shifts
+	   width as you move around. Between a reading column (36rem, too tight for
+	   a mosaic) and a gallery container (62rem, too loose for the rest). */
+	--measure: 48rem;
 	--gutter: 1.5rem;
 	--gap: 1rem;
 
@@ -229,9 +232,11 @@ figcaption {
 	}
 }
 
+/* Two columns, not three: inside a 48rem measure a third column costs ~100px
+   of print width and buys nothing — these are photographs, not thumbnails. */
 @media (min-width: 900px) {
 	.sheet {
-		column-count: 3;
+		column-count: 2;
 	}
 }
 

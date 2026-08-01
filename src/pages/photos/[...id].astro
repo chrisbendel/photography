@@ -175,6 +175,12 @@ const seriesLabel = series ? titleFromSlug(series) : null;
 		color: var(--ink);
 	}
 
+	/* The page measure suits a mosaic; running prose wants a shorter line, so
+	   the notes keep their own reading width inside it. */
+	section.notes {
+		max-width: 34rem;
+	}
+
 	section.notes h2 {
 		font-size: 1rem;
 		margin: 0 0 0.4rem;
