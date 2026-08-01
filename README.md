@@ -1,6 +1,6 @@
 # photography
 
-Personal photography site. Astro, plain CSS, deploys to Cloudflare Pages.
+Personal photography site. Astro, plain CSS, deploys to Cloudflare Workers.
 
 Ethos and content model: [`AGENTS.md`](./AGENTS.md).
 
@@ -16,22 +16,23 @@ yarn install
 | --- | --- |
 | `yarn dev` | Dev server at `localhost:4321` |
 | `yarn build` | Build to `./dist/` |
-| `yarn preview` | Preview the production build |
-| `yarn photo <image> [--no-tags]` | New draft entry in `archive/` (auto-suggests tags) |
-| `yarn publish [id]` | Promote `archive/<id>/` → live (id optional if archive holds one entry; creates a missing `series:` file) |
-| `yarn check-photos` | Lint live photos: alt text, sizes, refs |
-| `yarn suggest-tags <slug>\|--all` | Re-tag existing photos |
+| `yarn preview` | Build, then serve it through wrangler |
+| `yarn photo <image> [--no-tags]` | New entry in `src/content/photos/<id>/` (auto-suggests tags + series) |
+| `yarn entries` | List every entry, with a readable label per hash |
+| `yarn check-photos` | Pre-merge gate: empty alt and bad series slugs fail; near-duplicate series, size and orphans warn |
+| `yarn suggest-tags <slug>\|--all` | Re-tag existing photos (~10s each) |
 
 ## Adding a photograph
 
 1. **Scan** → JPEG, long edge ~3000–4000px, under 3 MB.
-2. **Scaffold** — `yarn photo path/to/scan.jpg`. Creates `archive/<id>/` and writes tag suggestions as comments in the frontmatter.
-3. **Fill frontmatter** — `alt` (required), lens, film, format, location, optional caption/series. Move any suggested tags you like into `tags:`.
-4. **Write the notes.** What you saw, remember, learned. The point of the project — don't rush.
-5. **Preview** — `yarn dev`, walk `/photos/<id>/` and the gallery.
-6. **Publish** — `yarn publish <id>`, then `yarn check-photos`, commit, push. Cloudflare rebuilds.
+2. **Scaffold** — `yarn photo path/to/scan.jpg`. Writes the entry, suggests tags and a series, prints a `code <path>` line to open it.
+3. **Fill it in** — `alt` is the one that matters; then year, lens, film, format, location, caption. Move suggested tags you like into `tags:`. Write the notes in the body: what you saw, remember, learned. The point of the project — don't rush. Lost a hash? `yarn entries`.
+4. **Ship** — `yarn dev` to walk it, `yarn check-photos`, then commit and push. Cloudflare rebuilds.
 
-Tags come from a local vision model (Florence-2 via transformers.js) — no API, offline after the first run downloads the model. Suggestions only; never written to `tags:` automatically.
+Entries render the moment they're scaffolded — `yarn dev` puts the new photo on
+`/` straight away, since it sorts newest-`added` first. That's safe because the
+branch is the draft: nothing reaches the site until a PR merges to `main`.
+Abandoning one is `rm -rf` on the folder, or just not merging.
 
 ## Routes
 

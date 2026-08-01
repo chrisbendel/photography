@@ -1,20 +1,20 @@
 ---
 import { Image } from "astro:assets";
-import { getCollection, getEntry } from "astro:content";
+import { getCollection } from "astro:content";
 import Layout from "../layouts/Layout.astro";
 import { byNewest, formatLabel } from "../lib/format";
+import { titleFromSlug } from "../lib/series";
 
 const allPhotos = (await getCollection("photos")).sort(byNewest);
 
 const photo = allPhotos[0];
-const seriesEntry = photo?.data.series ? await getEntry(photo.data.series) : null;
-const fmtMonthYear = new Intl.DateTimeFormat("en-US", { year: "numeric", month: "long" });
+const seriesLabel = photo?.data.series ? titleFromSlug(photo.data.series) : null;
 
 const versoLine = photo
 	? [
-			seriesEntry?.data.title,
+			seriesLabel,
 			photo.data.format && formatLabel(photo.data.format),
-			photo.data.date && fmtMonthYear.format(photo.data.date),
+			photo.data.year,
 			photo.data.location,
 		]
 			.filter(Boolean)

@@ -1,13 +1,15 @@
 #!/usr/bin/env node
-/**
- * Suggest tags for a photo via a local vision model (Florence-2), run
- * in-process with transformers.js — no daemon, no API, offline after the
- * weights download once. Object detection gives concrete subject tags; a
- * detailed caption gives material to mine for mood tags. Suggestions only —
- * never written to frontmatter. Imported by new-photo.mjs (tagImage), or
- * standalone to (re)tag existing photos: `yarn suggest-tags <slug> | --all`.
- * Env: TAGGER_MODEL, TAGGER_DTYPE.
- */
+// Tag suggestions from a local vision model (Florence-2 via transformers.js) —
+// no API, offline once the weights download. Suggestions only, never written to
+// frontmatter. Usage: yarn suggest-tags <slug>|--all.
+// Env: TAGGER_MODEL, TAGGER_DTYPE, TAGGER_MAX.
+//
+// Three captions at increasing detail, then rank words by how many of them
+// agree. Measured on a 4x5 landscape: the terse caption names only the subject,
+// the longest one wanders into composition ("on the left side", "in the
+// middle"), and words appearing in all three are the ones worth keeping.
+// <OD> is not used — it is COCO-trained, so on landscape work it returns
+// nothing useful (a lone hallucinated "bird" on the first real photo).
 
 import { existsSync, readdirSync } from "node:fs";
 import { extname, join } from "node:path";
@@ -17,11 +19,14 @@ import {
 	AutoProcessor,
 	RawImage,
 } from "@huggingface/transformers";
+import { cliArgs, frontmatter, idsIn, LIVE_DIR } from "./lib/entries.mjs";
 
-const MODEL = process.env.TAGGER_MODEL || "onnx-community/Florence-2-base";
-const DTYPE = process.env.TAGGER_DTYPE || "fp32";
-// Photos live in archive/ before publish, src/content/photos/ after.
-const PHOTO_DIRS = ["archive", "src/content/photos"];
+// Large at 8-bit beats base at full precision on every axis that matters here:
+// 821 MB vs 1.0 GB on disk, and it reads black-and-white correctly where base
+// guesses. Base called a frame of snow-capped rocks "ice formations floating on
+// a body of water"; large got it right. Costs ~3s more per photo.
+const MODEL = process.env.TAGGER_MODEL || "onnx-community/Florence-2-large";
+const DTYPE = process.env.TAGGER_DTYPE || "q8";
 const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 
 // Words too generic to be useful tags, stripped from caption-derived keywords.
@@ -33,45 +38,134 @@ const STOP = new Set(
 		"effect mood look feel sense thing area part way bit kind sort type view " +
 		"shows showing shown depicts featuring features appears seems very much more " +
 		"towards through reaching creating filtering running covered standing sitting " +
-		"small large tall short several many some most other another each both " +
+		"small large tall short thin wide narrow several many some most other " +
+		"another each both left right middle top bottom edge corner distance body " +
+		"few lot bit whole entire rest side sides part parts piece area areas " +
+		"group groups bunch collection pair variety number amount range " +
+		"surface surfaces scattered arranged formation formations covering " +
+		"covered visible object objects horizon texture textured layer " +
 		"man woman people person background foreground front side scene shot center").split(
 			" ",
 		),
 );
 
-// Find the image file inside a photo directory (archive/<slug> or live/<slug>).
+// Mood and light words earn their place from a single mention — they are the
+// reason to read the caption at all, and no object detector will ever supply them.
+const MOOD = new Set(
+	("calm still quiet peaceful serene stark bleak soft harsh bright dark moody " +
+		"misty foggy hazy overcast stormy golden empty desolate lonely wintry " +
+		"barren rugged windswept glassy shadowed sunlit").split(" "),
+);
+
+const CAPTION_TASKS = ["<CAPTION>", "<DETAILED_CAPTION>", "<MORE_DETAILED_CAPTION>"];
+const MAX_TAGS = Number(process.env.TAGGER_MAX) || 7;
+
 export function findImage(slug) {
-	for (const base of PHOTO_DIRS) {
-		const dir = join(base, slug);
-		if (!existsSync(dir)) continue;
-		const img = readdirSync(dir).find(
-			(f) =>
-				f.startsWith("image.") && IMAGE_EXTS.includes(extname(f).toLowerCase()),
-		);
-		if (img) return join(dir, img);
-	}
-	return null;
+	const dir = join(LIVE_DIR, slug);
+	if (!existsSync(dir)) return null;
+	const img = readdirSync(dir).find(
+		(f) => f.startsWith("image.") && IMAGE_EXTS.includes(extname(f).toLowerCase()),
+	);
+	return img ? join(dir, img) : null;
 }
 
-function clean(s) {
-	return s
-		.trim()
-		.toLowerCase()
-		.replace(/[.!?,]+$/, "")
-		.replace(/\s+/g, "-");
-}
-
-// Pull candidate tag words out of a caption sentence (nouns-ish), drop stopwords.
-function keywordsFromCaption(caption) {
-	const words = caption
+// Hyphens split rather than survive: "snow-covered" contributes "snow" (real)
+// and "covered" (stopped), instead of a compound that duplicates an existing tag.
+function words(text) {
+	return text
 		.toLowerCase()
 		.replace(/[^a-z\s-]/g, " ")
-		.split(/\s+/)
-		.filter((w) => w.length > 3 && !STOP.has(w));
-	return [...new Set(words)];
+		.split(/[\s-]+/)
+		.filter((w) => w.length > 2 && !STOP.has(w));
 }
 
-// Lazily loaded once, then reused across every photo in a run.
+// Every tag already used on the site. The model has no idea how this
+// photographer talks; the existing corpus does, and it's the one source of
+// vocabulary that improves as the catalogue grows.
+function corpusTags() {
+	const tags = new Set();
+	for (const id of idsIn(LIVE_DIR)) {
+		const raw = frontmatter(join(LIVE_DIR, id, "index.md"))?.("tags") ?? "";
+		for (const t of raw.replace(/[[\]]/g, "").split(",")) {
+			const tag = t.trim().replace(/^["']|["']$/g, "");
+			if (tag) tags.add(tag);
+		}
+	}
+	return tags;
+}
+
+// Suggest an existing series by overlap between a photo's tags and what that
+// series already stands for — its slug, plus the tags of the photos in it.
+// Never invents a name: starting a series is a decision, and a wrong guess
+// here would quietly found one (see src/lib/series.ts).
+export function suggestSeries(tags, minOverlap = 2) {
+	const candidates = new Set();
+	for (const id of idsIn(LIVE_DIR)) {
+		const s = frontmatter(join(LIVE_DIR, id, "index.md"))?.("series");
+		if (s) candidates.add(s);
+	}
+
+	let best = { slug: "", score: 0 };
+	for (const slug of candidates) {
+		const vocabulary = new Set(words(slug.replace(/-/g, " ")));
+		for (const id of idsIn(LIVE_DIR)) {
+			const photo = frontmatter(join(LIVE_DIR, id, "index.md"));
+			if (photo?.("series") !== slug) continue;
+			for (const t of (photo("tags") ?? "").replace(/[[\]]/g, "").split(",")) {
+				const tag = t.trim().replace(/^["']|["']$/g, "");
+				if (tag) vocabulary.add(tag);
+			}
+		}
+
+		const score = tags.filter((t) => vocabulary.has(t)).length;
+		if (score > best.score) best = { slug, score };
+	}
+
+	return best.score >= minOverlap ? best.slug : "";
+}
+
+// Fold a candidate onto an established tag when they differ only by a plural.
+// `/tags/tree/` and `/tags/trees/` as separate pages is the failure mode.
+function canonical(word, corpus) {
+	if (corpus.has(word)) return word;
+	for (const variant of [`${word}s`, word.replace(/s$/, "")]) {
+		if (variant !== word && corpus.has(variant)) return variant;
+	}
+	return word;
+}
+
+// Agreement across captions is the main signal, raw frequency the tiebreak.
+// Gerunds ("reflecting") are penalised — they read as verbs, and the tag index
+// wants nouns.
+function rank(captions, corpus) {
+	const stats = new Map();
+	for (const text of captions) {
+		const seen = new Set();
+		for (const raw of words(text)) {
+			const w = canonical(raw, corpus);
+			const s = stats.get(w) ?? { count: 0, captions: 0 };
+			s.count++;
+			if (!seen.has(w)) {
+				s.captions++;
+				seen.add(w);
+			}
+			stats.set(w, s);
+		}
+	}
+
+	return [...stats.entries()]
+		.map(([w, s]) => {
+			let score = s.captions * 2 + s.count + (MOOD.has(w) ? 2 : 0);
+			if (corpus.has(w)) score += 3;
+			if (w.endsWith("ing")) score -= 2;
+			return { tag: w, score };
+		})
+		.sort((a, b) => b.score - a.score || a.tag.localeCompare(b.tag))
+		.slice(0, MAX_TAGS)
+		.map((r) => r.tag);
+}
+
+// Loaded once, reused across every photo in a run.
 let _m = null;
 export async function loadModel() {
 	if (_m) return _m;
@@ -89,68 +183,59 @@ async function runTask(image, task) {
 	const { model, processor } = await loadModel();
 	const prompts = processor.construct_prompts(task);
 	const inputs = await processor(image, prompts);
-	const ids = await model.generate({ ...inputs, max_new_tokens: 128 });
+	// 128 truncates the longest caption mid-sentence on the large model, which
+	// loses the closing mood clause — the most useful part for tagging.
+	const ids = await model.generate({ ...inputs, max_new_tokens: 256 });
 	const text = processor.batch_decode(ids, { skip_special_tokens: false })[0];
 	return processor.post_process_generation(text, task, image.size);
 }
 
-// Core: tag a single image file. Returns { caption, objectTags, captionTags }.
-// Reused by new-photo.mjs and the CLI below.
 export async function tagImage(imagePath) {
 	const image = await RawImage.read(imagePath);
-	const od = await runTask(image, "<OD>");
-	const cap = await runTask(image, "<MORE_DETAILED_CAPTION>");
-
-	const labels = od["<OD>"]?.labels ?? [];
-	const objectTags = [...new Set(labels.map(clean))].filter(Boolean);
-	const caption = (cap["<MORE_DETAILED_CAPTION>"] ?? "").trim();
-	const captionTags = keywordsFromCaption(caption);
-	return { caption, objectTags, captionTags };
+	const captions = [];
+	for (const task of CAPTION_TASKS) {
+		const out = await runTask(image, task);
+		captions.push((out[task] ?? "").trim());
+	}
+	// The longest caption is the one worth reading by hand.
+	return {
+		caption: captions[captions.length - 1],
+		tags: rank(captions, corpusTags()),
+	};
 }
 
 async function suggestForSlug(slug) {
 	const imagePath = findImage(slug);
 	if (!imagePath) {
-		console.error(`  ✗ No image found for "${slug}" in archive/ or live.`);
+		console.error(`  ✗ No image found for "${slug}".`);
 		return;
 	}
 	process.stdout.write(`  ${slug} ... `);
-	const { caption, objectTags, captionTags } = await tagImage(imagePath);
+	const { caption, tags } = await tagImage(imagePath);
 	console.log("done");
 	console.log(`    caption: ${caption}`);
-	console.log(`    object tags: [${objectTags.map((t) => `"${t}"`).join(", ")}]`);
-	console.log(`    from caption: [${captionTags.map((t) => `"${t}"`).join(", ")}]`);
+	console.log(`    tags: ${tags.join(", ")}`);
 	console.log("");
 }
 
-// ---- CLI (only when run directly, not when imported by new-photo) ----
+// CLI — only when run directly, not when photo.mjs imports tagImage.
 const invokedDirectly =
 	process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (invokedDirectly) {
-	const arg = process.argv[2];
+	const [arg] = cliArgs();
 	if (!arg) {
 		console.error("Usage: yarn suggest-tags <slug>");
 		console.error("       yarn suggest-tags --all");
 		process.exit(1);
 	}
 
-	const allSlugs = [
-		...new Set(
-			PHOTO_DIRS.flatMap((base) =>
-				existsSync(base)
-					? readdirSync(base, { withFileTypes: true })
-							.filter((d) => d.isDirectory())
-							.map((d) => d.name)
-					: [],
-			),
-		),
-	];
+	const allSlugs = idsIn(LIVE_DIR);
 
 	const targets = arg === "--all" ? allSlugs : [arg];
 	for (const slug of targets) {
 		if (!allSlugs.includes(slug)) {
-			console.error(`  ✗ "${slug}" — no folder found in archive/ or live.`);
+			console.error(`  ✗ "${slug}" — no folder in ${LIVE_DIR}/.`);
 			continue;
 		}
 		try {
@@ -160,6 +245,6 @@ if (invokedDirectly) {
 		}
 	}
 
-	console.log("Done. Object tags are concrete subjects; mine the caption for");
-	console.log("mood/abstract tags. You decide what stays.");
+	console.log("Done. Read the caption for anything the tags missed.");
+	console.log("You decide what a photograph means.");
 }

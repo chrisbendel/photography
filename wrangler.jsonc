@@ -7,11 +7,8 @@
 		"directory": "./dist",
 		"binding": "ASSETS"
 	},
-	// Per-PR preview URLs. Workers Builds runs `versions upload` on non-production
-	// branches, and each uploaded version gets a URL under workers.dev — which is
-	// also why workers.dev itself has to be on: previews can't live anywhere else.
-	// Both are set explicitly rather than left to default, since preview_urls
-	// otherwise just inherits whatever workers_dev happens to be.
+	// Per-PR preview URLs live under workers.dev, so workers_dev has to stay on.
+	// Both set explicitly — preview_urls otherwise just inherits workers_dev.
 	"workers_dev": true,
 	"preview_urls": true,
 	"observability": {

@@ -1,55 +1,36 @@
 ---
 import { Image } from "astro:assets";
-import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
+import { getSeries } from "../../lib/series";
 
 export async function getStaticPaths() {
-	const allSeries = await getCollection("series");
-	const allPhotos = await getCollection("photos");
-
-	return allSeries.map((series) => {
-		// Within a series, capture chronology matters more than add order:
-		// sort by `date` (when made) desc when present, else fall back to
-		// `added` desc.
-		const photos = allPhotos
-			.filter((p) => p.data.series?.id === series.id)
-			.sort((a, b) => {
-				const aD = a.data.date?.valueOf();
-				const bD = b.data.date?.valueOf();
-				if (aD != null && bD != null) return bD - aD;
-				return b.data.added.valueOf() - a.data.added.valueOf();
-			});
-		return {
-			params: { id: series.id },
-			props: { series, photos },
-		};
-	});
+	return (await getSeries()).map((series) => ({
+		params: { id: series.slug },
+		props: { series },
+	}));
 }
 
-const { series, photos } = Astro.props;
+const { series } = Astro.props;
+const { photos } = series;
 ---
 
-<Layout title={`${series.data.title} — Chris Bendel`} description={series.data.description}>
-	<h1>{series.data.title}</h1>
+<Layout title={`${series.title} — Chris Bendel`}>
+	<h1>{series.title}</h1>
 
-	{
-		photos.length === 0 ? (
-			<p><em>No photographs in this box yet.</em></p>
-		) : (
-			<div class="print-stack">
-				{photos.map((photo) => (
-					<a class="print-entry" href={`/photos/${photo.id}/`} id={photo.id}>
-						<div class="print-mount">
-							<figure>
-								<Image src={photo.data.image} alt={photo.data.alt} loading="lazy" />
-								{photo.data.caption && <figcaption>{photo.data.caption}</figcaption>}
-							</figure>
-						</div>
-					</a>
-				))}
-			</div>
-		)
-	}
+	<div class="print-stack">
+		{
+			photos.map((photo) => (
+				<a class="print-entry" href={`/photos/${photo.id}/`} id={photo.id}>
+					<div class="print-mount">
+						<figure>
+							<Image src={photo.data.image} alt={photo.data.alt} loading="lazy" />
+							{photo.data.caption && <figcaption>{photo.data.caption}</figcaption>}
+						</figure>
+					</div>
+				</a>
+			))
+		}
+	</div>
 
 </Layout>
 

@@ -3,7 +3,8 @@ const links = [
 	{ href: "/gallery/", label: "Gallery" },
 	{ href: "/series/", label: "Series" },
 	{ href: "/tags/", label: "Tags" },
-	{ href: "/rss.xml", label: "Feed" },
+	// No Feed link — /rss.xml still exists and is advertised via <link
+	// rel="alternate"> in Layout. Readers find it; humans don't click into XML.
 	// Future: { href: "/shop", label: "Shop" },
 	// Future: { href: "/about", label: "About" },
 ];
