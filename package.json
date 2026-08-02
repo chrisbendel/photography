@@ -20,11 +20,11 @@
   "dependencies": {
     "@astrojs/cloudflare": "^13.3.1",
     "@astrojs/rss": "^4.0.18",
-    "@huggingface/transformers": "^4.2.0",
-    "astro": "^6.1.10",
-    "sharp": "^0.34.5"
+    "astro": "^6.1.10"
   },
   "devDependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "sharp": "^0.34.5",
     "wrangler": "^4.87.0"
   },
   "packageManager": "yarn@4.9.1",
