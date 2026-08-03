@@ -49,12 +49,7 @@ const { title = "Photography", description = "Selected film photography" } = Ast
 				if (!pull) return;
 
 				function currentTheme() {
-					return (
-						document.documentElement.getAttribute("data-theme") ||
-						(window.matchMedia("(prefers-color-scheme: dark)").matches
-							? "dark"
-							: "light")
-					);
+					return document.documentElement.getAttribute("data-theme") || "light";
 				}
 
 				function syncTitle() {

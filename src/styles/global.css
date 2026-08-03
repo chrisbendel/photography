@@ -18,30 +18,10 @@
 	--gap: 1rem;
 
 	font-size: 18px;
-	color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-	:root {
-		--paper: #14110e;
-		--paper-shadow: #1a1612;
-		--ink: #d4cdbe;
-		--ink-soft: #9a9388;
-		--ink-faint: #6a6358;
-		--rule: #2a241e;
-	}
-}
-
-:root[data-theme="light"] {
-	--paper: #f3efe6;
-	--paper-shadow: #ebe6da;
-	--ink: #1a1815;
-	--ink-soft: #4a443c;
-	--ink-faint: #8a8278;
-	--rule: #d8d2c4;
 	color-scheme: light;
 }
 
+/* Light regardless of OS preference — dark is a deliberate pull of the cord. */
 :root[data-theme="dark"] {
 	--paper: #14110e;
 	--paper-shadow: #1a1612;
@@ -89,21 +69,9 @@ body::before {
 	mix-blend-mode: multiply;
 }
 
-@media (prefers-color-scheme: dark) {
-	body::before {
-		opacity: 0.08;
-		mix-blend-mode: screen;
-	}
-}
-
 :root[data-theme="dark"] body::before {
 	opacity: 0.08;
 	mix-blend-mode: screen;
-}
-
-:root[data-theme="light"] body::before {
-	opacity: 0.05;
-	mix-blend-mode: multiply;
 }
 
 /* ---------- Layout shell ---------- */
@@ -170,6 +138,18 @@ a:hover {
 	text-decoration-thickness: 2px;
 }
 
+/* Present for screen readers, absent visually. */
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
+}
+
 /* Skip link: hidden until keyboard-focused, then floats above the nav. */
 .skip-link {
 	position: absolute;
@@ -214,7 +194,7 @@ figcaption {
 }
 
 /* ---------- Shared mosaic grid ---------- */
-/* Used by / and /tags/<tag>. Per-page additions live in those files. */
+/* Used by the gallery on /. Per-page additions live in that file. */
 
 .sheet {
 	column-count: 1;
@@ -227,6 +207,10 @@ figcaption {
 	.sheet {
 		column-count: 2;
 	}
+}
+
+.sheet .cell[hidden] {
+	display: none;
 }
 
 .sheet .cell {

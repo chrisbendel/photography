@@ -22,7 +22,7 @@ const seriesLabel = series ? titleFromSlug(series) : null;
 <Layout title={`#${photo.id} — Chris Bendel`} description={alt}>
 	<figure class="print-figure" data-invert="false">
 		<div class="print-frame">
-			<Image src={image} alt={alt} loading="eager" class="print-img" />
+			<Image src={image} alt={alt} loading="eager" fetchpriority="high" class="print-img" />
 			<button
 				type="button"
 				class="invert-btn"
@@ -86,7 +86,7 @@ const seriesLabel = series ? titleFromSlug(series) : null;
 				{tags.map((t, i) => (
 					<>
 						{i > 0 && ", "}
-						<a href={`/tags/${t}/`}>{t}</a>
+						<a href={`/?q=${encodeURIComponent(t)}`}>{t}</a>
 					</>
 				))}
 			</p>

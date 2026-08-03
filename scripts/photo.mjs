@@ -49,6 +49,7 @@ if (imagePath) {
 // Comments only, never `tags:`. A failure here must not lose the scaffold.
 let tagComment = "";
 let series = "";
+let scene = "";
 if (copiedImage && !skipTags) {
 	const ext = extname(copiedImage).toLowerCase();
 	if (!TAGGABLE.includes(ext)) {
@@ -57,10 +58,10 @@ if (copiedImage && !skipTags) {
 		try {
 			console.log("Suggesting tags (local vision model) ...");
 			const { caption, tags } = await tagImage(copiedImage);
-			tagComment =
-				`# --- suggested (review, move keepers into tags below) ---\n` +
-				`# caption: ${caption}\n` +
-				`# tags: ${tags.join(", ")}\n`;
+			// `scene` is kept, not just shown: it is what makes search find a photo
+			// by something you never got round to tagging.
+			scene = caption;
+			tagComment = `# suggested — move keepers into tags: ${tags.join(", ")}\n`;
 			console.log(`  suggested: ${tags.join(", ")}`);
 
 			series = suggestSeries(tags);
@@ -91,6 +92,7 @@ location: ""
 format: ""
 series: ${series}
 ${tagComment}tags: []
+scene: ${JSON.stringify(scene)}
 ---
 
 `.replace(/ +$/gm, ""),

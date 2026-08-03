@@ -12,8 +12,7 @@ live in [`README.md`](./README.md).
 - **No premature abstraction.** Duplicate three times before extracting.
 - **The site is a filing system and log book.** Each photo is a dated entry, not
   a product page. Schema and routes bend with the practice.
-- **Declined by default:** CMS, comments, analytics, search, custom build
-  pipeline.
+- **Declined by default:** CMS, comments, analytics, custom build pipeline.
 
 ## Stack
 
@@ -47,9 +46,9 @@ Rules that are easy to break:
   undefined, and blank YAML is null.
 - Reading frontmatter, match `^key:[ \t]*(.*)$`, never `\s*`. `\s` matches
   newlines, so on a blank field it captures the next line's value.
-- Hash ids are unreadable by design, so nothing else may be load-bearing for
-  finding an entry: `yarn photo` prints a `code <path>`, `yarn entries` labels
-  each hash. Scripts print commands; they don't launch editors.
+- Hash ids are unreadable by design — stable forever, so permalinks never rot.
+  Finding an entry by name is the IDE's job, not a script's. `yarn photo` prints
+  a `code <path>`; scripts print commands, they don't launch editors.
 
 Scripts: `photo.mjs` (scaffold), `check.mjs` (gate), `list.mjs` (`yarn
 entries`), `suggest-tags.mjs`. Shared plumbing in `scripts/lib/entries.mjs`.
@@ -75,9 +74,27 @@ Consequences, accepted knowingly:
 suggested tags against each one's slug and member tags (needs 2 overlaps).
 Founding a series is a decision, not a suggestion.
 
+## Search
+
+One field in the nav; `/` filters its own mosaic as you type, and the query lives
+in `?q=` so a result set is a link. There are no `/tags/` pages — a tag on a
+photo links to `/?q=<tag>`, so tags feed search rather than owning routes.
+
+Matching is plain substring over everything a photo carries: tags, alt, caption,
+location, lens, film, year, series, notes — plus `scene`, the vision model's
+full description, written by `yarn photo` and never rendered. `scene` is what
+makes "island" or "overcast" find a frame nobody thought to tag that way, and it
+is why search quality doesn't depend on tagging discipline. Backfill it on an
+old entry by copying the caption from `yarn suggest-tags <id>`.
+
+The index is inlined per build — no fetch, no dependency, no search service. At
+a few hundred photos that's still a small page; past that, move it to a JSON
+file before reaching for a library.
+
 ## Tagging
 
-Lowercase, kebab-case, any number including zero. Tags create `/tags/<tag>/`.
+Lowercase, kebab-case, any number including zero. Tags are search terms, not
+routes.
 
 A local vision model (Florence-2 via transformers.js) suggests tags in `yarn
 photo` and `yarn suggest-tags`. **Suggestions only — never written to `tags:`
@@ -98,8 +115,11 @@ automatically.**
 
 - Resist adding views. A new need ("by year", "by lens") becomes a section in an
   existing view before it becomes a route.
-- Mosaics only on `/` and `/tags/<tag>/`. A series is a single stack, newest
+- Mosaics only on `/`. A series is a single stack, newest
   first by `year` then `added` — prints in a paper box, not a grid.
+- Above-the-fold prints load `eager` with `fetchpriority="high"` on the first —
+  the mosaic is the LCP element, and lazy-loading it costs a round trip before
+  anything paints. Everything below stays `lazy`.
 - **Verso treatment:** per-photo metadata renders
   small/uppercase/monospace/faint, like pencil on the back of a print. Formats
   use `×` not `x`.
@@ -118,7 +138,7 @@ automatically.**
 
 Analog-process details that separate this from a generic gallery: pull-cord
 light switch (theme toggle), paper-grain overlay, verso metadata, print
-invert-to-negative button, gallery loupe.
+invert-to-negative button, gallery loupe, loupe glyph on the search field.
 
 Adding one — is there a real-world analog? Then:
 

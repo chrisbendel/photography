@@ -30,6 +30,7 @@ location: ""
 format: "4x5"         # renders as 4×5
 series: winter        # optional; naming one creates it
 tags: [water, snow]
+scene: "..."          # written by `yarn photo`; feeds search, never shown
 ```
 
 Notes go in the markdown body, below the frontmatter.
@@ -53,10 +54,10 @@ files.
 
 | Route | |
 | --- | --- |
-| `/` | every print, loupe view (`/gallery` redirects here) |
+| `/` | every print, loupe view, search (`?q=` filters; `/gallery` redirects here) |
 | `/photos/<id>/` | single print |
+| `/about/` | name, contact, colophon |
 | `/series/`, `/series/<slug>/` | |
-| `/tags/`, `/tags/<tag>/` | |
 | `/rss.xml` | feed |
 
 ## Scanning

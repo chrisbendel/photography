@@ -1,8 +1,7 @@
 ---
 const links = [
-	// No Gallery link — the gallery is `/`, which the brand link already goes to.
 	{ href: "/series/", label: "Series" },
-	{ href: "/tags/", label: "Tags" },
+	{ href: "/about/", label: "About" },
 	// No Feed link — /rss.xml is advertised via <link rel="alternate"> in Layout.
 ];
 
@@ -12,7 +11,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 
 <header class="site">
 	<nav class="site-nav" aria-label="Primary">
-		<a href="/" class="brand" aria-label="Chris Bendel — home">
+		<a href="/" class="brand" aria-label="Gallery — every print">
 			<svg
 				class="brand-mark"
 				viewBox="0 0 32 40"
@@ -43,7 +42,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 					<rect class="mark-img" x="0" y="36" width="32" height="4" opacity="0.4" />
 				</g>
 			</svg>
-			<span class="brand-name">Chris Bendel</span>
+			<span class="brand-name">Gallery</span>
 		</a>
 		<ul>
 			{
@@ -56,6 +55,21 @@ const isCurrent = (href: string) => path.startsWith(href);
 				))
 			}
 		</ul>
+		<form class="site-search" action="/" method="get" role="search">
+			<label class="visually-hidden" for="site-search">Search photographs</label>
+			<svg class="loupe-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+				<circle cx="6.75" cy="6.75" r="4.25" fill="none" stroke="currentColor" stroke-width="1.1" />
+				<line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+			</svg>
+			<input
+				type="search"
+				id="site-search"
+				name="q"
+				placeholder="search"
+				autocomplete="off"
+				spellcheck="false"
+			/>
+		</form>
 		<button
 			type="button"
 			class="darkroom-pull"
@@ -141,6 +155,75 @@ const isCurrent = (href: string) => path.startsWith(href);
 		}
 	}
 
+	/* A loupe — the tool you'd hold over a negative, and what the lightbox is
+	   named for. Faint until the field has focus, like the rest of the chrome. */
+	form.site-search {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-left: auto;
+		color: var(--ink-faint);
+		transition: color 0.2s ease;
+	}
+
+	form.site-search:focus-within {
+		color: var(--ink);
+	}
+
+	.loupe-glyph {
+		width: 0.8rem;
+		height: 0.8rem;
+		flex-shrink: 0;
+		display: block;
+	}
+
+	/* Monospace, like the verso metadata — this is filing-cabinet language. */
+	form.site-search input {
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		color: var(--ink);
+		background: none;
+		border: 0;
+		border-bottom: 1px solid var(--rule);
+		padding: 0.3rem 0 0.2rem;
+		width: 6rem;
+		transition: width 0.25s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	form.site-search input::placeholder {
+		color: var(--ink-faint);
+		letter-spacing: 0.08em;
+	}
+
+	/* Thickens like a nav underline, via shadow so nothing shifts by a pixel. */
+	form.site-search input:focus {
+		outline: none;
+		width: 10rem;
+		border-bottom-color: var(--ink);
+		box-shadow: 0 1px 0 var(--ink);
+	}
+
+	/* The native clear button is chrome from another site. */
+	form.site-search input::-webkit-search-cancel-button {
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	@media (max-width: 480px) {
+		form.site-search input {
+			width: 4.5rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		form.site-search,
+		form.site-search input {
+			transition: none;
+		}
+	}
+
+	/* The cord already sits hard right; the field takes the slack before it. */
 	nav.site-nav ul {
 		list-style: none;
 		margin: 0;
@@ -179,7 +262,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 		background: none;
 		border: 0;
 		padding: 0;
-		margin-left: auto;
+		margin-left: 1.25rem;
 		cursor: pointer;
 		color: var(--ink);
 		display: inline-flex;
@@ -256,55 +339,30 @@ const isCurrent = (href: string) => path.startsWith(href);
 		filter: blur(5px);
 	}
 
-	/* On (lit) — light mode via OS pref */
-	@media (prefers-color-scheme: light) {
-		:global(:root:not([data-theme="dark"])) .glass {
-			fill: #fff1b8;
-			stroke: #d4a82b;
-		}
-		:global(:root:not([data-theme="dark"])) .cap {
-			fill: var(--ink-soft);
-		}
-		:global(:root:not([data-theme="dark"])) .filament {
-			stroke: #d68500;
-			stroke-width: 0.85;
-			opacity: 1;
-		}
-		:global(:root:not([data-theme="dark"])) .highlight {
-			opacity: 0.85;
-		}
-		:global(:root:not([data-theme="dark"])) .halo-inner {
-			opacity: 0.75;
-		}
-		:global(:root:not([data-theme="dark"])) .halo-outer {
-			opacity: 0.45;
-		}
-	}
-
-	/* On (lit) — explicit data-theme=light */
-	:global(:root[data-theme="light"]) .glass {
+	/* On (lit) — the default state, since the site is light unless told otherwise. */
+	:global(:root:not([data-theme="dark"])) .glass {
 		fill: #fff1b8;
 		stroke: #d4a82b;
 	}
-	:global(:root[data-theme="light"]) .cap {
+	:global(:root:not([data-theme="dark"])) .cap {
 		fill: var(--ink-soft);
 	}
-	:global(:root[data-theme="light"]) .filament {
+	:global(:root:not([data-theme="dark"])) .filament {
 		stroke: #d68500;
 		stroke-width: 0.85;
 		opacity: 1;
 	}
-	:global(:root[data-theme="light"]) .highlight {
+	:global(:root:not([data-theme="dark"])) .highlight {
 		opacity: 0.85;
 	}
-	:global(:root[data-theme="light"]) .halo-inner {
+	:global(:root:not([data-theme="dark"])) .halo-inner {
 		opacity: 0.75;
 	}
-	:global(:root[data-theme="light"]) .halo-outer {
+	:global(:root:not([data-theme="dark"])) .halo-outer {
 		opacity: 0.45;
 	}
 
-	/* Force off in explicit dark mode regardless of OS */
+	/* Off in dark mode. */
 	:global(:root[data-theme="dark"]) .halo {
 		opacity: 0;
 	}
