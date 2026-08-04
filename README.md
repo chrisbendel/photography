@@ -18,22 +18,12 @@ merging to `main` is publishing. To abandon one, delete the folder.
 
 ## Frontmatter
 
-```yaml
-added: 2026-08-01     # stamped for you; drives newest-first order
-year: 2026            # optional
-image: ./image.jpg
-alt: ""               # required, non-empty
-caption: ""           # one line under the print
-lens: ""
-film: ""
-location: ""
-format: "4x5"         # renders as 4×5
-series: winter        # optional; naming one creates it
-tags: [water, snow]
-scene: "..."          # written by `yarn photo`; feeds search, never shown
-```
+`yarn photo` writes the frontmatter with a comment above each field that needs
+one, so the file explains itself. Every field is present and blank — fill in what
+you know, leave the rest.
 
-Notes go in the markdown body, below the frontmatter.
+`notes` is one plain-text section — render under the print, searchable, no
+markdown.
 
 ## Commands
 

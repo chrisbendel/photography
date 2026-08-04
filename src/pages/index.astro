@@ -33,7 +33,7 @@ const haystacks = Object.fromEntries(
 		const d = p.data;
 		return [
 			p.id,
-			[d.alt, d.caption, d.location, d.lens, d.film, d.series, d.year, d.scene, ...d.tags, p.body]
+			[d.alt, d.caption, d.location, d.lens, d.film, d.series, d.year, d.notes, d.scene, ...d.tags]
 				.filter(Boolean)
 				.join(" ")
 				.toLowerCase(),
@@ -57,8 +57,12 @@ const haystacks = Object.fromEntries(
 					<Image
 						src={photo.data.image}
 						alt={photo.data.alt}
-						widths={[400, 800, 1200]}
-						sizes="(min-width: 900px) 23rem, (min-width: 600px) 22rem, 92vw"
+						widths={i === 0 ? [800, 1200, 1800] : [400, 800, 1200]}
+						sizes={
+							i === 0
+								? "(min-width: 600px) 49.5rem, 92vw"
+								: "(min-width: 900px) 23rem, (min-width: 600px) 22rem, 92vw"
+						}
 						loading={i < EAGER ? "eager" : "lazy"}
 						fetchpriority={i === 0 ? "high" : undefined}
 						decoding={i < EAGER ? "sync" : "async"}
@@ -83,19 +87,118 @@ const haystacks = Object.fromEntries(
 		var count = document.getElementById("result-count");
 		var empty = document.getElementById("no-results");
 
+		// Words per photo, split on first fuzzy use — substring search never needs
+		// them, so nothing is paid for on the common path.
+		var words = null;
+
+		function tokenize() {
+			words = {};
+			Object.keys(haystacks).forEach(function (id) {
+				var seen = {};
+				haystacks[id].split(/[^a-z0-9]+/).forEach(function (w) {
+					if (w.length > 2) seen[w] = true;
+				});
+				words[id] = Object.keys(seen);
+			});
+		}
+
+		// Damerau-Levenshtein, bounded: returns true as soon as `a` is within `max`
+		// edits of `b`, and bails on the length gap before touching the matrix.
+		// Transposition is one edit, not two — "wodos" for "woods" is the typo people
+		// actually make.
+		function within(a, b, max) {
+			if (Math.abs(a.length - b.length) > max) return false;
+			var prev2 = [];
+			var prev = [];
+			var cur = [];
+			var i, j;
+			for (j = 0; j <= b.length; j++) prev[j] = j;
+			for (i = 1; i <= a.length; i++) {
+				cur[0] = i;
+				var best = cur[0];
+				for (j = 1; j <= b.length; j++) {
+					var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+					var v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+					if (
+						i > 1 && j > 1 &&
+						a.charAt(i - 1) === b.charAt(j - 2) &&
+						a.charAt(i - 2) === b.charAt(j - 1)
+					) {
+						v = Math.min(v, prev2[j - 2] + 1);
+					}
+					cur[j] = v;
+					if (v < best) best = v;
+				}
+				// Every path through this row already costs more than the budget.
+				if (best > max) return false;
+				prev2 = prev.slice();
+				prev = cur.slice();
+			}
+			return prev[b.length] <= max;
+		}
+
+		// One typo for a short word, two once there's enough word to be sure which
+		// word was meant. Under 4 characters, "wod" is as close to rod as to wood,
+		// so fuzzy is off — precision over recall, as with tags.
+		function budget(term) {
+			if (term.length < 4) return 0;
+			return term.length < 7 ? 1 : 2;
+		}
+
+		function fuzzyHit(id, term, max) {
+			var ws = words[id];
+			for (var i = 0; i < ws.length; i++) {
+				var w = ws[i];
+				if (within(term, w, max)) return true;
+				// Prefix, so a typo'd stem still finds the longer word: "wods" → "woodshed".
+				if (w.length > term.length + max && within(term, w.slice(0, term.length + max), max)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
 		function apply(q) {
 			var term = (q || "").trim().toLowerCase();
 			var shown = 0;
+			var hits = {};
 			cells.forEach(function (cell) {
-				var hay = haystacks[cell.getAttribute("data-loupe-id")] || "";
+				var id = cell.getAttribute("data-loupe-id");
+				var hay = haystacks[id] || "";
 				var hit = !term || hay.indexOf(term) !== -1;
-				cell.hidden = !hit;
+				hits[id] = hit;
 				if (hit) shown++;
 			});
+
+			// Fuzzy is a fallback, not the default: an exact substring stays exact and
+			// stays fast, and near matches only appear when nothing else would.
+			var max = shown === 0 ? budget(term) : 0;
+			var fuzzy = false;
+			if (max > 0) {
+				if (!words) tokenize();
+				cells.forEach(function (cell) {
+					var id = cell.getAttribute("data-loupe-id");
+					if (fuzzyHit(id, term, max)) {
+						hits[id] = true;
+						shown++;
+						fuzzy = true;
+					}
+				});
+			}
+
+			cells.forEach(function (cell) {
+				cell.hidden = !hits[cell.getAttribute("data-loupe-id")];
+			});
+
 			empty.hidden = !term || shown > 0;
 			count.hidden = !term;
 			if (term) {
-				count.textContent = shown + (shown === 1 ? " print matching “" : " prints matching “") + term + "”";
+				count.textContent =
+					shown +
+					(shown === 1 ? " print " : " prints ") +
+					(fuzzy ? "near “" : "matching “") +
+					term +
+					"”";
 			}
 		}
 
@@ -112,6 +215,15 @@ const haystacks = Object.fromEntries(
 		input.addEventListener("input", function () {
 			sync(input.value, true);
 		});
+		// Here the field filters as you type, so a phone keyboard's "search" key
+		// has nothing left to run — swallow the submit and blur, which is how the
+		// keyboard gets out of the way of the results. Off `/` the nav's field
+		// submits for real and this handler doesn't exist.
+		input.form.addEventListener("submit", function (e) {
+			e.preventDefault();
+			input.blur();
+		});
+
 		input.addEventListener("keydown", function (e) {
 			if (e.key === "Escape" && input.value) {
 				e.stopPropagation();

@@ -78,5 +78,22 @@ const { title = "Photography", description = "Selected film photography" } = Ast
 				});
 			})();
 		</script>
+		<script is:inline>
+			(function () {
+				var input = document.getElementById("site-search");
+				var clear = document.getElementById("search-clear");
+				if (!input || !clear) return;
+
+				// Lives here, not on the gallery page: the field is in the nav, so the
+				// clear mark has to work on every page. The mosaic listens for `input`,
+				// so dispatching one re-filters and resets ?q= on `/`; anywhere else
+				// this just empties the field.
+				clear.addEventListener("click", function () {
+					input.value = "";
+					input.dispatchEvent(new Event("input", { bubbles: true }));
+					input.focus();
+				});
+			})();
+		</script>
 	</body>
 </html>

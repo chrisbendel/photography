@@ -2,37 +2,44 @@
 import Layout from "../layouts/Layout.astro";
 ---
 
-<Layout title="About — Chris Bendel" description="About Chris Bendel and this collection.">
+<Layout title="About — Chris Bendel" description="About Chris Bendel and this site.">
 	<section class="about">
 		<h1>Chris Bendel</h1>
 
-		<p class="lede">
-			One or two sentences on who you are and what you photograph.
+		<h2>About</h2>
+		<p>
+			I use photography as a means to learn more about creative processes, failure, and why we bother doing things that are seemingly pointless.
+			Photography gets me out in situations and places that I typically wouldn't be in, while also challenging the creative side of my brain.
+			I'm self-taught, so I've learned a lot through many mistakes and plenty of ruined sheets of film.
 		</p>
 
+		<h2>Why?</h2>
 		<p>
-			Longer paragraph if you want one — where you shoot, what draws you to a
-			frame, how long you've been at it. Or delete this and let the first line
-			stand on its own.
+			I made this with the intention of serving as an archive of my work over the years and a place to reflect on the process.
 		</p>
 
-		<h2>Process</h2>
+		<h2>Philosophy & Process</h2>
 		<p>
-			Cameras, film stocks, how you scan and print. Optional — remove the
-			heading if it isn't interesting to write.
+			Early on someone I looked up to told me to stick to one film and one developer, which shaped how I approach photography.
 		</p>
+		<ul>
+			<li>I shoot across all formats, but mostly 4x5 (with a few lenses) and medium format (a rolleiflex)</li>
+			<li>I decided to shoot only black and white film stocks early on to force myself to learn more about composition and contrast</li>
+			<li>I have landed on HP5+ for my film and HC-110 for my developer</li>
+			<li>I scan my photos as a means to proof and organize, with the end goal being to print my favorites in my darkroom</li>
+		</ul>
+
 
 		<h2>Contact</h2>
 		<dl class="contact">
 			<dt>Email</dt>
-			<dd><a href="mailto:you@example.com">you@example.com</a></dd>
+			<dd><a href="mailto:chrissbendel@gmail.com">chrissbendel@gmail.com</a></dd>
 			<dt>Elsewhere</dt>
-			<dd><a href="https://example.com" rel="me">example.com</a></dd>
+			<dd><a href="https://cbendel.me" rel="me">cbendel.me</a></dd>
 		</dl>
 
 		<p class="colophon">
-			Prints are scanned at home and posted here as they're made. The feed is at
-			<a href="/rss.xml">/rss.xml</a>.
+			You can subscribe to an <a href="/rss.xml">RSS feed</a> if you're into that.
 		</p>
 	</section>
 </Layout>
@@ -41,10 +48,6 @@ import Layout from "../layouts/Layout.astro";
 	/* Prose wants a shorter line than the page measure. */
 	.about {
 		max-width: 34rem;
-	}
-
-	.lede {
-		font-size: 1.1rem;
 	}
 
 	h2 {

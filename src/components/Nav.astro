@@ -57,18 +57,31 @@ const isCurrent = (href: string) => path.startsWith(href);
 		</ul>
 		<form class="site-search" action="/" method="get" role="search">
 			<label class="visually-hidden" for="site-search">Search photographs</label>
+			<!-- A loupe — the tool you'd hold over a negative, and what the lightbox
+			     is named for. Faint until the field has focus, like the rest of the
+			     chrome. -->
 			<svg class="loupe-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
 				<circle cx="6.75" cy="6.75" r="4.25" fill="none" stroke="currentColor" stroke-width="1.1" />
 				<line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
 			</svg>
-			<input
-				type="search"
-				id="site-search"
-				name="q"
-				placeholder="search"
-				autocomplete="off"
-				spellcheck="false"
-			/>
+			<span class="field">
+				<input
+					type="search"
+					id="site-search"
+					name="q"
+					placeholder="search"
+					autocomplete="off"
+					spellcheck="false"
+					autocorrect="off"
+					autocapitalize="off"
+					enterkeyhint="search"
+				/>
+				<button type="button" class="search-clear" id="search-clear" aria-label="Clear search">
+					<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+					</svg>
+				</button>
+			</span>
 		</form>
 		<button
 			type="button"
@@ -105,13 +118,17 @@ const isCurrent = (href: string) => path.startsWith(href);
 		border-bottom: 1px solid var(--rule);
 	}
 
+	/* One row, deliberately: the field shrinks to fit rather than wrapping, so
+	   focusing it can never bump the cord onto a line of its own. Wrapping is
+	   switched on only for the narrow layout below, where it's the point. */
 	nav.site-nav {
 		max-width: var(--measure);
 		margin: 0 auto;
 		padding: 1rem var(--gutter);
 		display: flex;
+		flex-wrap: nowrap;
 		align-items: center;
-		gap: 1.5rem;
+		gap: 0.75rem 1.5rem;
 		font-size: 0.85rem;
 	}
 
@@ -155,13 +172,14 @@ const isCurrent = (href: string) => path.startsWith(href);
 		}
 	}
 
-	/* A loupe — the tool you'd hold over a negative, and what the lightbox is
-	   named for. Faint until the field has focus, like the rest of the chrome. */
 	form.site-search {
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
 		margin-left: auto;
+		/* Load-bearing: an input's default min-width is its intrinsic ~20ch, so
+		   without this the field refuses to shrink and shoves the cord off-screen. */
+		min-width: 0;
 		color: var(--ink-faint);
 		transition: color 0.2s ease;
 	}
@@ -177,6 +195,24 @@ const isCurrent = (href: string) => path.startsWith(href);
 		display: block;
 	}
 
+	/* The underline belongs to the field, not the input, so the clear mark can sit
+	   inside it — otherwise the ✕ floats past the end of the rule. */
+	.field {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		flex: 1 1 auto;
+		min-width: 0;
+		border-bottom: 1px solid var(--rule);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	/* Thickens like a nav underline, via shadow so nothing shifts by a pixel. */
+	.field:focus-within {
+		border-bottom-color: var(--ink);
+		box-shadow: 0 1px 0 var(--ink);
+	}
+
 	/* Monospace, like the verso metadata — this is filing-cabinet language. */
 	form.site-search input {
 		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
@@ -185,10 +221,16 @@ const isCurrent = (href: string) => path.startsWith(href);
 		color: var(--ink);
 		background: none;
 		border: 0;
-		border-bottom: 1px solid var(--rule);
 		padding: 0.3rem 0 0.2rem;
 		width: 6rem;
-		transition: width 0.25s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+		flex: 1 1 auto;
+		min-width: 0;
+		transition: width 0.25s ease;
+	}
+
+	form.site-search input:focus {
+		outline: none;
+		width: 10rem;
 	}
 
 	form.site-search input::placeholder {
@@ -196,34 +238,79 @@ const isCurrent = (href: string) => path.startsWith(href);
 		letter-spacing: 0.08em;
 	}
 
-	/* Thickens like a nav underline, via shadow so nothing shifts by a pixel. */
-	form.site-search input:focus {
-		outline: none;
-		width: 10rem;
-		border-bottom-color: var(--ink);
-		box-shadow: 0 1px 0 var(--ink);
-	}
-
-	/* The native clear button is chrome from another site. */
+	/* Ours replaces it: the native one is chrome from another site, and it only
+	   exists on WebKit anyway. */
 	form.site-search input::-webkit-search-cancel-button {
 		-webkit-appearance: none;
 		appearance: none;
 	}
 
-	@media (max-width: 480px) {
-		form.site-search input {
-			width: 4.5rem;
+	/* Only there when there's something to clear — :placeholder-shown is the CSS
+	   read of "field is empty", so no script decides whether this is visible. */
+	.search-clear {
+		display: none;
+		background: none;
+		border: 0;
+		color: var(--ink-faint);
+		cursor: pointer;
+		/* Padding makes a thumb-sized hit box; the negative margin keeps the mark
+		   where it was drawn and the field the height it was. Nothing negative on
+		   the right — the hit box would hang past the end of the rule. */
+		padding: 0.5rem 0.3rem;
+		margin: -0.5rem 0 -0.5rem -0.3rem;
+		flex-shrink: 0;
+	}
+
+	form.site-search:has(input:not(:placeholder-shown)) .search-clear {
+		display: flex;
+		align-items: center;
+	}
+
+	.search-clear:hover {
+		color: var(--ink);
+	}
+
+	.search-clear svg {
+		width: 0.8rem;
+		height: 0.8rem;
+		display: block;
+	}
+
+	/* No submit button, on purpose: `/` filters as you type, and everywhere else
+	   the keyboard's own return/search key submits (see `enterkeyhint`). A visible
+	   button earned its keep only while it was the sole way to run a query. */
+
+	/* Below this the row can't hold links, a focused field and the cord at
+	   readable sizes, so the field drops to a line of its own and spans it.
+	   Ordered after the cord so the cord still hangs from the header's top edge,
+	   where a real one would. (px, not rem: media queries ignore the 18px root.) */
+	@media (max-width: 544px) {
+		nav.site-nav {
+			flex-wrap: wrap;
+		}
+
+		form.site-search {
+			order: 1;
+			flex-basis: 100%;
+			margin-left: 0;
+		}
+
+		form.site-search input,
+		form.site-search input:focus {
+			width: 100%;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		form.site-search,
-		form.site-search input {
+		form.site-search input,
+		.field {
 			transition: none;
 		}
 	}
 
-	/* The cord already sits hard right; the field takes the slack before it. */
+	/* The links take the slack before the field, and the cord stays hard right
+	   where it hangs from the header's top edge. */
 	nav.site-nav ul {
 		list-style: none;
 		margin: 0;

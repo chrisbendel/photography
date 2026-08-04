@@ -29,10 +29,11 @@ hash — stable forever, no implied ordering, no collisions across parallel scan
 | Field | |
 | --- | --- |
 | `added` | required; stamped at scaffold, drives newest-first order |
-| `image`, `alt` | required; `alt` must be non-empty (`check-photos` fails) |
+| `image`, `alt` | required; `alt` is machine-written at scaffold — skim it |
 | `year` | integer, not a date — film rarely remembers the month, and a number has no timezone to render wrong |
 | `series` | a slug; naming one creates it |
 | `caption`, `lens`, `film`, `location`, `format`, `tags` | optional |
+| `notes` | the log book — plain text, renders under the print, searchable |
 
 **No `draft` field and no staging directory.** Git already is one: the branch is
 the draft, merging to `main` is publishing. `yarn photo` writes straight into the
@@ -96,9 +97,15 @@ file before reaching for a library.
 Lowercase, kebab-case, any number including zero. Tags are search terms, not
 routes.
 
-A local vision model (Florence-2 via transformers.js) suggests tags in `yarn
-photo` and `yarn suggest-tags`. **Suggestions only — never written to `tags:`
-automatically.**
+A local vision model (Florence-2 via transformers.js) runs in `yarn photo` and
+`yarn suggest-tags`. **Tags are suggestions only — never written to `tags:`
+automatically.** `alt` and `scene` are the exceptions and *are* written: a blank
+`alt` is an accessibility bug, and a machine sentence beats the empty string you
+meant to come back to.
+
+Skim the `alt` it writes. It is confidently wrong sometimes — it called a
+lakeshore at Grand Isle "a river winding through a forest" — and unlike a bad tag,
+a wrong `alt` misinforms the one reader who can't check it against the image.
 
 - Precision over recall: three captions at increasing detail, ranked by how many
   agree, capped at 7 (`TAGGER_MAX`). Prefer raising the bar to widening `STOP`.
@@ -133,6 +140,8 @@ automatically.**
   widening the page; notes keep a shorter reading line inside it.
 - No hardcoded colors. Darkroom palette: warm off-white / warm near-black, no
   pure RGB, no accent color (state via underline/weight/border).
+- `main` is a flex column with `gap: var(--gap)`. Don't also put margins on its
+  children — they stack on the gap and double every space.
 
 ## Tactile details
 

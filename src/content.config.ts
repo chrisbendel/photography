@@ -25,6 +25,8 @@ const photos = defineCollection({
 			// A slug, not a reference: naming one creates it (src/lib/series.ts).
 			series: z.string().nullish(),
 			tags: z.array(z.string()).default([]),
+			// Your notes on the frame. Plain text, not markdown — see AGENTS.md.
+			notes: z.string().optional(),
 			// What the vision model saw. Never rendered — it only widens search.
 			scene: z.string().optional(),
 		}),

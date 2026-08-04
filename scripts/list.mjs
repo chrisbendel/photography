@@ -7,9 +7,7 @@ function describe(id) {
 	const get = frontmatter(join(LIVE_DIR, id, "index.md"));
 	if (!get) return { added: "", line: "(no index.md)" };
 
-	// Before alt is filled in, the scan filename is the only handle there is.
-	const scan = get("# scan");
-	const label = get("caption") || get("alt") || (scan ? `[${scan}]` : "(unfilled)");
+	const label = get("caption") || get("alt") || "(unfilled)";
 	const added = get("added");
 	const rest = [get("location"), get("year") || added, get("series")].filter(Boolean);
 	return { added, line: [label, ...rest].join("  ·  ") };

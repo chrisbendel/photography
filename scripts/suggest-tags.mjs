@@ -120,6 +120,20 @@ function canonical(word, corpus) {
 	return word;
 }
 
+// Alt from the middle caption: the terse one is too thin, the longest is a
+// paragraph. Strip the model's "the image is a black and white photo of" opener —
+// a screen reader already says "image", and the catalogue is all monochrome — and
+// keep one sentence. The full description lives in `scene`.
+function deriveAlt(text) {
+	let s = (text || "")
+		.trim()
+		.replace(/^the image (shows|is|depicts)\s+/i, "")
+		.replace(/^(a|an)\s+(black and white\s+)?(photo(graph)?|picture|image)\s+of\s+/i, "")
+		.replace(/^(black and white\s+)?(photo(graph)?|picture|image)\s+of\s+/i, "");
+	s = s.split(/(?<=\.)\s+/)[0].replace(/\s*\.\s*$/, "");
+	return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+}
+
 // Caption agreement is the signal, frequency the tiebreak; gerunds penalised.
 function rank(captions, corpus) {
 	const stats = new Map();
@@ -180,9 +194,9 @@ export async function tagImage(imagePath) {
 		const out = await runTask(image, task);
 		captions.push((out[task] ?? "").trim());
 	}
-	// The longest caption is the one worth reading by hand.
 	return {
 		caption: captions[captions.length - 1],
+		alt: deriveAlt(captions[1] ?? captions[0]),
 		tags: rank(captions, corpusTags()),
 	};
 }
@@ -194,8 +208,9 @@ async function suggestForSlug(slug) {
 		return;
 	}
 	process.stdout.write(`  ${slug} ... `);
-	const { caption, tags } = await tagImage(imagePath);
+	const { caption, alt, tags } = await tagImage(imagePath);
 	console.log("done");
+	console.log(`    alt: ${alt}`);
 	console.log(`    caption: ${caption}`);
 	console.log(`    tags: ${tags.join(", ")}`);
 	console.log("");

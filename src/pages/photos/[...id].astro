@@ -1,6 +1,6 @@
 ---
 import { Image } from "astro:assets";
-import { getCollection, render } from "astro:content";
+import { getCollection } from "astro:content";
 import Layout from "../../layouts/Layout.astro";
 import { formatLabel } from "../../lib/format";
 import { titleFromSlug } from "../../lib/series";
@@ -14,8 +14,8 @@ export async function getStaticPaths() {
 }
 
 const { photo } = Astro.props;
-const { Content } = await render(photo);
-const { year, image, alt, caption, lens, film, location, format, series, tags } = photo.data;
+const { year, image, alt, caption, lens, film, location, format, series, tags, notes } =
+	photo.data;
 const seriesLabel = series ? titleFromSlug(series) : null;
 ---
 
@@ -73,10 +73,10 @@ const seriesLabel = series ? titleFromSlug(series) : null;
 		)}
 	</dl>
 
-	{photo.body?.trim() && (
+	{notes?.trim() && (
 		<section class="notes">
 			<h2>Notes</h2>
-			<Content />
+			<p>{notes.trim()}</p>
 		</section>
 	)}
 
@@ -96,7 +96,7 @@ const seriesLabel = series ? titleFromSlug(series) : null;
 
 <style>
 	.print-figure {
-		margin: 0 0 2rem;
+		margin: 0;
 	}
 
 	.print-frame {
@@ -155,7 +155,7 @@ const seriesLabel = series ? titleFromSlug(series) : null;
 		gap: 0.3rem 1.25rem;
 		color: var(--ink-soft);
 		font-size: 0.8rem;
-		margin: 1rem 0 1.5rem;
+		margin: 0;
 		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 		letter-spacing: 0.04em;
 	}
@@ -180,13 +180,20 @@ const seriesLabel = series ? titleFromSlug(series) : null;
 		max-width: 34rem;
 	}
 
+	/* Plain text, so line and paragraph breaks are the only structure there is. */
+	section.notes p {
+		white-space: pre-wrap;
+		margin: 0;
+	}
+
 	section.notes h2 {
 		font-size: 1rem;
 		margin: 0 0 0.4rem;
 	}
 
+	/* A footer thought, so a little clear of the metadata above it. */
 	.photo-tags {
-		margin: 2rem 0 0;
+		margin: 0.5rem 0 0;
 		color: var(--ink-faint);
 		font-size: 0.85rem;
 	}
