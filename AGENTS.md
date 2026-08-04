@@ -48,8 +48,13 @@ Rules that are easy to break:
 - Reading frontmatter, match `^key:[ \t]*(.*)$`, never `\s*`. `\s` matches
   newlines, so on a blank field it captures the next line's value.
 - Hash ids are unreadable by design — stable forever, so permalinks never rot.
-  Finding an entry by name is the IDE's job, not a script's. `yarn photo` prints
-  a `code <path>`; scripts print commands, they don't launch editors.
+  Finding an entry by name is the IDE's job, not a script's.
+- `yarn photo` ends by offering to open the entry: Enter opens it in
+  `$VISUAL`/`$EDITOR` (falling back to `code`), anything else prints the command.
+  Copying a path out of scrollback was the one place the CLI cost real friction.
+  The rule it replaces still holds everywhere else — scripts print commands, they
+  don't launch things, and this one only prompts when `stdin` is a TTY, so piped
+  and CI runs still just print.
 
 Scripts: `photo.mjs` (scaffold), `check.mjs` (gate), `list.mjs` (`yarn
 entries`), `suggest-tags.mjs`. Shared plumbing in `scripts/lib/entries.mjs`.
@@ -135,9 +140,14 @@ a wrong `alt` misinforms the one reader who can't check it against the image.
 
 - Semantic elements (`main`, `header`, `figure`, `figcaption`, `dl`).
 - Flexbox/block flow; grid only for genuine 2D alignment.
-- **One page measure** (`--measure`, 48rem), shared by nav and content so nothing
-  shifts width between pages. A mosaic gets room by shedding a column, never by
-  widening the page; notes keep a shorter reading line inside it.
+- **One page measure** (`--measure`, 48rem), shared by nav and prose so nothing
+  shifts width between pages; notes keep a shorter reading line inside it.
+- **The mosaic is the one exception** (`--sheet`, 72rem, applied via
+  `main:has(.sheet)`). Prints want room, prose doesn't. The consequence is
+  accepted: the nav rule is narrower than the photographs under it, like a narrow
+  header over a wide plate. Widen by *less* than this and it backfires — a third
+  column at 64rem is 375px against the 412px two columns give inside `--measure`;
+  at 72rem it's 423px, so the third column arrives at 1350px and not before.
 - No hardcoded colors. Darkroom palette: warm off-white / warm near-black, no
   pure RGB, no accent color (state via underline/weight/border).
 - `main` is a flex column with `gap: var(--gap)`. Don't also put margins on its

@@ -6,7 +6,7 @@ Conventions and rationale: [`AGENTS.md`](./AGENTS.md).
 ## Add a photograph
 
 ```sh
-yarn photo ~/scans/011.jpg     # scaffold; prints a `code <path>` to open
+yarn photo ~/scans/011.jpg     # scaffold; Enter at the prompt opens it in $EDITOR
 # fill in alt (required), year, lens, film, format, location, tags, notes
 yarn dev                       # walk it at /
 yarn check-photos              # must pass

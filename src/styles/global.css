@@ -14,6 +14,10 @@
 
 	/* One measure for every page — nav and content share it. */
 	--measure: 48rem;
+	/* Except the mosaic, which gets its own. At 72rem three columns are 423px
+	   wide, a touch more than the two columns of 412px inside --measure; at 64rem
+	   they'd be 375px, so widening by less than this only shrinks the prints. */
+	--sheet: 72rem;
 	--gutter: 1.5rem;
 	--gap: 1rem;
 
@@ -202,10 +206,25 @@ figcaption {
 	margin: 0 calc(var(--gutter) * -0.5);
 }
 
-/* Two columns at most: inside a 48rem measure a third only shrinks the prints. */
+/* The sheet is the only thing allowed past the page measure: prints want room,
+   prose doesn't, and :has means no page that lacks a mosaic is affected. The nav
+   rule stays at --measure and so reads narrower than the photographs below it —
+   deliberate, like a narrow header over a wide plate. */
+main:has(.sheet) {
+	max-width: var(--sheet);
+}
+
 @media (min-width: 600px) {
 	.sheet {
 		column-count: 2;
+	}
+}
+
+/* A third column only once the sheet is actually wide enough to carry it without
+   shrinking the prints — 72rem of sheet plus both gutters. */
+@media (min-width: 1350px) {
+	.sheet {
+		column-count: 3;
 	}
 }
 
@@ -213,15 +232,12 @@ figcaption {
 	display: none;
 }
 
-/* The newest print takes the full measure, like the plate facing a book's title
-   page. Everything below it balances as a sheet, so this costs one fragment
-   boundary and nothing else — measured at 20 frames, coverage goes 95% → 92%.
-   Spanning mid-sheet instead (every Nth print) drops it to 86% and leaves holes
-   beside tall frames, because multicol balances each fragment separately.
-   Filtered out by a search, this cell is display:none and no plate appears. */
-.sheet .cell:first-child {
-	column-span: all;
-}
+/* Every print flows in the sheet at column width — no featured first print. A
+   frontispiece was worth it while the mosaic was a flat two columns; once --sheet
+   widened and a third column arrived, the sheet carries its own variety, and the
+   plate mostly pushed everything else below the fold. Restoring it is
+   `.sheet .cell:first-child { column-span: all }` plus a max-height cap, which it
+   needs at 72rem: a 5:4 plate computes to ~1037px tall. */
 
 .sheet .cell {
 	display: block;

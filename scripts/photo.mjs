@@ -1,8 +1,10 @@
 #!/usr/bin/env node
 // Scaffold a new entry, live immediately. Usage: yarn photo <image> [--no-tags]
+import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, extname, join, resolve } from "node:path";
+import { createInterface } from "node:readline";
 import { cliArgs, idsIn, LIVE_DIR } from "./lib/entries.mjs";
 import { suggestSeries, tagImage } from "./suggest-tags.mjs";
 
@@ -111,7 +113,45 @@ notes: ""
 `.replace(/ +$/gm, ""),
 );
 
-console.log(`Created  ${resolve(mdPath)}`);
+const entry = resolve(mdPath);
+
+console.log(`Created  ${entry}`);
 console.log(`         ${imageNote}`);
-console.log(`\nOpen:    code ${resolve(mdPath)}`);
 console.log("Preview: yarn dev, then yarn check-photos before pushing.");
+
+// $VISUAL/$EDITOR first — the shell already knows which editor you meant, and
+// hardcoding `code` breaks for anyone who doesn't use it.
+const editor = process.env.VISUAL || process.env.EDITOR || "code";
+
+// VS Code has no CLI option for editor groups — 1.130 offers --diff, --goto and
+// --reuse-window and nothing that opens a file beside another — so the best a
+// script can do is put both files in the window as tabs; ⌘\ then splits them.
+// A terminal editor gets the entry alone: vim has no use for a jpg.
+const isCode = /^(code|code-insiders|codium|vscodium|cursor|windsurf)$/.test(basename(editor));
+const openWith = isCode && copiedImage ? [entry, resolve(copiedImage)] : [entry];
+
+// Not a terminal (piped, CI, an agent running this) means no one is there to
+// press anything, so print the command and leave.
+if (!process.stdin.isTTY) {
+	console.log(`\nOpen:    ${editor} ${openWith.join(" ")}`);
+	process.exit(0);
+}
+
+const rl = createInterface({ input: process.stdin, output: process.stdout });
+rl.question(`\nEnter to open in ${editor}, anything else to skip: `, (answer) => {
+	rl.close();
+	if (answer.trim() !== "") {
+		console.log(`Open:    ${editor} ${openWith.join(" ")}`);
+		return;
+	}
+	// stdio inherited so a terminal editor takes the tty and this waits for it;
+	// `code` and friends hand off to the running window and return immediately.
+	const child = spawn(editor, openWith, { stdio: "inherit" });
+	child.on("error", (err) => {
+		console.log(`Couldn't launch ${editor} (${err.code}). Open it yourself:`);
+		console.log(`         ${entry}`);
+	});
+	if (openWith.length > 1) {
+		console.log("Split:   entry and photo are both open — ⌘\\ puts them side by side.");
+	}
+});
