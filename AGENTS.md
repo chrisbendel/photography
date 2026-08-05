@@ -76,9 +76,17 @@ Consequences, accepted knowingly:
   a series wants a description, reintroduce a small collection merged in
   `getSeries()` (~15 lines). Not before — it was removed for doing nothing.
 
-`yarn photo` pre-fills `series:` only with a series that already exists, scoring
-suggested tags against each one's slug and member tags (needs 2 overlaps).
-Founding a series is a decision, not a suggestion.
+`yarn photo` leaves `series:` blank, always. Joining one is a decision, same as
+founding one.
+
+It used to guess, scoring the suggested tags against each existing series' slug
+and pooled member tags (2 overlaps to win). Don't reinstate that: the score grew
+with membership, so the largest series always won. At 10 entries `winter` had
+absorbed `water, trees, rocks, lake, river, sky, calm` — plus `spring`, from a
+member tagged that way — and matched 6 of 7 unrelated photos, while `water`
+appeared in 8 of 10 entries on its own. Tag overlap measures "both are Vermont
+landscapes", not "both are winter". Anything that scores series from shared tags
+needs the tags to be *distinctive*, which these aren't.
 
 ## Search
 

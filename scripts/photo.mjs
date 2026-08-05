@@ -6,7 +6,7 @@ import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, extname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { cliArgs, idsIn, LIVE_DIR } from "./lib/entries.mjs";
-import { suggestSeries, tagImage } from "./suggest-tags.mjs";
+import { tagImage } from "./suggest-tags.mjs";
 
 const args = cliArgs();
 const skipTags = args.includes("--no-tags");
@@ -68,12 +68,12 @@ if (copiedImage && !skipTags) {
 			console.log(`  alt:       ${alt}`);
 			console.log(`  suggested: ${tags.join(", ")}`);
 
-			series = suggestSeries(tags);
-			console.log(
-				series
-					? `  series:    ${series}`
-					: "  series:    (no match — left blank, name one to start it)",
-			);
+			// `series` is never guessed. It used to be scored against the pooled tags
+			// of each existing series, which meant the largest series won: `winter`
+			// had accumulated water, trees, rocks, lake, river — and `spring`, from a
+			// member tagged that way — so it matched 6 of 7 unrelated photos. Tag
+			// overlap measures "both are Vermont landscapes", not "both are winter".
+			console.log("  series:    (blank — name one to join or start it)");
 		} catch (err) {
 			console.log(`  (tag suggestion failed: ${err.message})`);
 		}

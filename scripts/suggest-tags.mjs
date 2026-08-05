@@ -84,33 +84,6 @@ function corpusTags() {
 	return tags;
 }
 
-// Match against existing series only — a wrong guess would found a real one.
-export function suggestSeries(tags, minOverlap = 2) {
-	const candidates = new Set();
-	for (const id of idsIn(LIVE_DIR)) {
-		const s = frontmatter(join(LIVE_DIR, id, "index.md"))?.("series");
-		if (s) candidates.add(s);
-	}
-
-	let best = { slug: "", score: 0 };
-	for (const slug of candidates) {
-		const vocabulary = new Set(words(slug.replace(/-/g, " ")));
-		for (const id of idsIn(LIVE_DIR)) {
-			const photo = frontmatter(join(LIVE_DIR, id, "index.md"));
-			if (photo?.("series") !== slug) continue;
-			for (const t of (photo("tags") ?? "").replace(/[[\]]/g, "").split(",")) {
-				const tag = t.trim().replace(/^["']|["']$/g, "");
-				if (tag) vocabulary.add(tag);
-			}
-		}
-
-		const score = tags.filter((t) => vocabulary.has(t)).length;
-		if (score > best.score) best = { slug, score };
-	}
-
-	return best.score >= minOverlap ? best.slug : "";
-}
-
 // Fold onto an established tag by plural — `/tags/tree/` vs `/tags/trees/`.
 function canonical(word, corpus) {
 	if (corpus.has(word)) return word;

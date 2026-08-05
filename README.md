@@ -32,7 +32,7 @@ markdown.
 | `yarn dev` | Dev server at `localhost:4321` |
 | `yarn build` | Build to `./dist/` |
 | `yarn preview` | Build, then serve through wrangler |
-| `yarn photo <image> [--no-tags]` | New entry, with suggested tags + series |
+| `yarn photo <image> [--no-tags]` | New entry, with suggested tags (`series` stays blank) |
 | `yarn entries` | List entries with a readable label per hash |
 | `yarn check-photos` | Pre-merge gate (see below) |
 | `yarn suggest-tags <slug>\|--all` | Re-tag an existing photo (~10s each) |
