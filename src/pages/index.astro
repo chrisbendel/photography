@@ -19,12 +19,35 @@ const photoData = await Promise.all(
 );
 
 const loupeJson = JSON.stringify(photoData);
+
+// The top of the mosaic is the LCP element — leaving it to the lazy loader
+// costs a round trip before anything paints. Multi-column fills down the first
+// column before the second, so past a screenful this is approximate.
+const EAGER = 4;
+
+// Everything a photograph can be found by, flattened per entry. `scene` is the
+// vision model's description — it is why searching "island" or "overcast" works
+// on a photo nobody thought to tag that way.
+const haystacks = Object.fromEntries(
+	allPhotos.map((p) => {
+		const d = p.data;
+		return [
+			p.id,
+			[d.alt, d.caption, d.location, d.lens, d.film, d.series, d.year, d.notes, d.scene, ...d.tags]
+				.filter(Boolean)
+				.join(" ")
+				.toLowerCase(),
+		];
+	}),
+);
 ---
 
 <Layout title="Chris Bendel — Photography" description="Selected film photography.">
+	<p class="result-count" id="result-count" role="status" aria-live="polite" hidden></p>
+
 	<div class="sheet" id="gallery-grid">
 		{
-			allPhotos.map((photo) => (
+			allPhotos.map((photo, i) => (
 				<button
 					type="button"
 					class="cell"
@@ -35,14 +58,175 @@ const loupeJson = JSON.stringify(photoData);
 						src={photo.data.image}
 						alt={photo.data.alt}
 						widths={[400, 800, 1200]}
-						sizes="(min-width: 900px) 23rem, (min-width: 600px) 22rem, 92vw"
-						loading="lazy"
+						sizes="(min-width: 1350px) 23rem, (min-width: 600px) 35rem, 92vw"
+						loading={i < EAGER ? "eager" : "lazy"}
+						fetchpriority={i === 0 ? "high" : undefined}
+						decoding={i < EAGER ? "sync" : "async"}
 					/>
 				</button>
 			))
 		}
 	</div>
+
+	<p class="no-results" id="no-results" hidden>
+		Nothing matches that. <button type="button" id="clear-search">Show everything</button>
+	</p>
 </Layout>
+
+<script is:inline define:vars={{ haystacks }}>
+	(function () {
+		var grid = document.getElementById("gallery-grid");
+		var input = document.getElementById("site-search");
+		if (!grid || !input) return;
+
+		var cells = Array.prototype.slice.call(grid.querySelectorAll("[data-loupe-id]"));
+		var count = document.getElementById("result-count");
+		var empty = document.getElementById("no-results");
+
+		// Split on first fuzzy use, so substring search pays nothing for them.
+		var words = null;
+
+		function tokenize() {
+			words = {};
+			Object.keys(haystacks).forEach(function (id) {
+				var seen = {};
+				haystacks[id].split(/[^a-z0-9]+/).forEach(function (w) {
+					if (w.length > 2) seen[w] = true;
+				});
+				words[id] = Object.keys(seen);
+			});
+		}
+
+		// Bounded Damerau-Levenshtein: bails on the length gap before the matrix, and
+		// counts transposition as one edit — "wodos" for "woods" is the common typo.
+		function within(a, b, max) {
+			if (Math.abs(a.length - b.length) > max) return false;
+			var prev2 = [];
+			var prev = [];
+			var cur = [];
+			var i, j;
+			for (j = 0; j <= b.length; j++) prev[j] = j;
+			for (i = 1; i <= a.length; i++) {
+				cur[0] = i;
+				var best = cur[0];
+				for (j = 1; j <= b.length; j++) {
+					var cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+					var v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + cost);
+					if (
+						i > 1 && j > 1 &&
+						a.charAt(i - 1) === b.charAt(j - 2) &&
+						a.charAt(i - 2) === b.charAt(j - 1)
+					) {
+						v = Math.min(v, prev2[j - 2] + 1);
+					}
+					cur[j] = v;
+					if (v < best) best = v;
+				}
+				// Every path through this row already costs more than the budget.
+				if (best > max) return false;
+				prev2 = prev.slice();
+				prev = cur.slice();
+			}
+			return prev[b.length] <= max;
+		}
+
+		// Off under 4 chars: "wod" is as close to rod as to wood. Precision over recall.
+		function budget(term) {
+			if (term.length < 4) return 0;
+			return term.length < 7 ? 1 : 2;
+		}
+
+		function fuzzyHit(id, term, max) {
+			var ws = words[id];
+			for (var i = 0; i < ws.length; i++) {
+				var w = ws[i];
+				if (within(term, w, max)) return true;
+				// Prefix, so a typo'd stem still finds the longer word: "wods" → "woodshed".
+				if (w.length > term.length + max && within(term, w.slice(0, term.length + max), max)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		function apply(q) {
+			var term = (q || "").trim().toLowerCase();
+			var shown = 0;
+			var hits = {};
+			cells.forEach(function (cell) {
+				var id = cell.getAttribute("data-loupe-id");
+				var hay = haystacks[id] || "";
+				var hit = !term || hay.indexOf(term) !== -1;
+				hits[id] = hit;
+				if (hit) shown++;
+			});
+
+			// Fallback, not default: an exact substring stays exact, and fast.
+			var max = shown === 0 ? budget(term) : 0;
+			var fuzzy = false;
+			if (max > 0) {
+				if (!words) tokenize();
+				cells.forEach(function (cell) {
+					var id = cell.getAttribute("data-loupe-id");
+					if (fuzzyHit(id, term, max)) {
+						hits[id] = true;
+						shown++;
+						fuzzy = true;
+					}
+				});
+			}
+
+			cells.forEach(function (cell) {
+				cell.hidden = !hits[cell.getAttribute("data-loupe-id")];
+			});
+
+			empty.hidden = !term || shown > 0;
+			count.hidden = !term;
+			if (term) {
+				count.textContent =
+					shown +
+					(shown === 1 ? " print " : " prints ") +
+					(fuzzy ? "near “" : "matching “") +
+					term +
+					"”";
+			}
+		}
+
+		function sync(q, push) {
+			apply(q);
+			var url = q ? "/?q=" + encodeURIComponent(q) : "/";
+			if (push) history.replaceState(null, "", url);
+		}
+
+		var initial = new URLSearchParams(location.search).get("q") || "";
+		if (initial) input.value = initial;
+		apply(initial);
+
+		input.addEventListener("input", function () {
+			sync(input.value, true);
+		});
+		// Filtering already happened, so the keyboard's "search" key has nothing to run:
+		// swallow it and blur, which gets the keyboard off the results. Off `/` the same
+		// field submits for real, and this handler isn't there.
+		input.form.addEventListener("submit", function (e) {
+			e.preventDefault();
+			input.blur();
+		});
+
+		input.addEventListener("keydown", function (e) {
+			if (e.key === "Escape" && input.value) {
+				e.stopPropagation();
+				input.value = "";
+				sync("", true);
+			}
+		});
+		document.getElementById("clear-search").addEventListener("click", function () {
+			input.value = "";
+			input.focus();
+			sync("", true);
+		});
+	})();
+</script>
 
 <div
 	class="loupe"
@@ -77,6 +261,25 @@ const loupeJson = JSON.stringify(photoData);
 </div>
 
 <style>
+	.result-count,
+	.no-results {
+		color: var(--ink-faint);
+		font-size: 0.8rem;
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		letter-spacing: 0.04em;
+		margin: 0;
+	}
+
+	.no-results button {
+		font: inherit;
+		color: var(--ink);
+		background: none;
+		border: 0;
+		padding: 0;
+		cursor: pointer;
+		text-decoration: underline;
+	}
+
 	/* Grid cells use <button> instead of <a> — strip default button chrome */
 	.sheet button.cell {
 		background: none;

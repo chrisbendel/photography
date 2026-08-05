@@ -19,11 +19,17 @@ const { photos } = series;
 
 	<div class="print-stack">
 		{
-			photos.map((photo) => (
+			photos.map((photo, i) => (
 				<a class="print-entry" href={`/photos/${photo.id}/`} id={photo.id}>
 					<div class="print-mount">
 						<figure>
-							<Image src={photo.data.image} alt={photo.data.alt} loading="lazy" />
+							<Image
+								src={photo.data.image}
+								alt={photo.data.alt}
+								loading={i === 0 ? "eager" : "lazy"}
+								fetchpriority={i === 0 ? "high" : undefined}
+								decoding={i === 0 ? "sync" : "async"}
+							/>
 							{photo.data.caption && <figcaption>{photo.data.caption}</figcaption>}
 						</figure>
 					</div>

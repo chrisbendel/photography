@@ -49,12 +49,7 @@ const { title = "Photography", description = "Selected film photography" } = Ast
 				if (!pull) return;
 
 				function currentTheme() {
-					return (
-						document.documentElement.getAttribute("data-theme") ||
-						(window.matchMedia("(prefers-color-scheme: dark)").matches
-							? "dark"
-							: "light")
-					);
+					return document.documentElement.getAttribute("data-theme") || "light";
 				}
 
 				function syncTitle() {
@@ -80,6 +75,21 @@ const { title = "Photography", description = "Selected film photography" } = Ast
 					setTimeout(function () {
 						pull.classList.remove("is-pulling");
 					}, 600);
+				});
+			})();
+		</script>
+		<script is:inline>
+			(function () {
+				var input = document.getElementById("site-search");
+				var clear = document.getElementById("search-clear");
+				if (!input || !clear) return;
+
+				// Here, not on the gallery page: the field is in the nav, so this has to
+				// work everywhere. Dispatching `input` is what re-filters and resets ?q=.
+				clear.addEventListener("click", function () {
+					input.value = "";
+					input.dispatchEvent(new Event("input", { bubbles: true }));
+					input.focus();
 				});
 			})();
 		</script>

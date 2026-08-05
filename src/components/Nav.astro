@@ -1,8 +1,7 @@
 ---
 const links = [
-	// No Gallery link — the gallery is `/`, which the brand link already goes to.
 	{ href: "/series/", label: "Series" },
-	{ href: "/tags/", label: "Tags" },
+	{ href: "/about/", label: "About" },
 	// No Feed link — /rss.xml is advertised via <link rel="alternate"> in Layout.
 ];
 
@@ -12,7 +11,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 
 <header class="site">
 	<nav class="site-nav" aria-label="Primary">
-		<a href="/" class="brand" aria-label="Chris Bendel — home">
+		<a href="/" class="brand" aria-label="Gallery — every print">
 			<svg
 				class="brand-mark"
 				viewBox="0 0 32 40"
@@ -43,7 +42,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 					<rect class="mark-img" x="0" y="36" width="32" height="4" opacity="0.4" />
 				</g>
 			</svg>
-			<span class="brand-name">Chris Bendel</span>
+			<span class="brand-name">Gallery</span>
 		</a>
 		<ul>
 			{
@@ -56,6 +55,34 @@ const isCurrent = (href: string) => path.startsWith(href);
 				))
 			}
 		</ul>
+		<form class="site-search" action="/" method="get" role="search">
+			<label class="visually-hidden" for="site-search">Search photographs</label>
+			<!-- A loupe — the tool you'd hold over a negative, and what the lightbox
+			     is named for. Faint until the field has focus, like the rest of the
+			     chrome. -->
+			<svg class="loupe-glyph" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+				<circle cx="6.75" cy="6.75" r="4.25" fill="none" stroke="currentColor" stroke-width="1.1" />
+				<line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" />
+			</svg>
+			<span class="field">
+				<input
+					type="search"
+					id="site-search"
+					name="q"
+					placeholder="search"
+					autocomplete="off"
+					spellcheck="false"
+					autocorrect="off"
+					autocapitalize="off"
+					enterkeyhint="search"
+				/>
+				<button type="button" class="search-clear" id="search-clear" aria-label="Clear search">
+					<svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+					</svg>
+				</button>
+			</span>
+		</form>
 		<button
 			type="button"
 			class="darkroom-pull"
@@ -91,13 +118,15 @@ const isCurrent = (href: string) => path.startsWith(href);
 		border-bottom: 1px solid var(--rule);
 	}
 
+	/* One row: the field shrinks to fit, so focusing it can't bump the cord to a second line. */
 	nav.site-nav {
 		max-width: var(--measure);
 		margin: 0 auto;
 		padding: 1rem var(--gutter);
 		display: flex;
+		flex-wrap: nowrap;
 		align-items: center;
-		gap: 1.5rem;
+		gap: 0.75rem 1.5rem;
 		font-size: 0.85rem;
 	}
 
@@ -141,6 +170,137 @@ const isCurrent = (href: string) => path.startsWith(href);
 		}
 	}
 
+	form.site-search {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-left: auto;
+		/* Load-bearing: an input's intrinsic min-width (~20ch) otherwise shoves the cord off-screen. */
+		min-width: 0;
+		color: var(--ink-faint);
+		transition: color 0.2s ease;
+	}
+
+	form.site-search:focus-within {
+		color: var(--ink);
+	}
+
+	.loupe-glyph {
+		width: 0.8rem;
+		height: 0.8rem;
+		flex-shrink: 0;
+		display: block;
+	}
+
+	/* Underline on the field, not the input, so the ✕ sits inside the rule. */
+	.field {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		flex: 1 1 auto;
+		min-width: 0;
+		border-bottom: 1px solid var(--rule);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	/* Thickens like a nav underline, via shadow so nothing shifts by a pixel. */
+	.field:focus-within {
+		border-bottom-color: var(--ink);
+		box-shadow: 0 1px 0 var(--ink);
+	}
+
+	/* Monospace, like the verso metadata — this is filing-cabinet language. */
+	form.site-search input {
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-size: 0.75rem;
+		letter-spacing: 0.06em;
+		color: var(--ink);
+		background: none;
+		border: 0;
+		padding: 0.3rem 0 0.2rem;
+		width: 6rem;
+		flex: 1 1 auto;
+		min-width: 0;
+		transition: width 0.25s ease;
+	}
+
+	form.site-search input:focus {
+		outline: none;
+		width: 10rem;
+	}
+
+	form.site-search input::placeholder {
+		color: var(--ink-faint);
+		letter-spacing: 0.08em;
+	}
+
+	/* Ours replaces it — the native one is chrome from another site. */
+	form.site-search input::-webkit-search-cancel-button {
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
+	/* :placeholder-shown is the CSS read of "field is empty" — no script decides this. */
+	.search-clear {
+		display: none;
+		background: none;
+		border: 0;
+		color: var(--ink-faint);
+		cursor: pointer;
+		/* Padding makes a thumb-sized hit box; negative margin keeps the mark and the
+		   field where they were. None on the right, or the box hangs past the rule. */
+		padding: 0.5rem 0.3rem;
+		margin: -0.5rem 0 -0.5rem -0.3rem;
+		flex-shrink: 0;
+	}
+
+	form.site-search:has(input:not(:placeholder-shown)) .search-clear {
+		display: flex;
+		align-items: center;
+	}
+
+	.search-clear:hover {
+		color: var(--ink);
+	}
+
+	.search-clear svg {
+		width: 0.8rem;
+		height: 0.8rem;
+		display: block;
+	}
+
+	/* No submit button: `/` filters as you type, and elsewhere the keyboard's own
+	   return/search key submits (see `enterkeyhint`). */
+
+	/* Too narrow for links, field and cord: the field takes its own row, after the
+	   cord so the cord still hangs from the top edge. px not rem — MQs ignore the
+	   18px root. */
+	@media (max-width: 544px) {
+		nav.site-nav {
+			flex-wrap: wrap;
+		}
+
+		form.site-search {
+			order: 1;
+			flex-basis: 100%;
+			margin-left: 0;
+		}
+
+		form.site-search input,
+		form.site-search input:focus {
+			width: 100%;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		form.site-search,
+		form.site-search input,
+		.field {
+			transition: none;
+		}
+	}
+
+	/* The links take the slack, so the cord stays hard right. */
 	nav.site-nav ul {
 		list-style: none;
 		margin: 0;
@@ -179,7 +339,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 		background: none;
 		border: 0;
 		padding: 0;
-		margin-left: auto;
+		margin-left: 1.25rem;
 		cursor: pointer;
 		color: var(--ink);
 		display: inline-flex;
@@ -256,55 +416,30 @@ const isCurrent = (href: string) => path.startsWith(href);
 		filter: blur(5px);
 	}
 
-	/* On (lit) — light mode via OS pref */
-	@media (prefers-color-scheme: light) {
-		:global(:root:not([data-theme="dark"])) .glass {
-			fill: #fff1b8;
-			stroke: #d4a82b;
-		}
-		:global(:root:not([data-theme="dark"])) .cap {
-			fill: var(--ink-soft);
-		}
-		:global(:root:not([data-theme="dark"])) .filament {
-			stroke: #d68500;
-			stroke-width: 0.85;
-			opacity: 1;
-		}
-		:global(:root:not([data-theme="dark"])) .highlight {
-			opacity: 0.85;
-		}
-		:global(:root:not([data-theme="dark"])) .halo-inner {
-			opacity: 0.75;
-		}
-		:global(:root:not([data-theme="dark"])) .halo-outer {
-			opacity: 0.45;
-		}
-	}
-
-	/* On (lit) — explicit data-theme=light */
-	:global(:root[data-theme="light"]) .glass {
+	/* On (lit) — the default state, since the site is light unless told otherwise. */
+	:global(:root:not([data-theme="dark"])) .glass {
 		fill: #fff1b8;
 		stroke: #d4a82b;
 	}
-	:global(:root[data-theme="light"]) .cap {
+	:global(:root:not([data-theme="dark"])) .cap {
 		fill: var(--ink-soft);
 	}
-	:global(:root[data-theme="light"]) .filament {
+	:global(:root:not([data-theme="dark"])) .filament {
 		stroke: #d68500;
 		stroke-width: 0.85;
 		opacity: 1;
 	}
-	:global(:root[data-theme="light"]) .highlight {
+	:global(:root:not([data-theme="dark"])) .highlight {
 		opacity: 0.85;
 	}
-	:global(:root[data-theme="light"]) .halo-inner {
+	:global(:root:not([data-theme="dark"])) .halo-inner {
 		opacity: 0.75;
 	}
-	:global(:root[data-theme="light"]) .halo-outer {
+	:global(:root:not([data-theme="dark"])) .halo-outer {
 		opacity: 0.45;
 	}
 
-	/* Force off in explicit dark mode regardless of OS */
+	/* Off in dark mode. */
 	:global(:root[data-theme="dark"]) .halo {
 		opacity: 0;
 	}

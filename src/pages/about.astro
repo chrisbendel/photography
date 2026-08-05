@@ -1,0 +1,82 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="About — Chris Bendel" description="About Chris Bendel and this site.">
+	<section class="about">
+		<h1>Chris Bendel</h1>
+
+		<h2>About</h2>
+		<p>
+			I have been using photography as a means to become disciplined in a practice. This involves a lot of failure along the way including many ruined sheets & rolls of film.
+			Photography gets me out in situations and places that I typically wouldn't be in, while also challenging the creative side of my brain.
+		</p>
+
+		<h2>Why?</h2>
+		<p>
+			I made this with the intention of serving as an archive of my work over the years and a place to reflect on the process.
+		</p>
+
+		<h2>Philosophy & Process</h2>
+		<p>
+			Early on someone I looked up to told me to stick to one film and one developer, which shaped how I approach photography.
+		</p>
+		<ul>
+			<li>I shoot across all formats, but mostly 4x5 (with a few lenses) and medium format (a rolleiflex)</li>
+			<li>I decided to shoot only black and white film stocks early on to force myself to learn more about composition and contrast</li>
+			<li>I have landed on HP5+ for my film and HC-110 for my developer</li>
+			<li>I scan my photos as a means to proof and organize, with the end goal being to print my favorites in my darkroom</li>
+		</ul>
+
+
+		<h2>Contact</h2>
+		<dl class="contact">
+			<dt>Email</dt>
+			<dd><a href="mailto:chrissbendel@gmail.com">chrissbendel@gmail.com</a></dd>
+			<dt>Elsewhere</dt>
+			<dd><a href="https://cbendel.me" rel="me">cbendel.me</a></dd>
+		</dl>
+
+		<p class="colophon">
+			You can subscribe to an <a href="/rss.xml">RSS feed</a> if you're into that.
+		</p>
+	</section>
+</Layout>
+
+<style>
+	/* Prose wants a shorter line than the page measure. */
+	.about {
+		max-width: 34rem;
+	}
+
+	h2 {
+		margin-top: 2rem;
+	}
+
+	dl.contact {
+		display: grid;
+		grid-template-columns: max-content 1fr;
+		gap: 0.3rem 1.25rem;
+		margin: 0 0 1rem;
+		font-size: 0.85rem;
+	}
+
+	dl.contact dt {
+		color: var(--ink-faint);
+		text-transform: uppercase;
+		font-size: 0.7rem;
+		padding-top: 0.15rem;
+		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		letter-spacing: 0.04em;
+	}
+
+	dl.contact dd {
+		margin: 0;
+	}
+
+	.colophon {
+		margin-top: 2.5rem;
+		color: var(--ink-soft);
+		font-size: 0.85rem;
+	}
+</style>
