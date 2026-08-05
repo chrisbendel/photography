@@ -83,8 +83,7 @@ const haystacks = Object.fromEntries(
 		var count = document.getElementById("result-count");
 		var empty = document.getElementById("no-results");
 
-		// Words per photo, split on first fuzzy use — substring search never needs
-		// them, so nothing is paid for on the common path.
+		// Split on first fuzzy use, so substring search pays nothing for them.
 		var words = null;
 
 		function tokenize() {
@@ -98,10 +97,8 @@ const haystacks = Object.fromEntries(
 			});
 		}
 
-		// Damerau-Levenshtein, bounded: returns true as soon as `a` is within `max`
-		// edits of `b`, and bails on the length gap before touching the matrix.
-		// Transposition is one edit, not two — "wodos" for "woods" is the typo people
-		// actually make.
+		// Bounded Damerau-Levenshtein: bails on the length gap before the matrix, and
+		// counts transposition as one edit — "wodos" for "woods" is the common typo.
 		function within(a, b, max) {
 			if (Math.abs(a.length - b.length) > max) return false;
 			var prev2 = [];
@@ -133,9 +130,7 @@ const haystacks = Object.fromEntries(
 			return prev[b.length] <= max;
 		}
 
-		// One typo for a short word, two once there's enough word to be sure which
-		// word was meant. Under 4 characters, "wod" is as close to rod as to wood,
-		// so fuzzy is off — precision over recall, as with tags.
+		// Off under 4 chars: "wod" is as close to rod as to wood. Precision over recall.
 		function budget(term) {
 			if (term.length < 4) return 0;
 			return term.length < 7 ? 1 : 2;
@@ -166,8 +161,7 @@ const haystacks = Object.fromEntries(
 				if (hit) shown++;
 			});
 
-			// Fuzzy is a fallback, not the default: an exact substring stays exact and
-			// stays fast, and near matches only appear when nothing else would.
+			// Fallback, not default: an exact substring stays exact, and fast.
 			var max = shown === 0 ? budget(term) : 0;
 			var fuzzy = false;
 			if (max > 0) {
@@ -211,10 +205,9 @@ const haystacks = Object.fromEntries(
 		input.addEventListener("input", function () {
 			sync(input.value, true);
 		});
-		// Here the field filters as you type, so a phone keyboard's "search" key
-		// has nothing left to run — swallow the submit and blur, which is how the
-		// keyboard gets out of the way of the results. Off `/` the nav's field
-		// submits for real and this handler doesn't exist.
+		// Filtering already happened, so the keyboard's "search" key has nothing to run:
+		// swallow it and blur, which gets the keyboard off the results. Off `/` the same
+		// field submits for real, and this handler isn't there.
 		input.form.addEventListener("submit", function (e) {
 			e.preventDefault();
 			input.blur();

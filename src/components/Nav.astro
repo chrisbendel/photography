@@ -118,9 +118,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 		border-bottom: 1px solid var(--rule);
 	}
 
-	/* One row, deliberately: the field shrinks to fit rather than wrapping, so
-	   focusing it can never bump the cord onto a line of its own. Wrapping is
-	   switched on only for the narrow layout below, where it's the point. */
+	/* One row: the field shrinks to fit, so focusing it can't bump the cord to a second line. */
 	nav.site-nav {
 		max-width: var(--measure);
 		margin: 0 auto;
@@ -177,8 +175,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 		align-items: center;
 		gap: 0.4rem;
 		margin-left: auto;
-		/* Load-bearing: an input's default min-width is its intrinsic ~20ch, so
-		   without this the field refuses to shrink and shoves the cord off-screen. */
+		/* Load-bearing: an input's intrinsic min-width (~20ch) otherwise shoves the cord off-screen. */
 		min-width: 0;
 		color: var(--ink-faint);
 		transition: color 0.2s ease;
@@ -195,8 +192,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 		display: block;
 	}
 
-	/* The underline belongs to the field, not the input, so the clear mark can sit
-	   inside it — otherwise the ✕ floats past the end of the rule. */
+	/* Underline on the field, not the input, so the ✕ sits inside the rule. */
 	.field {
 		display: flex;
 		align-items: center;
@@ -238,24 +234,21 @@ const isCurrent = (href: string) => path.startsWith(href);
 		letter-spacing: 0.08em;
 	}
 
-	/* Ours replaces it: the native one is chrome from another site, and it only
-	   exists on WebKit anyway. */
+	/* Ours replaces it — the native one is chrome from another site. */
 	form.site-search input::-webkit-search-cancel-button {
 		-webkit-appearance: none;
 		appearance: none;
 	}
 
-	/* Only there when there's something to clear — :placeholder-shown is the CSS
-	   read of "field is empty", so no script decides whether this is visible. */
+	/* :placeholder-shown is the CSS read of "field is empty" — no script decides this. */
 	.search-clear {
 		display: none;
 		background: none;
 		border: 0;
 		color: var(--ink-faint);
 		cursor: pointer;
-		/* Padding makes a thumb-sized hit box; the negative margin keeps the mark
-		   where it was drawn and the field the height it was. Nothing negative on
-		   the right — the hit box would hang past the end of the rule. */
+		/* Padding makes a thumb-sized hit box; negative margin keeps the mark and the
+		   field where they were. None on the right, or the box hangs past the rule. */
 		padding: 0.5rem 0.3rem;
 		margin: -0.5rem 0 -0.5rem -0.3rem;
 		flex-shrink: 0;
@@ -276,14 +269,12 @@ const isCurrent = (href: string) => path.startsWith(href);
 		display: block;
 	}
 
-	/* No submit button, on purpose: `/` filters as you type, and everywhere else
-	   the keyboard's own return/search key submits (see `enterkeyhint`). A visible
-	   button earned its keep only while it was the sole way to run a query. */
+	/* No submit button: `/` filters as you type, and elsewhere the keyboard's own
+	   return/search key submits (see `enterkeyhint`). */
 
-	/* Below this the row can't hold links, a focused field and the cord at
-	   readable sizes, so the field drops to a line of its own and spans it.
-	   Ordered after the cord so the cord still hangs from the header's top edge,
-	   where a real one would. (px, not rem: media queries ignore the 18px root.) */
+	/* Too narrow for links, field and cord: the field takes its own row, after the
+	   cord so the cord still hangs from the top edge. px not rem — MQs ignore the
+	   18px root. */
 	@media (max-width: 544px) {
 		nav.site-nav {
 			flex-wrap: wrap;
@@ -309,8 +300,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 		}
 	}
 
-	/* The links take the slack before the field, and the cord stays hard right
-	   where it hangs from the header's top edge. */
+	/* The links take the slack, so the cord stays hard right. */
 	nav.site-nav ul {
 		list-style: none;
 		margin: 0;

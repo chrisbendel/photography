@@ -68,11 +68,8 @@ if (copiedImage && !skipTags) {
 			console.log(`  alt:       ${alt}`);
 			console.log(`  suggested: ${tags.join(", ")}`);
 
-			// `series` is never guessed. It used to be scored against the pooled tags
-			// of each existing series, which meant the largest series won: `winter`
-			// had accumulated water, trees, rocks, lake, river — and `spring`, from a
-			// member tagged that way — so it matched 6 of 7 unrelated photos. Tag
-			// overlap measures "both are Vermont landscapes", not "both are winter".
+			// Never guessed — scoring by shared tags just picked the largest series.
+			// AGENTS.md has the numbers, so nobody reinstates it.
 			console.log("  series:    (blank — name one to join or start it)");
 		} catch (err) {
 			console.log(`  (tag suggestion failed: ${err.message})`);
@@ -119,19 +116,16 @@ console.log(`Created  ${entry}`);
 console.log(`         ${imageNote}`);
 console.log("Preview: yarn dev, then yarn check-photos before pushing.");
 
-// $VISUAL/$EDITOR first — the shell already knows which editor you meant, and
-// hardcoding `code` breaks for anyone who doesn't use it.
+// $VISUAL/$EDITOR first — the shell already knows which editor you meant.
 const editor = process.env.VISUAL || process.env.EDITOR || "code";
 
-// VS Code has no CLI option for editor groups — 1.130 offers --diff, --goto and
-// --reuse-window and nothing that opens a file beside another — so the best a
-// script can do is put both files in the window as tabs; ⌘\ then splits them.
-// A terminal editor gets the entry alone: vim has no use for a jpg.
+// VS Code has no CLI option for editor groups (1.130: --diff, --goto,
+// --reuse-window, nothing for split), so both files open as tabs and ⌘\ splits
+// them. A terminal editor gets the entry alone — vim has no use for a jpg.
 const isCode = /^(code|code-insiders|codium|vscodium|cursor|windsurf)$/.test(basename(editor));
 const openWith = isCode && copiedImage ? [entry, resolve(copiedImage)] : [entry];
 
-// Not a terminal (piped, CI, an agent running this) means no one is there to
-// press anything, so print the command and leave.
+// Piped, CI, an agent: nobody there to press anything, so print and leave.
 if (!process.stdin.isTTY) {
 	console.log(`\nOpen:    ${editor} ${openWith.join(" ")}`);
 	process.exit(0);
@@ -144,8 +138,8 @@ rl.question(`\nEnter to open in ${editor}, anything else to skip: `, (answer) =>
 		console.log(`Open:    ${editor} ${openWith.join(" ")}`);
 		return;
 	}
-	// stdio inherited so a terminal editor takes the tty and this waits for it;
-	// `code` and friends hand off to the running window and return immediately.
+	// Inherited stdio: a terminal editor takes the tty and this waits; `code` hands
+	// off to the running window and returns at once.
 	const child = spawn(editor, openWith, { stdio: "inherit" });
 	child.on("error", (err) => {
 		console.log(`Couldn't launch ${editor} (${err.code}). Open it yourself:`);
