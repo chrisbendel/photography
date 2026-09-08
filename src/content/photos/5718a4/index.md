@@ -16,7 +16,7 @@ format: "4x5"
 series: river
 # Lowercase search terms, any number including none. Not routes.
 # suggested — move keepers into tags: trees, water, sky, swamp, peaceful, clouds, plants
-tags: [trees, water, sky ,swamp, river, peaceful, clouds, plants, lilypad]
+tags: [trees, water, sky, swamp, river, peaceful, clouds, plants, lilypad]
 # What the vision model saw. Feeds search, never displayed. Machine-written.
 scene: "The image is a black and white photograph of a swampy area. The photo is taken from a low angle, looking down on the water. The water is still and reflects the trees and plants around it. The trees are tall and slender, with bare branches and leaves. The sky is overcast, and the overall mood of the image is peaceful and serene. The overall mood is one of serenity and tranquility."
 # What you saw, what you decided, what you'd do differently. Plain text.

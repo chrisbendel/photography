@@ -56,8 +56,43 @@ Rules that are easy to break:
   don't launch things, and this one only prompts when `stdin` is a TTY, so piped
   and CI runs still just print.
 
-Scripts: `photo.mjs` (scaffold), `check.mjs` (gate), `list.mjs` (`yarn
-entries`), `suggest-tags.mjs`. Shared plumbing in `scripts/lib/entries.mjs`.
+Scripts: `photo.mjs` (scaffold), `form.mjs` + `form.html` (the bench),
+`check.mjs` (gate), `list.mjs` (`yarn entries`), `suggest-tags.mjs`. Shared
+plumbing in `scripts/lib/entries.mjs`, which owns the frontmatter template and
+the in-place field writer so the CLI and the bench cannot drift apart.
+
+## The bench
+
+`yarn photo-form` is the CLI with eyes: one page on `127.0.0.1:4331`, thumbnails
+of every frame down the left, the selected entry's fields on the right. It writes
+`src/content/photos/<id>/index.md` through the same template `yarn photo` uses,
+and nothing else.
+
+It exists because two pains have no terminal answer. Hash ids are unreadable by
+design, so *choosing* which entry to edit wants a picture. And free text drifts:
+at 13 entries `lens` held seven strings for four lenses (`Fujinon W 250mm f/6.7`
+against `Fujinon W 250 f/6.7`; `Schneider 360mm Tele-Xenar f/5.5` against
+`Schneider Tele-Xenar 360mm f/5.5`; the Super Angulon with and without its
+"Super"), `location` had Delta Park under two spellings, and `film` had `4x5` in
+it. So `lens`, `film`, `format`, `location` and `series` are dropdowns over the
+values the collection already holds, ordered by how often each is used, with a
+row for a new one. A value is typed once, ever.
+
+Lens strings read maker, series name, focal length, aperture — `Caltar II-N 210mm
+f/5.6`. Four lenses, four strings: don't re-split one on a spelling. A near-match
+in the dropdown is drift, not a second lens.
+
+**This is not the CMS that was reverted** (#5, #7). No object storage, no D1, no
+auth, no second render path: git is still the versioned backup, and `yarn dev`
+still renders exactly what ships. It binds `127.0.0.1`, not `0.0.0.0`, because it
+writes to the working tree — that is also the whole of its security model, so
+don't put it behind a tunnel or "just" bind it wider. Close the process and
+nothing is left running.
+
+Keep it dumb. It has no delete, no reorder, no bulk edit and no preview of the
+site — the collection, `git rm` and `yarn dev` already do those. If it ever needs
+a build step or a framework, that is the signal it has outgrown its brief, not a
+reason to add one.
 
 ## Series
 
@@ -77,7 +112,8 @@ Consequences, accepted knowingly:
   `getSeries()` (~15 lines). Not before — it was removed for doing nothing.
 
 `yarn photo` leaves `series:` blank, always. Joining one is a decision, same as
-founding one.
+founding one. The bench's dropdown is not a walk-back of that: it lists what
+exists and preselects nothing. Offering the vocabulary is not guessing from it.
 
 It used to guess, scoring the suggested tags against each existing series' slug
 and pooled member tags (2 overlaps to win). Don't reinstate that: the score grew
@@ -121,9 +157,32 @@ lakeshore at Grand Isle "a river winding through a forest" — and unlike a bad 
 a wrong `alt` misinforms the one reader who can't check it against the image.
 
 - Precision over recall: three captions at increasing detail, ranked by how many
-  agree, capped at 7 (`TAGGER_MAX`). Prefer raising the bar to widening `STOP`.
+  agree, capped at 7 (`TAGGER_MAX`) and floored at 6 (`TAGGER_FLOOR`). Below the
+  floor a word was named in one caption only and is not already a site tag, so
+  four honest tags ship instead of seven padded with noise. Raise the floor
+  before widening `STOP` — that is the lever.
 - Tags already on the site score higher, and candidates fold onto an existing tag
   by plural (`rock` → `rocks`). One subject, one page.
+- **The mood sentence is cut, not scored.** Florence-2 closes nearly every
+  caption with "the overall mood of the image is peaceful and serene", and often
+  a sentence on where the camera stood. Both are boilerplate: they appear on
+  almost every frame, so they separate none of them. `frame()` strips them from
+  the caption before anything reads it, which keeps them out of the tags *and*
+  out of `scene`. It used to be worse than neutral — a `MOOD` set gave those
+  words a +2 bonus, and "peaceful and serene" was suggested on 11 of 13 photos.
+  A mood word used descriptively ("the water appears calm") still survives, and
+  that is the distinction worth keeping.
+- **`CLIMATE` words are never suggested, and are cut from `alt`.** In monochrome
+  the model reads any smooth bright region as snow or ice: it called a
+  long-exposure river a "frozen lake" in all three captions (`fc75e1`), so
+  caption agreement cannot tell the two apart — a 3-of-3 gate was tried and it
+  passes. A season is one word and you know it; type it. This matters most in
+  `alt`, which is written to the file and read by the one person who can't check
+  it against the print.
+- Measured over the 13-photo catalogue, the two rules above moved suggestions
+  that match a tag actually chosen from 50/91 to 48/75 — fewer tags, more of
+  them right. Re-measure the same way before changing the scoring again: cache
+  the three captions per photo once, then iterate the ranking offline.
 - Defaults to Florence-2 **large** at **q8** — smaller than base at fp32 (821 MB
   vs 1.0 GB) and much better on black-and-white, which is the whole catalogue.
   Override with `TAGGER_MODEL` / `TAGGER_DTYPE`.
@@ -161,6 +220,23 @@ a wrong `alt` misinforms the one reader who can't check it against the image.
 - `main` is a flex column with `gap: var(--gap)`. Don't also put margins on its
   children — they stack on the gap and double every space.
 
+The bench (`scripts/form.html`) links `src/styles/global.css`, served by
+`form.mjs` alongside `grain.svg`, and adds only the layout the site has no
+equivalent for. It declares no palette and no type scale of its own, so it cannot
+drift. Controls borrow the nav search field's treatment — underline, not a box,
+thickening on focus by shadow so nothing shifts — and labels borrow the verso
+metadata idiom. One flex row that wraps, `min-width: 0` on both panes, no media
+query and no nested scroller. The `min-width` is load-bearing: a `<select>`'s
+intrinsic width otherwise pushes the row past the viewport, the same trap the nav
+documents.
+
+Light/dark on the bench is a plain button writing the same `theme` key
+`Layout.astro` reads, so a choice there and a pull of the cord here agree; the OS
+preference only seeds the first visit. **Don't port the pull-cord to it** — that
+is 200 lines of SVG and CSS scoped inside `Nav.astro`, and a copy drifts the
+first time the cord is tweaked. The cord is a tactile detail for a visitor; the
+bench is a tool.
+
 ## Tactile details
 
 Analog-process details that separate this from a generic gallery: pull-cord
@@ -191,6 +267,7 @@ Print sales (Stripe, once the catalogue justifies it). R2 hosting (once git size
 hurts).
 
 Browser-based CMS on R2 + D1, replacing the CLI: built and reverted (#5, #7).
+The UX half of what it was for now lives in the bench above, at none of its cost.
 Revisit only if you wanted to post away from the laptop, the CLI has cost real
 friction over ~10 posts, or frontmatter starts feeling like data entry past ~100
 photos. Two objections against it were wrong and shouldn't be reused: Cloudflare

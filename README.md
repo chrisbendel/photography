@@ -1,44 +1,48 @@
 # photography
 
 Personal photography site. Astro, plain CSS, deploys to Cloudflare Workers.
-Conventions and rationale: [`AGENTS.md`](./AGENTS.md).
+Conventions and the reasoning behind them: [`AGENTS.md`](./AGENTS.md).
 
 ## Add a photograph
 
 ```sh
-yarn photo ~/scans/011.jpg     # scaffold; Enter at the prompt opens it in $EDITOR
-# fill in alt (required), year, lens, film, format, location, tags, notes
-yarn dev                       # walk it at /
-yarn check-photos              # must pass
-# commit, open a PR, merge
+yarn photo-form     # bench at localhost:4331
+yarn dev            # walk it at /
+yarn check-photos   # must pass
 ```
 
-Entries are live the moment they're scaffolded — the branch is the draft,
-merging to `main` is publishing. To abandon one, delete the folder.
+Drop the scan onto the bench. It creates the entry, reads the image for `alt` and
+tag suggestions, and offers the lenses, films, locations and series already in the
+collection as dropdowns — so a value is typed once, ever. Cut what the model got
+wrong, then Save. Every frame sits on the contact sheet beside the form, so
+finding an old entry to edit is looking at it rather than recalling a hash.
 
-## Frontmatter
+Then commit, open a PR, merge. An entry is live the moment it exists: the branch
+is the draft, merging to `main` is publishing. To abandon one, delete the folder.
 
-`yarn photo` writes the frontmatter with a comment above each field that needs
-one, so the file explains itself. Every field is present and blank — fill in what
-you know, leave the rest.
-
-`notes` is one plain-text section — render under the print, searchable, no
-markdown.
+The terminal path still works and writes the same file. `yarn photo
+~/scans/011.jpg` scaffolds the folder and opens it in `$EDITOR`, every field
+present and blank, with a comment over the ones that need one.
 
 ## Commands
 
 | Command | What it does |
 | --- | --- |
+| `yarn photo-form` | The bench at `localhost:4331` — add and edit entries, see every frame |
+| `yarn photo <image> [--no-tags]` | Same entry from the terminal (`series` stays blank) |
+| `yarn entries` | One readable line per hash id |
+| `yarn check-photos` | Pre-merge gate |
+| `yarn suggest-tags <id>\|--all` | Re-read an existing photo (~10s each) |
 | `yarn dev` | Dev server at `localhost:4321` |
 | `yarn build` | Build to `./dist/` |
 | `yarn preview` | Build, then serve through wrangler |
-| `yarn photo <image> [--no-tags]` | New entry, with suggested tags (`series` stays blank) |
-| `yarn entries` | List entries with a readable label per hash |
-| `yarn check-photos` | Pre-merge gate (see below) |
-| `yarn suggest-tags <slug>\|--all` | Re-tag an existing photo (~10s each) |
+| `yarn deploy` | Build and deploy |
 
 `check-photos` **fails** on empty alt; **warns** on images over 3 MB and orphan
-files.
+files. The bench flags a frame with no `alt` on the sheet, for the same reason.
+
+The bench binds `127.0.0.1` and writes only into `src/content/photos/`. No
+database, no uploads, no auth. Close it and nothing is left running.
 
 ## Routes
 

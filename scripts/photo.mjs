@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 // Scaffold a new entry, live immediately. Usage: yarn photo <image> [--no-tags]
 import { spawn } from "node:child_process";
-import { randomBytes } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, extname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
-import { cliArgs, idsIn, LIVE_DIR } from "./lib/entries.mjs";
+import { cliArgs, entryTemplate, LIVE_DIR, newId } from "./lib/entries.mjs";
 import { tagImage } from "./suggest-tags.mjs";
 
 const args = cliArgs();
@@ -14,16 +13,6 @@ const [imagePath] = args.filter((a) => !a.startsWith("--"));
 const TAGGABLE = [".jpg", ".jpeg", ".png", ".webp"];
 
 mkdirSync(LIVE_DIR, { recursive: true });
-
-function newId() {
-	const taken = new Set(idsIn(LIVE_DIR));
-	for (let attempt = 0; attempt < 8; attempt++) {
-		const id = randomBytes(3).toString("hex");
-		if (!taken.has(id)) return id;
-	}
-	console.error("Failed to generate unique id after 8 attempts. Archive size?");
-	process.exit(1);
-}
 
 const id = newId();
 const photoDir = join(LIVE_DIR, id);
@@ -77,37 +66,19 @@ if (copiedImage && !skipTags) {
 	}
 }
 
-// Fields blank, not commented out — filling one in beats remembering it exists.
-// The comments are for the person filling them in, so only the non-obvious ones
-// get one; `lens`/`film`/`location` explain themselves.
+// Shared with the form (scripts/form.mjs) so the two cannot drift on what a
+// fresh entry looks like. Every field blank, never commented out.
 const mdPath = join(photoDir, "index.md");
 writeFileSync(
 	mdPath,
-	`---
-# Stamped at scaffold. Orders the gallery, newest first. Leave it alone.
-added: ${new Date().toISOString().slice(0, 10)}
-year:
-image: ${imageRef}
-# Required. Written for you from the image — skim it, it is what a screen reader says.
-alt: ${JSON.stringify(alt)}
-# One short line printed under the image. Optional.
-caption: ""
-lens: ""
-film: ""
-location: ""
-# Written with × when shown, so type it plainly: 4x5, 6x7, 35mm.
-format: ""
-# A slug. Naming one that doesn't exist yet is how you start it.
-series: ${series}
-# Lowercase search terms, any number including none. Not routes.
-${tagComment}tags: []
-# What the vision model saw. Feeds search, never displayed. Machine-written.
-scene: ${JSON.stringify(scene)}
-# What you saw, what you decided, what you'd do differently. Plain text.
-notes: ""
----
-
-`.replace(/ +$/gm, ""),
+	entryTemplate({
+		added: new Date().toISOString().slice(0, 10),
+		imageRef,
+		alt,
+		series,
+		tagComment,
+		scene,
+	}),
 );
 
 const entry = resolve(mdPath);

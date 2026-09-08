@@ -16,7 +16,7 @@ format: "4x5"
 series: summer
 # Lowercase search terms, any number including none. Not routes.
 # suggested — move keepers into tags: river, mountains, trees, peaceful, clouds, forest, sky
-tags: [river, hills, trees, barn, rock, nature]
+tags: [river, hills, trees, barn, rocks, nature]
 # What the vision model saw. Feeds search, never displayed. Machine-written.
 scene: "The image is a black and white photograph of a landscape with a river flowing through it. The river is surrounded by trees and shrubs, and there is a small cabin on the right side of the image. In the background, there are mountains with a cloudy sky above them. The image appears to be taken from a distance, as there are no other buildings or structures visible in the frame. The overall mood of the photograph is peaceful and serene."
 # What you saw, what you decided, what you'd do differently. Plain text.

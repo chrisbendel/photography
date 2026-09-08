@@ -7,9 +7,9 @@ image: ./image.jpg
 alt: "A lake with the sun shining brightly in the sky, surrounded by hills and grass in the foreground"
 # One short line printed under the image. Optional.
 caption: "Delta Park Sunset"
-lens: "Schneider 360mm Tele-Xenar f/5.5"
+lens: "Schneider Tele-Xenar 360mm f/5.5"
 film: "FP4+"
-location: "Delta Park, VT"
+location: "Delta Park, Colchester, VT"
 # Written with × when shown, so type it plainly: 4x5, 6x7, 35mm.
 format: "4x5"
 # A slug. Naming one that doesn't exist yet is how you start it.

@@ -7,9 +7,9 @@ image: ./image.jpg
 alt: "A stream running through a forest, with trees, stones, and water visible"
 # One short line printed under the image. Optional.
 caption: "Audubon Woods"
-lens: "Schneider Angulon 90mm f/8"
+lens: "Schneider Super Angulon 90mm f/8"
 film: "FP4+"
-location: "Audubon, Huntington VT"
+location: "Audubon, Huntington, VT"
 # Written with × when shown, so type it plainly: 4x5, 6x7, 35mm.
 format: "4x5"
 # A slug. Naming one that doesn't exist yet is how you start it.

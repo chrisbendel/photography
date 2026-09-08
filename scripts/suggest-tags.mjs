@@ -6,6 +6,12 @@
 // Three captions at rising detail, ranked by how many agree: the terse one names
 // the subject, the longest wanders into composition. <OD> is unused — COCO-trained,
 // so on landscapes it returns noise (one hallucinated "bird" on the first photo).
+//
+// The model volunteers two things it cannot know: how the frame feels, and what
+// season it is. Both are stripped rather than scored — see `frame()` and
+// `CLIMATE`. Measured over the 13-photo catalogue, that moved suggestions which
+// match a tag actually chosen from 50/91 to 48/75, and stopped suggesting a
+// mood word on 11 of 13 frames.
 
 import { existsSync, readdirSync } from "node:fs";
 import { extname, join } from "node:path";
@@ -38,20 +44,26 @@ const STOP = new Set(
 		"group groups bunch collection pair variety number amount range " +
 		"surface surfaces scattered arranged formation formations covering " +
 		"covered visible object objects horizon texture textured layer " +
-		"man woman people person background foreground front side scene shot center").split(
-			" ",
-		),
+		"man woman people person background foreground front side scene shot center " +
+		// Left behind once the framing and mood sentences are cut.
+		"angle taken appear either ones beautiful").split(" "),
 );
 
-// Mood and light words earn their place from a single mention.
-const MOOD = new Set(
-	("calm still quiet peaceful serene stark bleak soft harsh bright dark moody " +
-		"misty foggy hazy overcast stormy golden empty desolate lonely wintry " +
-		"barren rugged windswept glassy shadowed sunlit").split(" "),
+// Never suggested, whatever the captions agree on. In monochrome the model reads
+// any smooth bright region as snow or ice: it called a long-exposure river a
+// "frozen lake" in all three captions (fc75e1), so caption agreement cannot tell
+// the two apart. A season is yours to type — it is one word, and it is true.
+const CLIMATE = new Set(
+	("snow snowy snowfall snowing ice icy iced frost frosty frozen freeze " +
+		"fog foggy mist misty haze hazy rain rainy").split(" "),
 );
+
+// Longest first, so "snowfall" is not half-matched by "snow".
+const CLIMATE_RE = [...CLIMATE].sort((a, b) => b.length - a.length).join("|");
 
 const CAPTION_TASKS = ["<CAPTION>", "<DETAILED_CAPTION>", "<MORE_DETAILED_CAPTION>"];
 const MAX_TAGS = Number(process.env.TAGGER_MAX) || 7;
+const FLOOR = Number(process.env.TAGGER_FLOOR) || 6;
 
 export function findImage(slug) {
 	const dir = join(LIVE_DIR, slug);
@@ -60,6 +72,23 @@ export function findImage(slug) {
 		(f) => f.startsWith("image.") && IMAGE_EXTS.includes(extname(f).toLowerCase()),
 	);
 	return img ? join(dir, img) : null;
+}
+
+// Florence-2 ends nearly every caption with a verdict on the mood, and often a
+// sentence on where the camera stood. Both are formulaic, so they appear on
+// almost every frame and separate none of them — "peaceful and serene" was
+// suggested on 11 of 13 photographs. Cut at the source, so the words never reach
+// the ranking and never reach `scene` either. A mood word used descriptively
+// ("the water appears calm") survives, which is the distinction worth keeping.
+function frame(text) {
+	return (text || "")
+		.replace(/,?\s*(and\s+)?the overall (mood|atmosphere|feeling|tone)\b[^.]*\.?/gi, ".")
+		.replace(/[^.]*\bis (taken|shot|photographed) from\b[^.]*\.?/gi, "")
+		.replace(/,?\s*(and\s+)?(with|creating)\s+a\s+sense\s+of\b[^.]*/gi, "")
+		.replace(/,?\s*creating a\b[^.]*?\bcontrast\b[^.]*/gi, "")
+		.replace(/\s*\.\s*\./g, ".")
+		.replace(/\s{2,}/g, " ")
+		.trim();
 }
 
 // Hyphens split: "snow-covered" gives "snow" (real) and "covered" (stopped).
@@ -97,6 +126,12 @@ function canonical(word, corpus) {
 // paragraph. Strip the model's "the image is a black and white photo of" opener —
 // a screen reader already says "image", and the catalogue is all monochrome — and
 // keep one sentence. The full description lives in `scene`.
+//
+// The CLIMATE pass matters more here than in the tags. `alt` is written to the
+// file, and it is read by the one person who cannot check it against the print:
+// "A frozen lake with water flowing over rocks" (fc75e1) describes a river with
+// no ice on it. A vaguer sentence is honest; that one is not. Losing "snow" from
+// a frame that really has snow costs one word you can type back.
 function deriveAlt(text) {
 	let s = (text || "")
 		.trim()
@@ -104,10 +139,23 @@ function deriveAlt(text) {
 		.replace(/^(a|an)\s+(black and white\s+)?(photo(graph)?|picture|image)\s+of\s+/i, "")
 		.replace(/^(black and white\s+)?(photo(graph)?|picture|image)\s+of\s+/i, "");
 	s = s.split(/(?<=\.)\s+/)[0].replace(/\s*\.\s*$/, "");
+	s = s
+		// A whole clause claiming a season goes; the main clause never does.
+		.replace(new RegExp(`,[^,]*\\b(${CLIMATE_RE})\\b[^,]*`, "gi"), "")
+		// "snow-covered rocks" has to lose both words, or "covered" dangles.
+		.replace(new RegExp(`\\b(${CLIMATE_RE})[-\\s]covered\\s*`, "gi"), "")
+		.replace(new RegExp(`\\b(${CLIMATE_RE})\\b\\s*`, "gi"), "")
+		.replace(/\s{2,}/g, " ")
+		.replace(/\s+([,.])/g, "$1")
+		.replace(/[\s,]+$/, "")
+		.trim();
 	return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 }
 
 // Caption agreement is the signal, frequency the tiebreak; gerunds penalised.
+// Below FLOOR a word was named in one caption only and is not already a site tag
+// — noise, and padding the list to MAX_TAGS with it costs precision. Raising this
+// bar is the lever to reach for before widening STOP.
 function rank(captions, corpus) {
 	const stats = new Map();
 	for (const text of captions) {
@@ -125,12 +173,14 @@ function rank(captions, corpus) {
 	}
 
 	return [...stats.entries()]
+		.filter(([w]) => !CLIMATE.has(w))
 		.map(([w, s]) => {
-			let score = s.captions * 2 + s.count + (MOOD.has(w) ? 2 : 0);
+			let score = s.captions * 2 + s.count;
 			if (corpus.has(w)) score += 3;
 			if (w.endsWith("ing")) score -= 2;
 			return { tag: w, score };
 		})
+		.filter((r) => r.score >= FLOOR)
 		.sort((a, b) => b.score - a.score || a.tag.localeCompare(b.tag))
 		.slice(0, MAX_TAGS)
 		.map((r) => r.tag);
@@ -165,7 +215,7 @@ export async function tagImage(imagePath) {
 	const captions = [];
 	for (const task of CAPTION_TASKS) {
 		const out = await runTask(image, task);
-		captions.push((out[task] ?? "").trim());
+		captions.push(frame((out[task] ?? "").trim()));
 	}
 	return {
 		caption: captions[captions.length - 1],

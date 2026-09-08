@@ -4,9 +4,9 @@ year: 2025
 image: ./image.jpg
 alt: "Snow capped rocks"
 caption: "Snow capped rocks"
-lens: "Schneider 360mm Tele-Xenar f/5.5"
+lens: "Schneider Tele-Xenar 360mm f/5.5"
 film: "Tri-X"
-location: "East Woods, South Burlington"
+location: "East Woods, South Burlington, VT"
 format: "4x5"
 series: winter
 tags: [rocks, water, snow, river, winter]

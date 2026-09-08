@@ -8,7 +8,7 @@ alt: "A forest filled with tall trees"
 # One short line printed under the image. Optional.
 caption: "Forest of trees"
 lens: "Caltar II-N 210mm f/5.6"
-film: "4x5"
+film: ""
 location: "Jericho, VT"
 # Written with × when shown, so type it plainly: 4x5, 6x7, 35mm.
 format: "4x5"

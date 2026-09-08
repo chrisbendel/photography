@@ -6,7 +6,7 @@ alt: "Lake scene"
 caption: ""
 lens: "Schneider Tele-Xenar 360mm f/5.5"
 film: "FP4+"
-location: "Delta Park, Colchester VT"
+location: "Delta Park, Colchester, VT"
 format: "4x5"
 series: landscapes
 tags: [water, lake, mountains, shoreline]
