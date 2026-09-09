@@ -1,11 +1,7 @@
 #!/usr/bin/env node
-// A local darkroom bench: see every frame, pick from the lenses you own, write
-// straight into the collection. Usage: yarn photo-form. Env: PORT.
-//
-// Localhost only, on purpose. It writes files and shells the vision model, so it
-// binds 127.0.0.1 and has no auth — there is nothing to authenticate against.
-// It is the CLI with eyes, not a CMS: same folders, same frontmatter, git still
-// the staging area. Close it and nothing is left running.
+// See every frame, edit one, write straight into the collection.
+// Usage: yarn photo-form. Env: PORT. Localhost only — it edits the working tree,
+// which is also the whole of its security model. See AGENTS.md.
 import { createServer } from "node:http";
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
@@ -26,8 +22,7 @@ import {
 const PORT = Number(process.env.PORT) || 4331;
 const PAGE = new URL("./form.html", import.meta.url);
 
-// The page links the site's own stylesheet rather than restating its palette,
-// so the two can never drift. The grain comes with it.
+// The page links the site's stylesheet rather than restating its palette.
 const STATIC = {
 	"/global.css": ["src/styles/global.css", "text/css; charset=utf-8"],
 	"/grain.svg": ["public/grain.svg", "image/svg+xml"],
@@ -41,8 +36,7 @@ const TAGGABLE = [".jpg", ".jpeg", ".png", ".webp"];
 
 const TEXT_FIELDS = ["alt", "caption", "lens", "film", "location", "format", "notes", "scene"];
 
-// Dropdown fields: the vocabulary is whatever the collection already says it is,
-// so a value only has to be typed once, ever.
+// Offered as dropdowns, so a value is typed once, ever.
 const VOCAB_FIELDS = ["lens", "film", "format", "location", "series"];
 
 const mdPathFor = (id) => join(LIVE_DIR, id, "index.md");
@@ -57,8 +51,7 @@ function readEntry(id) {
 	return entry;
 }
 
-// Frequency first, then alphabetical: the lens on half the catalogue sits at the
-// top of its own dropdown, which is where the hand already expects it.
+// Frequency first: the lens on half the catalogue sits at the top of its own list.
 function vocabulary(entries) {
 	const vocab = {};
 	for (const field of VOCAB_FIELDS) {
@@ -91,8 +84,7 @@ function state() {
 	return { entries, vocab: vocabulary(entries) };
 }
 
-// Resized in memory and keyed by mtime, so the grid is fast and nothing new
-// appears in the working tree to gitignore.
+// In memory and keyed by mtime — no cache directory to gitignore.
 const thumbs = new Map();
 async function thumbnail(id, width) {
 	const file = findImageFile(id);
@@ -128,9 +120,7 @@ function readBody(req) {
 	});
 }
 
-// Only the fields the form owns, coerced the way the schema wants them. `year` is
-// an integer or blank; `series` is a bare slug; tags lose anything that would
-// break a flow sequence.
+// Only the fields the form owns, coerced the way the schema wants them.
 function sanitise(fields) {
 	const out = {};
 	for (const key of TEXT_FIELDS) {
@@ -164,8 +154,7 @@ async function createEntry({ filename, data, fields }) {
 		throw new Error(`${ext} is not one of ${IMAGE_EXTS.join(", ")}`);
 	}
 
-	// Decoded before anything is written: a bad drop should not leave a folder
-	// behind for check-photos to complain about.
+	// Decoded first: a bad drop shouldn't leave a folder for check-photos to flag.
 	const buffer = Buffer.from(data, "base64");
 	const { width, height } = await sharp(buffer).metadata();
 	if (!width || !height) throw new Error(`${filename} is not an image sharp can read`);
@@ -189,8 +178,7 @@ async function createEntry({ filename, data, fields }) {
 	return id;
 }
 
-// Dynamic import: loading the model chain costs seconds and ~800 MB, and most
-// sessions never press the button. Nothing pays for it until one does.
+// Dynamic: the model chain costs seconds and ~800 MB, and most sessions skip it.
 async function suggest(id) {
 	const file = findImageFile(id);
 	if (!file) throw new Error(`No image in ${id}/`);

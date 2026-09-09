@@ -3,15 +3,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Bench</title>
 
-<!-- The site's own stylesheet, served by form.mjs. Tokens, reset, typography and
-     the dark palette all come from there, so the bench cannot drift from the
-     gallery it writes into. Everything below is layout this page alone needs. -->
+<!-- The site's own stylesheet, served by form.mjs: tokens, reset, typography and
+     the dark palette, so the bench can't drift. Below is layout only. -->
 <link rel="stylesheet" href="/global.css" />
 
 <script>
-	// The same "theme" key Layout.astro reads, so a choice here and a pull of the
-	// cord on the site agree. The OS preference only seeds the first visit — the
-	// bench has no cord, and copying one would duplicate 200 lines of Nav.astro.
+	// The same "theme" key Layout.astro reads, so the bench and the cord agree.
+	// The OS preference only seeds the first visit.
 	(function () {
 		var saved = null;
 		try {
@@ -27,9 +25,8 @@
 </script>
 
 <style>
-	/* One row that wraps. No media query and no nested scroller: the page has a
-	   single scrollbar, and `min-width: 0` stops a select's intrinsic width from
-	   pushing the row wider than the viewport (same trap as the nav search). */
+	/* One row that wraps: no media query, no nested scroller. `min-width: 0` on the
+	   panes stops a select's intrinsic width widening the row (same trap as the nav). */
 	body {
 		max-width: var(--sheet);
 		margin: 0 auto;
@@ -55,8 +52,7 @@
 		margin-top: var(--gap);
 	}
 
-	/* Always two across, so a frame grows with the pane instead of shrinking to
-	   fit more in. Reading a thumbnail is the whole point of the sheet. */
+	/* Two across always, so a frame grows with the pane rather than shrinking. */
 	.frame {
 		flex: 0 1 calc(50% - var(--gap) / 2);
 		border: 0;
@@ -85,8 +81,7 @@
 	}
 
 	/* ---------- Verso treatment ---------- */
-	/* Small, uppercase, monospace, faint — the metadata idiom from the print page,
-	   used here for frame labels and field names alike. */
+	/* The print page's metadata idiom, for frame labels and field names alike. */
 
 	.verso {
 		display: block;
@@ -121,8 +116,8 @@
 		margin-top: var(--gap);
 	}
 
-	/* Underline, not a box, and it thickens on focus by shadow so nothing shifts —
-	   the nav search field's treatment, applied to every control. */
+	/* The nav search field's treatment: underline, not a box, thickening by shadow
+	   on focus so nothing shifts. */
 	input,
 	select,
 	textarea {
@@ -329,8 +324,7 @@
 	const form = $("#entry");
 	const sheet = $("#sheet");
 
-	// The "new value" sentinel. A leading space is not a legal value for any
-	// field, so it can never collide with something typed.
+	// Sentinel. A leading space is not a legal value, so it can't collide.
 	const NEW = " new";
 
 	let state = { entries: [], vocab: {} };
@@ -399,8 +393,8 @@
 		for (const { value: option, count } of options) {
 			select.append(new Option(count > 1 ? `${option} (${count})` : option, option));
 		}
-		// A value the corpus has not seen yet, from an entry edited by hand, still
-		// has to be selectable or opening the entry would silently drop it.
+		// A hand-edited value the corpus hasn't seen must still be selectable,
+		// or opening the entry would silently drop it.
 		if (value && !known) select.append(new Option(value, value));
 		select.append(new Option("New value...", NEW));
 
@@ -543,8 +537,7 @@
 			});
 			refresh(created);
 			select(created.id);
-			// Blank alt fails check-photos, so the read is automatic on a new frame.
-			// The button is there for a second opinion.
+			// Blank alt fails check-photos, so a new frame is read automatically.
 			$("#reread").click();
 		} catch (err) {
 			say(`Failed: ${err.message}`);

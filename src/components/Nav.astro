@@ -439,7 +439,6 @@ const isCurrent = (href: string) => path.startsWith(href);
 		opacity: 0.45;
 	}
 
-	/* Off in dark mode. */
 	:global(:root[data-theme="dark"]) .halo {
 		opacity: 0;
 	}
@@ -447,7 +446,6 @@ const isCurrent = (href: string) => path.startsWith(href);
 		opacity: 0;
 	}
 
-	/* Pull animation */
 	@keyframes cord-stretch {
 		0%   { transform: scaleY(1); }
 		22%  { transform: scaleY(1.20); }

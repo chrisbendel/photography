@@ -47,18 +47,15 @@ if (copiedImage && !skipTags) {
 		try {
 			console.log("Suggesting tags (local vision model) ...");
 			const { caption, alt: suggestedAlt, tags } = await tagImage(copiedImage);
-			// `scene` is kept, not just shown: it is what makes search find a photo
-			// by something you never got round to tagging.
+			// Kept, not just shown: it finds a photo by what you never tagged.
 			scene = caption;
-			// Alt is written, not suggested — a blank one is an accessibility bug,
-			// and a machine sentence beats the empty string you meant to come back to.
+			// Written, not suggested: a blank alt is an accessibility bug.
 			alt = suggestedAlt;
 			tagComment = `# suggested — move keepers into tags: ${tags.join(", ")}\n`;
 			console.log(`  alt:       ${alt}`);
 			console.log(`  suggested: ${tags.join(", ")}`);
 
-			// Never guessed — scoring by shared tags just picked the largest series.
-			// AGENTS.md has the numbers, so nobody reinstates it.
+			// Never guessed — scoring by shared tags picked the largest series. AGENTS.md.
 			console.log("  series:    (blank — name one to join or start it)");
 		} catch (err) {
 			console.log(`  (tag suggestion failed: ${err.message})`);
@@ -66,8 +63,7 @@ if (copiedImage && !skipTags) {
 	}
 }
 
-// Shared with the form (scripts/form.mjs) so the two cannot drift on what a
-// fresh entry looks like. Every field blank, never commented out.
+// Shared with the bench (form.mjs), so the two can't drift on a fresh entry.
 const mdPath = join(photoDir, "index.md");
 writeFileSync(
 	mdPath,
@@ -90,9 +86,8 @@ console.log("Preview: yarn dev, then yarn check-photos before pushing.");
 // $VISUAL/$EDITOR first — the shell already knows which editor you meant.
 const editor = process.env.VISUAL || process.env.EDITOR || "code";
 
-// VS Code has no CLI option for editor groups (1.130: --diff, --goto,
-// --reuse-window, nothing for split), so both files open as tabs and ⌘\ splits
-// them. A terminal editor gets the entry alone — vim has no use for a jpg.
+// VS Code has no CLI option for editor groups (1.130), so both open as tabs and
+// ⌘\ splits them. A terminal editor gets the entry alone — vim has no use for a jpg.
 const isCode = /^(code|code-insiders|codium|vscodium|cursor|windsurf)$/.test(basename(editor));
 const openWith = isCode && copiedImage ? [entry, resolve(copiedImage)] : [entry];
 
@@ -109,8 +104,7 @@ rl.question(`\nEnter to open in ${editor}, anything else to skip: `, (answer) =>
 		console.log(`Open:    ${editor} ${openWith.join(" ")}`);
 		return;
 	}
-	// Inherited stdio: a terminal editor takes the tty and this waits; `code` hands
-	// off to the running window and returns at once.
+	// Inherited stdio: a terminal editor takes the tty; `code` returns at once.
 	const child = spawn(editor, openWith, { stdio: "inherit" });
 	child.on("error", (err) => {
 		console.log(`Couldn't launch ${editor} (${err.code}). Open it yourself:`);

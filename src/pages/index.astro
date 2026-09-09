@@ -6,7 +6,7 @@ import { byNewest } from "../lib/format";
 
 const allPhotos = (await getCollection("photos")).sort(byNewest);
 
-// Build per-photo data + a 1600w large variant URL for the loupe
+// A second 1600w variant per photo, for the loupe to swap in.
 const photoData = await Promise.all(
 	allPhotos.map(async (p) => {
 		const large = await getImage({ src: p.data.image, width: 1600 });
@@ -33,7 +33,7 @@ const haystacks = Object.fromEntries(
 		const d = p.data;
 		return [
 			p.id,
-			[d.alt, d.caption, d.location, d.lens, d.film, d.series, d.year, d.notes, d.scene, ...d.tags]
+			[d.alt, d.caption, d.location, d.lens, d.film, d.format, d.series, d.year, d.notes, d.scene, ...d.tags]
 				.filter(Boolean)
 				.join(" ")
 				.toLowerCase(),
@@ -290,7 +290,6 @@ const haystacks = Object.fromEntries(
 		color: inherit;
 	}
 
-	/* Loupe overlay — appears above the grid when a thumb is clicked */
 	.loupe {
 		position: fixed;
 		inset: 0;
@@ -475,7 +474,6 @@ const haystacks = Object.fromEntries(
 			if (location.hash !== "#" + p.id) {
 				history.replaceState(null, "", "#" + p.id);
 			}
-			// Preload neighbors
 			const preload = (i) => {
 				if (i < 0 || i >= photos.length) return;
 				const im = new Image();
@@ -513,7 +511,7 @@ const haystacks = Object.fromEntries(
 		btnNext?.addEventListener("click", () => step(1));
 
 		loupe.addEventListener("click", (e) => {
-			// Click on backdrop (loupe itself), not on stage or buttons
+			// The backdrop only — a click on the stage or a button isn't a dismiss.
 			if (e.target === loupe) close();
 		});
 
@@ -531,7 +529,6 @@ const haystacks = Object.fromEntries(
 			}
 		});
 
-		// Open from URL hash on load
 		if (location.hash.length > 1) {
 			const idx = indexById(location.hash.slice(1));
 			if (idx !== -1) open(idx);

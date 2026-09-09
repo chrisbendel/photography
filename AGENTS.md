@@ -131,7 +131,7 @@ in `?q=` so a result set is a link. There are no `/tags/` pages — a tag on a
 photo links to `/?q=<tag>`, so tags feed search rather than owning routes.
 
 Matching is plain substring over everything a photo carries: tags, alt, caption,
-location, lens, film, year, series, notes — plus `scene`, the vision model's
+location, lens, film, format, year, series, notes — plus `scene`, the vision model's
 full description, written by `yarn photo` and never rendered. `scene` is what
 makes "island" or "overcast" find a frame nobody thought to tag that way, and it
 is why search quality doesn't depend on tagging discipline. Backfill it on an

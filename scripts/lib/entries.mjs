@@ -56,8 +56,7 @@ export function frontmatter(mdPath) {
 // A YAML double-quoted scalar. JSON strings are valid YAML, newlines included.
 const scalar = (v) => JSON.stringify(v ?? "");
 
-// Flow sequence, matching what the entries already on disk look like. Commas and
-// brackets are stripped on the way in, so a tag can never break the sequence.
+// Commas and brackets are stripped on the way in, so a tag can't break this.
 const sequence = (tags) => `[${(tags ?? []).join(", ")}]`;
 
 export function cleanTag(tag) {
@@ -72,8 +71,7 @@ export function parseTags(raw) {
 		.filter(Boolean);
 }
 
-// Every field written blank rather than commented out — filling one in beats
-// remembering it exists. Comments only where the field doesn't explain itself.
+// Every field blank rather than commented out — filling one in beats recalling it.
 export function entryTemplate({
 	added,
 	imageRef,
@@ -117,15 +115,13 @@ notes: ${scalar(notes)}
 `.replace(/ +$/gm, "");
 }
 
-// Rewrite named fields in place, one line at a time, so comments and any field
-// this script has never heard of both survive. Same `[ \t]*` rule as the reader.
+// One line at a time, so comments and unknown fields survive. `[ \t]*`, not `\s*`.
 export function setFrontmatter(mdPath, updates) {
 	const text = readFileSync(mdPath, "utf8");
 	const match = text.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)/);
 	if (!match) throw new Error(`No frontmatter block in ${mdPath}`);
 
-	// `year`, `series`, `added` and `image` are bare scalars; everything else is
-	// quoted. `trimEnd` keeps a blanked field flush, the way the scaffold writes it.
+	// `trimEnd` keeps a blanked field flush, the way the scaffold writes it.
 	const BARE = new Set(["added", "year", "series", "image"]);
 	const render = (key, value) => {
 		if (key === "tags") return `tags: ${sequence(value)}`;
@@ -137,8 +133,7 @@ export function setFrontmatter(mdPath, updates) {
 	for (const [key, value] of Object.entries(updates)) {
 		const line = render(key, value);
 		const re = new RegExp(`^${key}:[ \\t]*.*$`, "m");
-		// Function replacement, not a string: a value holding `$&` or `$1` would
-		// otherwise be read as a backreference and mangle the line.
+		// A function, not a string: `$&` or `$1` in a value would be a backreference.
 		block = re.test(block) ? block.replace(re, () => line) : `${block}\n${line}`;
 	}
 

@@ -1,17 +1,11 @@
 #!/usr/bin/env node
-// Local tag suggestions (Florence-2 via transformers.js) — no API, offline
-// after the first download. Suggestions only, never written to frontmatter.
+// Local tag suggestions (Florence-2 via transformers.js) — no API, offline after
+// the first download. Suggestions only, never written to frontmatter.
 // Usage: yarn suggest-tags <slug>|--all. Env: TAGGER_MODEL, TAGGER_DTYPE, TAGGER_MAX.
 //
-// Three captions at rising detail, ranked by how many agree: the terse one names
-// the subject, the longest wanders into composition. <OD> is unused — COCO-trained,
-// so on landscapes it returns noise (one hallucinated "bird" on the first photo).
-//
-// The model volunteers two things it cannot know: how the frame feels, and what
-// season it is. Both are stripped rather than scored — see `frame()` and
-// `CLIMATE`. Measured over the 13-photo catalogue, that moved suggestions which
-// match a tag actually chosen from 50/91 to 48/75, and stopped suggesting a
-// mood word on 11 of 13 frames.
+// Three captions at rising detail, ranked by how many agree. <OD> is unused —
+// COCO-trained, so on landscapes it returns noise (a hallucinated "bird").
+// Mood and season are stripped, not scored; AGENTS.md has the measurements.
 
 import { existsSync, readdirSync } from "node:fs";
 import { extname, join } from "node:path";
@@ -74,12 +68,9 @@ export function findImage(slug) {
 	return img ? join(dir, img) : null;
 }
 
-// Florence-2 ends nearly every caption with a verdict on the mood, and often a
-// sentence on where the camera stood. Both are formulaic, so they appear on
-// almost every frame and separate none of them — "peaceful and serene" was
-// suggested on 11 of 13 photographs. Cut at the source, so the words never reach
-// the ranking and never reach `scene` either. A mood word used descriptively
-// ("the water appears calm") survives, which is the distinction worth keeping.
+// The mood verdict and the camera-position sentence are boilerplate: "peaceful
+// and serene" landed on 11 of 13 frames, so it separates none of them. Cut here,
+// so it reaches neither the ranking nor `scene`. Descriptive use survives.
 function frame(text) {
 	return (text || "")
 		.replace(/,?\s*(and\s+)?the overall (mood|atmosphere|feeling|tone)\b[^.]*\.?/gi, ".")
@@ -123,15 +114,12 @@ function canonical(word, corpus) {
 }
 
 // Alt from the middle caption: the terse one is too thin, the longest is a
-// paragraph. Strip the model's "the image is a black and white photo of" opener —
-// a screen reader already says "image", and the catalogue is all monochrome — and
-// keep one sentence. The full description lives in `scene`.
+// paragraph. The opener goes (a screen reader already says "image") and one
+// sentence is kept; `scene` holds the rest.
 //
-// The CLIMATE pass matters more here than in the tags. `alt` is written to the
-// file, and it is read by the one person who cannot check it against the print:
-// "A frozen lake with water flowing over rocks" (fc75e1) describes a river with
-// no ice on it. A vaguer sentence is honest; that one is not. Losing "snow" from
-// a frame that really has snow costs one word you can type back.
+// CLIMATE matters more here than in the tags, because `alt` is written to the
+// file and read by the one person who can't check it: "A frozen lake with water
+// flowing over rocks" (fc75e1) is a river with no ice on it.
 function deriveAlt(text) {
 	let s = (text || "")
 		.trim()
@@ -153,9 +141,8 @@ function deriveAlt(text) {
 }
 
 // Caption agreement is the signal, frequency the tiebreak; gerunds penalised.
-// Below FLOOR a word was named in one caption only and is not already a site tag
-// — noise, and padding the list to MAX_TAGS with it costs precision. Raising this
-// bar is the lever to reach for before widening STOP.
+// Below FLOOR a word came from one caption and isn't already a site tag, so it
+// is dropped rather than padding the list. Raise the floor before widening STOP.
 function rank(captions, corpus) {
 	const stats = new Map();
 	for (const text of captions) {
