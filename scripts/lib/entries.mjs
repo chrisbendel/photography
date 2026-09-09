@@ -7,8 +7,10 @@ export const LIVE_DIR = "src/content/photos";
 
 export const ID_RE = /^[0-9a-f]{6}$/;
 
-// What a photo folder may hold. The tagger's list is narrower — see suggest-tags.
+// Two lists because two questions. An avif entry displays and ships fine; it
+// just gets no suggestion, because Florence-2 can't read it.
 export const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".avif"];
+export const TAGGABLE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 
 // yarn forwards a bare `--` as an argument where npm eats it.
 export function cliArgs() {

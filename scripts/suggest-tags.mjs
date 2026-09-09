@@ -15,13 +15,12 @@ import {
 	AutoProcessor,
 	RawImage,
 } from "@huggingface/transformers";
-import { cliArgs, frontmatter, idsIn, LIVE_DIR } from "./lib/entries.mjs";
+import { cliArgs, frontmatter, idsIn, LIVE_DIR, TAGGABLE_EXTS } from "./lib/entries.mjs";
 
 // Large at q8 beats base at fp32: smaller (821 MB vs 1.0 GB) and reads
 // black-and-white correctly where base guesses. ~3s more per photo.
 const MODEL = process.env.TAGGER_MODEL || "onnx-community/Florence-2-large";
 const DTYPE = process.env.TAGGER_DTYPE || "q8";
-const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 
 // Words too generic to be useful tags, stripped from caption-derived keywords.
 const STOP = new Set(
@@ -63,7 +62,7 @@ export function findImage(slug) {
 	const dir = join(LIVE_DIR, slug);
 	if (!existsSync(dir)) return null;
 	const img = readdirSync(dir).find(
-		(f) => f.startsWith("image.") && IMAGE_EXTS.includes(extname(f).toLowerCase()),
+		(f) => f.startsWith("image.") && TAGGABLE_EXTS.includes(extname(f).toLowerCase()),
 	);
 	return img ? join(dir, img) : null;
 }
@@ -104,7 +103,7 @@ function corpusTags() {
 	return tags;
 }
 
-// Fold onto an established tag by plural — `/tags/tree/` vs `/tags/trees/`.
+// Fold onto an established tag by plural: one subject, one search term.
 function canonical(word, corpus) {
 	if (corpus.has(word)) return word;
 	for (const variant of [`${word}s`, word.replace(/s$/, "")]) {

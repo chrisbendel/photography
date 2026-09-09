@@ -4,13 +4,12 @@ import { spawn } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { basename, extname, join, resolve } from "node:path";
 import { createInterface } from "node:readline";
-import { cliArgs, entryTemplate, LIVE_DIR, newId } from "./lib/entries.mjs";
+import { cliArgs, entryTemplate, LIVE_DIR, newId, TAGGABLE_EXTS } from "./lib/entries.mjs";
 import { tagImage } from "./suggest-tags.mjs";
 
 const args = cliArgs();
 const skipTags = args.includes("--no-tags");
 const [imagePath] = args.filter((a) => !a.startsWith("--"));
-const TAGGABLE = [".jpg", ".jpeg", ".png", ".webp"];
 
 mkdirSync(LIVE_DIR, { recursive: true });
 
@@ -41,7 +40,7 @@ let scene = "";
 let alt = "";
 if (copiedImage && !skipTags) {
 	const ext = extname(copiedImage).toLowerCase();
-	if (!TAGGABLE.includes(ext)) {
+	if (!TAGGABLE_EXTS.includes(ext)) {
 		console.log(`Skipping tag suggestions — ${ext} not supported (use jpg/png/webp).`);
 	} else {
 		try {

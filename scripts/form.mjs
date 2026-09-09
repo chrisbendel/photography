@@ -17,6 +17,7 @@ import {
 	newId,
 	parseTags,
 	setFrontmatter,
+	TAGGABLE_EXTS,
 } from "./lib/entries.mjs";
 
 const PORT = Number(process.env.PORT) || 4331;
@@ -30,9 +31,6 @@ const STATIC = {
 
 // Base64 of a 3 MB jpg is ~4 MB. The cap is slack, not a policy.
 const MAX_BODY = 32 * 1024 * 1024;
-
-// Florence-2 reads these. An avif upload lands fine, it just gets no suggestion.
-const TAGGABLE = [".jpg", ".jpeg", ".png", ".webp"];
 
 const TEXT_FIELDS = ["alt", "caption", "lens", "film", "location", "format", "notes", "scene"];
 
@@ -51,17 +49,21 @@ function forbid(req) {
 	// The Host header, not just the bind address: a domain that resolves to
 	// 127.0.0.1 would otherwise look same-origin to the browser (DNS rebinding).
 	const host = (req.headers.host ?? "").replace(/:\d+$/, "");
-	if (host !== "localhost" && host !== "127.0.0.1") return [421, `Refusing Host ${host}`];
+	if (host !== "localhost" && host !== "127.0.0.1") {
+		return { code: 421, message: `Refusing Host ${host}` };
+	}
 
 	// Absent on a same-origin GET, and the page's own value on a same-origin write.
 	const origin = req.headers.origin;
-	if (origin && !ALLOWED_ORIGINS.has(origin)) return [403, `Refusing origin ${origin}`];
+	if (origin && !ALLOWED_ORIGINS.has(origin)) {
+		return { code: 403, message: `Refusing origin ${origin}` };
+	}
 
 	// Writes must be application/json, which forces a preflight nothing answers.
 	const writing = req.method !== "GET" && req.method !== "HEAD";
 	const type = req.headers["content-type"] ?? "";
 	if (writing && !type.startsWith("application/json")) {
-		return [415, `Writes need content-type: application/json, got ${type || "none"}`];
+		return { code: 415, message: `Writes need application/json, got ${type || "none"}` };
 	}
 	return null;
 }
@@ -78,26 +80,22 @@ function readEntry(id) {
 
 // Frequency first: the lens on half the catalogue sits at the top of its own list.
 function vocabulary(entries) {
-	const vocab = {};
-	for (const field of VOCAB_FIELDS) {
+	function tally(valuesOf) {
 		const counts = new Map();
 		for (const entry of entries) {
-			const value = (entry[field] || "").trim();
-			if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
+			for (const value of valuesOf(entry)) {
+				if (value) counts.set(value, (counts.get(value) ?? 0) + 1);
+			}
 		}
-		vocab[field] = [...counts.entries()]
-			.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+		return [...counts]
+			.sort(([a, countA], [b, countB]) => countB - countA || a.localeCompare(b))
 			.map(([value, count]) => ({ value, count }));
 	}
 
-	const tagCounts = new Map();
-	for (const entry of entries) {
-		for (const tag of entry.tags) tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+	const vocab = { tags: tally((entry) => entry.tags) };
+	for (const field of VOCAB_FIELDS) {
+		vocab[field] = tally((entry) => [(entry[field] || "").trim()]);
 	}
-	vocab.tags = [...tagCounts.entries()]
-		.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
-		.map(([value, count]) => ({ value, count }));
-
 	return vocab;
 }
 
@@ -121,28 +119,24 @@ async function thumbnail(id, width) {
 	return thumbs.get(key);
 }
 
-function readBody(req) {
-	return new Promise((done, fail) => {
-		let size = 0;
-		const chunks = [];
-		req.on("data", (chunk) => {
-			size += chunk.length;
-			if (size > MAX_BODY) {
-				fail(new Error(`Body over ${MAX_BODY / 1024 / 1024} MB`));
-				req.destroy();
-				return;
-			}
-			chunks.push(chunk);
-		});
-		req.on("end", () => {
-			try {
-				done(JSON.parse(Buffer.concat(chunks).toString("utf8") || "{}"));
-			} catch (err) {
-				fail(new Error(`Bad JSON body: ${err.message}`));
-			}
-		});
-		req.on("error", fail);
-	});
+async function readBody(req) {
+	// Abandoning the stream — an oversize body, or a client that hangs up — makes
+	// it emit 'error', and with no listener that takes the whole process down.
+	req.on("error", () => {});
+
+	const chunks = [];
+	let size = 0;
+	for await (const chunk of req) {
+		size += chunk.length;
+		if (size > MAX_BODY) throw new Error(`Body over ${MAX_BODY / 1024 / 1024} MB`);
+		chunks.push(chunk);
+	}
+	const text = Buffer.concat(chunks).toString("utf8");
+	try {
+		return JSON.parse(text || "{}");
+	} catch (err) {
+		throw new Error(`Bad JSON body: ${err.message}`);
+	}
 }
 
 // Only the fields the form owns, coerced the way the schema wants them.
@@ -163,10 +157,8 @@ function sanitise(fields) {
 			.replace(/^-|-$/g, "");
 	}
 	if ("tags" in fields) {
-		const seen = new Set();
-		out.tags = (Array.isArray(fields.tags) ? fields.tags : parseTags(fields.tags))
-			.map(cleanTag)
-			.filter((tag) => tag && !seen.has(tag) && seen.add(tag));
+		const given = Array.isArray(fields.tags) ? fields.tags : parseTags(fields.tags);
+		out.tags = [...new Set(given.map(cleanTag).filter(Boolean))];
 	}
 	return out;
 }
@@ -207,7 +199,7 @@ async function createEntry({ filename, data, fields }) {
 async function suggest(id) {
 	const file = findImageFile(id);
 	if (!file) throw new Error(`No image in ${id}/`);
-	if (!TAGGABLE.includes(extname(file).toLowerCase())) {
+	if (!TAGGABLE_EXTS.includes(extname(file).toLowerCase())) {
 		throw new Error(`${extname(file)} can't be read — use jpg, png or webp`);
 	}
 	const { tagImage } = await import("./suggest-tags.mjs");
@@ -227,9 +219,8 @@ const server = createServer(async (req, res) => {
 	try {
 		const refused = forbid(req);
 		if (refused) {
-			const [code, message] = refused;
-			console.error(`  ✗ ${code} ${req.method} ${path}: ${message}`);
-			return send(res, code, { error: message });
+			console.error(`  ✗ ${refused.code} ${req.method} ${path}: ${refused.message}`);
+			return send(res, refused.code, { error: refused.message });
 		}
 
 		if (req.method === "GET" && (path === "/" || path === "/index.html")) {
