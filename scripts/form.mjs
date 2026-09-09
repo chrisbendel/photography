@@ -41,6 +41,31 @@ const VOCAB_FIELDS = ["lens", "film", "format", "location", "series"];
 
 const mdPathFor = (id) => join(LIVE_DIR, id, "index.md");
 
+// Binding 127.0.0.1 stops other machines. It does not stop other pages in this
+// browser, which can reach localhost freely — and a `text/plain` body is a
+// CORS-simple request, so it needs no preflight. Without this guard, any site
+// open in another tab could POST an entry into the collection.
+const ALLOWED_ORIGINS = new Set([`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`]);
+
+function forbid(req) {
+	// The Host header, not just the bind address: a domain that resolves to
+	// 127.0.0.1 would otherwise look same-origin to the browser (DNS rebinding).
+	const host = (req.headers.host ?? "").replace(/:\d+$/, "");
+	if (host !== "localhost" && host !== "127.0.0.1") return [421, `Refusing Host ${host}`];
+
+	// Absent on a same-origin GET, and the page's own value on a same-origin write.
+	const origin = req.headers.origin;
+	if (origin && !ALLOWED_ORIGINS.has(origin)) return [403, `Refusing origin ${origin}`];
+
+	// Writes must be application/json, which forces a preflight nothing answers.
+	const writing = req.method !== "GET" && req.method !== "HEAD";
+	const type = req.headers["content-type"] ?? "";
+	if (writing && !type.startsWith("application/json")) {
+		return [415, `Writes need content-type: application/json, got ${type || "none"}`];
+	}
+	return null;
+}
+
 function readEntry(id) {
 	const get = frontmatter(mdPathFor(id));
 	if (!get) return null;
@@ -200,6 +225,13 @@ const server = createServer(async (req, res) => {
 	const path = url.pathname;
 
 	try {
+		const refused = forbid(req);
+		if (refused) {
+			const [code, message] = refused;
+			console.error(`  ✗ ${code} ${req.method} ${path}: ${message}`);
+			return send(res, code, { error: message });
+		}
+
 		if (req.method === "GET" && (path === "/" || path === "/index.html")) {
 			return send(res, 200, readFileSync(PAGE), "text/html; charset=utf-8");
 		}

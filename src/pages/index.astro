@@ -265,7 +265,7 @@ const haystacks = Object.fromEntries(
 	.no-results {
 		color: var(--ink-faint);
 		font-size: 0.8rem;
-		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-family: var(--mono);
 		letter-spacing: 0.04em;
 		margin: 0;
 	}
@@ -281,7 +281,7 @@ const haystacks = Object.fromEntries(
 	}
 
 	/* Grid cells use <button> instead of <a> — strip default button chrome */
-	.sheet button.cell {
+	.cell {
 		background: none;
 		border: 0;
 		padding: 0;
@@ -298,7 +298,6 @@ const haystacks = Object.fromEntries(
 		display: grid;
 		grid-template-columns: auto 1fr auto;
 		grid-template-rows: 1fr auto;
-		gap: 0;
 		align-items: center;
 		justify-items: center;
 		padding: 4vh 4vw;
@@ -331,11 +330,7 @@ const haystacks = Object.fromEntries(
 	}
 
 	.loupe-stage img {
-		max-width: 100%;
 		max-height: calc(92vh - 5rem);
-		height: auto;
-		width: auto;
-		display: block;
 		box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.6);
 	}
 
@@ -344,7 +339,7 @@ const haystacks = Object.fromEntries(
 		display: flex;
 		align-items: baseline;
 		gap: 0.75rem;
-		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-family: var(--mono);
 		font-size: 0.7rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
@@ -400,37 +395,27 @@ const haystacks = Object.fromEntries(
 		grid-column: 1;
 		grid-row: 1;
 		justify-self: start;
-		align-self: center;
 	}
 
 	.loupe-next {
 		grid-column: 3;
 		grid-row: 1;
 		justify-self: end;
-		align-self: center;
 	}
 
 	@media (max-width: 600px) {
 		.loupe {
 			padding: 3vh 1rem;
 			grid-template-columns: 1fr;
-			grid-template-rows: 1fr auto;
 		}
 		.loupe-stage {
 			grid-column: 1;
-			grid-row: 1;
 		}
 		.loupe-prev,
 		.loupe-next {
 			grid-row: 2;
 			grid-column: 1;
 			align-self: end;
-		}
-		.loupe-prev {
-			justify-self: start;
-		}
-		.loupe-next {
-			justify-self: end;
 		}
 	}
 </style>

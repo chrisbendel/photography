@@ -84,10 +84,19 @@ in the dropdown is drift, not a second lens.
 
 **This is not the CMS that was reverted** (#5, #7). No object storage, no D1, no
 auth, no second render path: git is still the versioned backup, and `yarn dev`
-still renders exactly what ships. It binds `127.0.0.1`, not `0.0.0.0`, because it
-writes to the working tree — that is also the whole of its security model, so
-don't put it behind a tunnel or "just" bind it wider. Close the process and
-nothing is left running.
+still renders exactly what ships. Close the process and nothing is left running.
+
+Its security model is two things, and it needs both. It binds `127.0.0.1`, never
+`0.0.0.0` — don't put it behind a tunnel or "just" bind it wider. And `forbid()`
+checks `Host`, `Origin` and `content-type` on every request, because binding
+alone does **not** make it unreachable: localhost is reachable from every page
+the browser has open. A `text/plain` body is a CORS-simple request, so it needs
+no preflight — before the guard, a `POST /api/entries` with `text/plain` and
+`Origin: https://evil.example` returned 201 and wrote an entry to disk. Writes
+now require `application/json`, which forces a preflight nothing answers; a
+foreign `Origin` is refused; and a foreign `Host` is refused so a domain
+resolving to 127.0.0.1 can't pose as same-origin. Plain GETs send no `Origin`,
+so the page, the stylesheet and the thumbnails are untouched.
 
 Keep it dumb. It has no delete, no reorder, no bulk edit and no preview of the
 site — the collection, `git rm` and `yarn dev` already do those. If it ever needs

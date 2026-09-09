@@ -37,10 +37,13 @@
 		gap: var(--gutter);
 	}
 
+	/* #bench is a <main>, so global.css gives it the page shell — including a
+	   padding this layout already has on <body>. */
 	#strip,
 	#bench {
 		flex: 1 1 22rem;
 		min-width: 0;
+		padding: 0;
 	}
 
 	/* ---------- Contact sheet ---------- */
@@ -58,9 +61,7 @@
 		border: 0;
 		padding: 0;
 		background: none;
-		font: inherit;
 		text-align: left;
-		cursor: pointer;
 		transition: opacity 0.15s ease;
 	}
 
@@ -78,18 +79,6 @@
 
 	.frame[aria-current="true"] img {
 		outline: 2px solid var(--ink);
-	}
-
-	/* ---------- Verso treatment ---------- */
-	/* The print page's metadata idiom, for frame labels and field names alike. */
-
-	.verso {
-		display: block;
-		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-		font-size: 0.7rem;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--ink-faint);
 	}
 
 	.frame .verso {

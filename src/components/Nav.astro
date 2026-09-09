@@ -122,7 +122,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 	nav.site-nav {
 		max-width: var(--measure);
 		margin: 0 auto;
-		padding: 1rem var(--gutter);
+		padding: var(--gap) var(--gutter);
 		display: flex;
 		flex-wrap: nowrap;
 		align-items: center;
@@ -211,7 +211,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 
 	/* Monospace, like the verso metadata — this is filing-cabinet language. */
 	form.site-search input {
-		font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+		font-family: var(--mono);
 		font-size: 0.75rem;
 		letter-spacing: 0.06em;
 		color: var(--ink);
@@ -289,14 +289,6 @@ const isCurrent = (href: string) => path.startsWith(href);
 		form.site-search input,
 		form.site-search input:focus {
 			width: 100%;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		form.site-search,
-		form.site-search input,
-		.field {
-			transition: none;
 		}
 	}
 
@@ -402,7 +394,7 @@ const isCurrent = (href: string) => path.startsWith(href);
 
 	.halo {
 		opacity: 0;
-		transition: opacity 0.4s ease, r 0.4s ease;
+		transition: opacity 0.4s ease;
 		pointer-events: none;
 	}
 
@@ -437,13 +429,6 @@ const isCurrent = (href: string) => path.startsWith(href);
 	}
 	:global(:root:not([data-theme="dark"])) .halo-outer {
 		opacity: 0.45;
-	}
-
-	:global(:root[data-theme="dark"]) .halo {
-		opacity: 0;
-	}
-	:global(:root[data-theme="dark"]) .highlight {
-		opacity: 0;
 	}
 
 	@keyframes cord-stretch {
@@ -491,12 +476,4 @@ const isCurrent = (href: string) => path.startsWith(href);
 	}
 
 	/* Inherits global :focus-visible ring. */
-
-	@media (prefers-reduced-motion: reduce) {
-		button.darkroom-pull.is-pulling .cord-group,
-		button.darkroom-pull.is-pulling .bulb-group,
-		button.darkroom-pull.is-pulling .halo {
-			animation: none;
-		}
-	}
 </style>
