@@ -2,10 +2,9 @@
 // Pre-merge gate for what the build won't catch. Errors exit non-zero, warnings don't.
 import { readdirSync, statSync } from "node:fs";
 import { extname, join } from "node:path";
-import { frontmatter, ID_RE, idsIn, LIVE_DIR } from "./lib/entries.mjs";
+import { frontmatter, ID_RE, idsIn, IMAGE_EXTS, LIVE_DIR } from "./lib/entries.mjs";
 
 const MAX_MB = 3;
-const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".avif"];
 
 let errors = 0;
 let warnings = 0;

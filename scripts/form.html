@@ -1,0 +1,612 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bench</title>
+
+<!-- The site's own stylesheet, served by form.mjs: tokens, reset, typography and
+     the dark palette, so the bench can't drift. Below is layout only. -->
+<link rel="stylesheet" href="/global.css" />
+
+<script>
+	// The same "theme" key Layout.astro reads, so the bench and the cord agree.
+	// The OS preference only seeds the first visit.
+	(function () {
+		var saved = null;
+		try {
+			saved = localStorage.getItem("theme");
+		} catch (_) {}
+		document.documentElement.dataset.theme =
+			saved === "light" || saved === "dark"
+				? saved
+				: matchMedia("(prefers-color-scheme: dark)").matches
+					? "dark"
+					: "light";
+	})();
+</script>
+
+<style>
+	/* One row that wraps: no media query, no nested scroller. `min-width: 0` on the
+	   panes stops a select's intrinsic width widening the row (same trap as the nav). */
+	body {
+		max-width: var(--sheet);
+		margin: 0 auto;
+		padding: var(--gap) var(--gutter);
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: var(--gutter);
+	}
+
+	/* #bench is a <main>, so global.css gives it the page shell — including a
+	   padding this layout already has on <body>. */
+	#strip,
+	#bench {
+		flex: 1 1 22rem;
+		min-width: 0;
+		padding: 0;
+	}
+
+	/* ---------- Contact sheet ---------- */
+
+	#sheet {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--gap);
+		margin-top: var(--gap);
+	}
+
+	/* Two across always, so a frame grows with the pane rather than shrinking. */
+	.frame {
+		flex: 0 1 calc(50% - var(--gap) / 2);
+		border: 0;
+		padding: 0;
+		background: none;
+		text-align: left;
+		transition: opacity 0.15s ease;
+	}
+
+	.frame:hover {
+		opacity: 0.7;
+	}
+
+	.frame img {
+		aspect-ratio: 5 / 4;
+		object-fit: cover;
+		background: var(--paper-shadow);
+		outline: 1px solid var(--rule);
+		outline-offset: -1px;
+	}
+
+	.frame[aria-current="true"] img {
+		outline: 2px solid var(--ink);
+	}
+
+	.frame .verso {
+		padding-top: 0.3rem;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.frame[aria-current="true"] .verso {
+		color: var(--ink);
+	}
+
+	/* An entry with no alt text fails check-photos, so say so on the sheet. */
+	.frame[data-gap] .verso::after {
+		content: " · no alt";
+		color: var(--ink);
+	}
+
+	/* ---------- Fields ---------- */
+
+	label {
+		display: block;
+		margin-top: var(--gap);
+	}
+
+	/* The nav search field's treatment: underline, not a box, thickening by shadow
+	   on focus so nothing shifts. */
+	input,
+	select,
+	textarea {
+		width: 100%;
+		font: inherit;
+		color: var(--ink);
+		background: none;
+		border: 0;
+		border-bottom: 1px solid var(--rule);
+		padding: 0.3rem 0;
+	}
+
+	input:focus,
+	select:focus,
+	textarea:focus {
+		outline: none;
+		border-bottom-color: var(--ink);
+		box-shadow: 0 1px 0 var(--ink);
+	}
+
+	textarea {
+		resize: vertical;
+	}
+
+	select {
+		cursor: pointer;
+	}
+
+	/* Two fields to a row where they belong together; they stack when narrow. */
+	.pair {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--gutter);
+	}
+
+	.pair > label {
+		flex: 1 1 9rem;
+		min-width: 0;
+	}
+
+	/* ---------- Buttons ---------- */
+	/* Hover thickens the rule, the way links and the search field do. */
+
+	button {
+		font: inherit;
+		color: var(--ink);
+		background: none;
+		border: 1px solid var(--rule);
+		padding: 0.3rem 0.7rem;
+		cursor: pointer;
+	}
+
+	button:hover:not(:disabled) {
+		border-color: var(--ink);
+	}
+
+	button:disabled {
+		color: var(--ink-faint);
+		cursor: default;
+	}
+
+	button[aria-pressed="true"] {
+		border-color: var(--ink);
+		background: var(--ink);
+		color: var(--paper);
+	}
+
+	#tagpool {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
+		margin-top: 0.5rem;
+	}
+
+	#tagpool button {
+		font-size: 0.8rem;
+		padding: 0.05rem 0.4rem;
+		color: var(--ink-faint);
+	}
+
+	#actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--gutter);
+		margin-top: var(--gutter);
+		padding-top: var(--gap);
+		border-top: 1px solid var(--rule);
+	}
+
+	#status {
+		color: var(--ink-soft);
+		font-size: 0.85rem;
+	}
+
+	#preview {
+		outline: 1px solid var(--rule);
+	}
+
+	body.dropping {
+		outline: 2px dashed var(--ink-soft);
+		outline-offset: -0.5rem;
+	}
+</style>
+
+<section id="strip">
+	<div class="pair">
+		<label style="margin-top: 0">
+			<span class="verso">Filter frames</span>
+			<input id="filter" type="search" autocomplete="off" spellcheck="false" />
+		</label>
+		<p style="flex: 0 0 auto; align-self: flex-end; margin: 0">
+			<button id="add" type="button">Add a photograph</button>
+			<button id="light" type="button"></button>
+			<input id="file" type="file" accept="image/*" hidden />
+		</p>
+	</div>
+	<div id="sheet"></div>
+</section>
+
+<main id="bench">
+	<p id="hint">Pick a frame, or drop an image anywhere to start a new one.</p>
+
+	<form id="entry" hidden>
+		<h2 id="title"></h2>
+		<p class="verso" id="idtag"></p>
+		<img id="preview" alt="" />
+
+		<label>
+			<span class="verso">Alt — what a screen reader says, required</span>
+			<textarea name="alt" rows="2"></textarea>
+		</label>
+		<label>
+			<span class="verso">Caption</span>
+			<input name="caption" />
+		</label>
+
+		<div class="pair">
+			<label>
+				<span class="verso">Year</span>
+				<input name="year" type="number" min="1800" max="2100" step="1" />
+			</label>
+			<label>
+				<span class="verso">Format</span>
+				<select data-vocab="format"></select>
+				<input class="new-value" data-for="format" placeholder="4x5" hidden />
+			</label>
+		</div>
+
+		<label>
+			<span class="verso">Lens</span>
+			<select data-vocab="lens"></select>
+			<input class="new-value" data-for="lens" placeholder="Caltar II-N 210mm f/5.6" hidden />
+		</label>
+
+		<div class="pair">
+			<label>
+				<span class="verso">Film</span>
+				<select data-vocab="film"></select>
+				<input class="new-value" data-for="film" placeholder="FP4+" hidden />
+			</label>
+			<label>
+				<span class="verso">Location</span>
+				<select data-vocab="location"></select>
+				<input class="new-value" data-for="location" placeholder="Grand Isle, VT" hidden />
+			</label>
+		</div>
+
+		<label>
+			<span class="verso">Series — a slug; naming a new one starts it</span>
+			<select data-vocab="series"></select>
+			<input class="new-value" data-for="series" placeholder="north-shore" hidden />
+		</label>
+
+		<label>
+			<span class="verso">Tags — click to toggle, comma-separate new ones</span>
+			<input name="tags" />
+		</label>
+		<div id="tagpool"></div>
+
+		<label>
+			<span class="verso">Notes — the log book</span>
+			<textarea name="notes" rows="4"></textarea>
+		</label>
+
+		<details>
+			<summary class="verso">Scene — machine-written, feeds search, never shown</summary>
+			<label>
+				<span class="verso">Scene</span>
+				<textarea name="scene" rows="4"></textarea>
+			</label>
+		</details>
+
+		<div id="actions">
+			<button type="submit" id="save">Save</button>
+			<button type="button" id="reread">Re-read image</button>
+			<span id="status"></span>
+		</div>
+	</form>
+</main>
+
+<script type="module">
+	const $ = (sel) => document.querySelector(sel);
+	const form = $("#entry");
+	const sheet = $("#sheet");
+
+	// Sentinel. A leading space is not a legal value, so it can't collide.
+	const NEW = " new";
+
+	let state = { entries: [], vocab: {} };
+	let current = null;
+	// Twelve fields of typing are worth one confirm. Set by hand as well as by
+	// the input event, because chips and pickers change values from script.
+	let dirty = false;
+	const markDirty = () => {
+		dirty = true;
+	};
+
+	const say = (message) => {
+		$("#status").textContent = message;
+	};
+
+	async function api(path, options) {
+		const res = await fetch(path, options);
+		const body = await res.json();
+		if (!res.ok) throw new Error(body.error ?? res.statusText);
+		return body;
+	}
+
+	// ---------- Contact sheet ----------
+
+	function drawSheet() {
+		const query = $("#filter").value.trim().toLowerCase();
+		const haystack = (entry) =>
+			[entry.id, entry.caption, entry.alt, entry.location, entry.series, entry.year, entry.notes, entry.scene]
+				.concat(entry.tags)
+				.join(" ")
+				.toLowerCase();
+		const shown = state.entries.filter((entry) => !query || haystack(entry).includes(query));
+
+		sheet.replaceChildren(
+			...shown.map((entry) => {
+				const frame = document.createElement("button");
+				frame.className = "frame";
+				frame.type = "button";
+				frame.setAttribute("aria-current", String(entry.id === current));
+				if (!entry.alt) frame.dataset.gap = "";
+
+				const img = document.createElement("img");
+				img.loading = "lazy";
+				img.src = `/thumb/${entry.id}?w=480`;
+				img.alt = entry.alt || entry.id;
+
+				const label = document.createElement("span");
+				label.className = "verso";
+				label.textContent = `${entry.id} ${entry.caption || entry.alt || ""}`.trim();
+
+				frame.append(img, label);
+				frame.onclick = () => select(entry.id);
+				return frame;
+			}),
+		);
+
+		if (!shown.length) {
+			const none = document.createElement("p");
+			none.textContent = query ? "No frame matches." : "No entries yet.";
+			sheet.append(none);
+		}
+	}
+
+	// ---------- Dropdowns ----------
+
+	function drawSelect(select, value) {
+		const options = state.vocab[select.dataset.vocab] ?? [];
+		const known = options.some((o) => o.value === value);
+
+		select.replaceChildren();
+		select.append(new Option("(none)", ""));
+		for (const { value: option, count } of options) {
+			select.append(new Option(count > 1 ? `${option} (${count})` : option, option));
+		}
+		// A hand-edited value the corpus hasn't seen must still be selectable,
+		// or opening the entry would silently drop it.
+		if (value && !known) select.append(new Option(value, value));
+		select.append(new Option("New value...", NEW));
+
+		select.value = value ?? "";
+		syncNew(select);
+	}
+
+	function syncNew(select) {
+		const box = form.querySelector(`.new-value[data-for="${select.dataset.vocab}"]`);
+		const opening = select.value === NEW;
+		box.hidden = !opening;
+		if (opening) box.focus();
+		else box.value = "";
+	}
+
+	// The typed value wins while the new-value box is open, the picker otherwise.
+	function vocabValue(field) {
+		const select = form.querySelector(`[data-vocab="${field}"]`);
+		const box = form.querySelector(`.new-value[data-for="${field}"]`);
+		return select.value === NEW ? box.value.trim() : select.value;
+	}
+
+	// ---------- Tags ----------
+
+	const currentTags = () =>
+		form.tags.value
+			.split(",")
+			.map((t) => t.trim().toLowerCase())
+			.filter(Boolean);
+
+	function drawTagPool() {
+		const chosen = new Set(currentTags());
+		$("#tagpool").replaceChildren(
+			...(state.vocab.tags ?? []).map(({ value, count }) => {
+				const chip = document.createElement("button");
+				chip.type = "button";
+				chip.textContent = count > 1 ? `${value} ${count}` : value;
+				chip.setAttribute("aria-pressed", String(chosen.has(value)));
+				chip.onclick = () => {
+					const next = new Set(currentTags());
+					if (next.has(value)) next.delete(value);
+					else next.add(value);
+					form.tags.value = [...next].join(", ");
+					markDirty();
+					drawTagPool();
+				};
+				return chip;
+			}),
+		);
+	}
+
+	// ---------- Bench ----------
+
+	function select(id) {
+		const entry = state.entries.find((e) => e.id === id);
+		if (!entry) return;
+		if (dirty && id !== current && !confirm("Discard unsaved changes to this frame?")) return;
+		current = id;
+		dirty = false;
+
+		$("#hint").hidden = true;
+		form.hidden = false;
+		$("#title").textContent = entry.caption || entry.alt || "Unfilled frame";
+		$("#idtag").textContent = entry.id;
+		$("#preview").src = `/thumb/${entry.id}?w=1000`;
+		$("#preview").alt = entry.alt || "";
+
+		for (const name of ["alt", "caption", "year", "notes", "scene"]) form[name].value = entry[name] ?? "";
+		form.tags.value = entry.tags.join(", ");
+		for (const select of form.querySelectorAll("[data-vocab]")) {
+			drawSelect(select, entry[select.dataset.vocab] ?? "");
+		}
+		drawTagPool();
+		say("");
+		drawSheet();
+	}
+
+	function fields() {
+		const out = { tags: currentTags() };
+		for (const name of ["alt", "caption", "year", "notes", "scene"]) out[name] = form[name].value;
+		for (const field of ["lens", "film", "format", "location", "series"]) out[field] = vocabValue(field);
+		return out;
+	}
+
+	function refresh(next) {
+		state = { entries: next.entries, vocab: next.vocab };
+		drawSheet();
+	}
+
+	form.onsubmit = async (event) => {
+		event.preventDefault();
+		if (!current) return;
+		$("#save").disabled = true;
+		say("Saving...");
+		try {
+			refresh(
+				await api(`/api/entries/${current}`, {
+					method: "PATCH",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ fields: fields() }),
+				}),
+			);
+			select(current);
+			dirty = false;
+			say("Saved. yarn dev has it already.");
+		} catch (err) {
+			say(`Failed: ${err.message}`);
+		}
+		$("#save").disabled = false;
+	};
+
+	$("#reread").onclick = async () => {
+		if (!current) return;
+		$("#reread").disabled = true;
+		say("Reading the image. First run downloads the model, so give it a minute.");
+		try {
+			const { alt, scene, tags } = await api(`/api/entries/${current}/suggest`, { method: "POST" });
+
+			// Alt is the one field a human owns — AGENTS.md is explicit, because it
+			// is read by the one person who can't check it against the print. Fill
+			// it only when blank; otherwise offer the sentence and let it be taken.
+			const kept = [];
+			if (alt && !form.alt.value.trim()) form.alt.value = alt;
+			else if (alt) kept.push(`alt it would have written: "${alt}"`);
+			if (scene && !form.scene.value.trim()) form.scene.value = scene;
+
+			form.tags.value = [...new Set([...currentTags(), ...tags])].join(", ");
+			drawTagPool();
+			markDirty();
+			kept.unshift(`Suggested ${tags.join(", ") || "nothing it was sure of"}.`);
+			say(`${kept.join("  ")}  Cut what is wrong, then Save.`);
+		} catch (err) {
+			say(`Failed: ${err.message}`);
+		}
+		$("#reread").disabled = false;
+	};
+
+	// ---------- New entries ----------
+
+	async function addImage(file) {
+		if (!file) return;
+		say(`Copying ${file.name}...`);
+		const data = await new Promise((done, fail) => {
+			const reader = new FileReader();
+			reader.onload = () => done(String(reader.result).split(",")[1]);
+			reader.onerror = () => fail(new Error(`Couldn't read ${file.name}`));
+			reader.readAsDataURL(file);
+		});
+		try {
+			const created = await api("/api/entries", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ filename: file.name, data, fields: {} }),
+			});
+			refresh(created);
+			dirty = false;
+			select(created.id);
+			// Blank alt fails check-photos, so a new frame is read automatically.
+			$("#reread").click();
+		} catch (err) {
+			say(`Failed: ${err.message}`);
+		}
+	}
+
+	// Labelled with what it will do, same wording as the cord's tooltip.
+	function drawLight() {
+		$("#light").textContent =
+			document.documentElement.dataset.theme === "dark" ? "Turn light on" : "Turn light off";
+	}
+
+	$("#light").onclick = () => {
+		const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+		document.documentElement.dataset.theme = next;
+		try {
+			localStorage.setItem("theme", next);
+		} catch (_) {}
+		drawLight();
+	};
+
+	drawLight();
+
+	$("#add").onclick = () => $("#file").click();
+	$("#file").onchange = (event) => addImage(event.target.files[0]);
+
+	for (const type of ["dragenter", "dragover"]) {
+		document.addEventListener(type, (event) => {
+			event.preventDefault();
+			document.body.classList.add("dropping");
+		});
+	}
+	document.addEventListener("dragleave", (event) => {
+		if (event.relatedTarget === null) document.body.classList.remove("dropping");
+	});
+	document.addEventListener("drop", (event) => {
+		event.preventDefault();
+		document.body.classList.remove("dropping");
+		addImage(event.dataTransfer.files[0]);
+	});
+
+	// ---------- Wiring ----------
+
+	$("#filter").oninput = drawSheet;
+	form.tags.oninput = drawTagPool;
+	form.addEventListener("input", markDirty);
+	form.addEventListener("change", (event) => {
+		markDirty();
+		if (event.target.dataset.vocab) syncNew(event.target);
+	});
+	addEventListener("beforeunload", (event) => {
+		if (dirty) event.preventDefault();
+	});
+	document.addEventListener("keydown", (event) => {
+		if ((event.metaKey || event.ctrlKey) && event.key === "s") {
+			event.preventDefault();
+			form.requestSubmit();
+		}
+	});
+
+	refresh(await api("/api/state"));
+</script>

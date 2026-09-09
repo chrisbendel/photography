@@ -19,6 +19,18 @@
 	--sheet: 72rem;
 	--gutter: 1.5rem;
 	--gap: 1rem;
+	/* Half the gutter, and load-bearing three ways: the mosaic's column gap, the
+	   cell's bottom margin and the negative margin that bleeds the sheet past the
+	   measure all have to stay equal or the columns stop lining up. */
+	--sheet-gap: calc(var(--gutter) / 2);
+	/* Filing-cabinet language: verso metadata, the search field, the loupe caption. */
+	--mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+
+	/* Chrome that sits on a photograph, so it must not flip with the theme: a
+	   scrim over a print stays dark whichever way the cord is pulled. The two
+	   paper values, deliberately not redefined in the dark block below. */
+	--scrim: #14110e;
+	--scrim-ink: #f3efe6;
 
 	font-size: 18px;
 	color-scheme: light;
@@ -69,12 +81,11 @@ body::before {
 	background-image: url("/grain.svg");
 	background-repeat: repeat;
 	opacity: 0.05;
-	mix-blend-mode: multiply;
 }
 
 :root[data-theme="dark"] body::before {
-	opacity: 0.08;
-	mix-blend-mode: screen;
+	opacity: 0.07;
+	filter: invert(1);
 }
 
 /* ---------- Layout shell ---------- */
@@ -174,12 +185,6 @@ a:hover {
 	outline-offset: 0;
 }
 
-hr {
-	border: 0;
-	border-top: 1px solid var(--rule);
-	margin: 2rem 0;
-}
-
 img {
 	display: block;
 	max-width: 100%;
@@ -196,13 +201,35 @@ figcaption {
 	margin-top: 0.4rem;
 }
 
+/* Pencil on the back of a print. AGENTS.md names this treatment; before it was a
+   class it was copied into three files and had already drifted. */
+.verso {
+	display: block;
+	font-family: var(--mono);
+	font-size: 0.7rem;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--ink-faint);
+}
+
+/* One rule for the whole site, the bench included, rather than a block per
+   component — three local ones covered 3 of 10 animations between them. */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		transition: none;
+		animation: none;
+	}
+}
+
 /* ---------- Shared mosaic grid ---------- */
 /* Used by the gallery on /. Per-page additions live in that file. */
 
 .sheet {
 	column-count: 1;
-	column-gap: 0.75rem;
-	margin: 0 calc(var(--gutter) * -0.5);
+	column-gap: var(--sheet-gap);
+	margin: 0 calc(var(--sheet-gap) * -1);
 }
 
 /* The only thing allowed past the page measure; :has spares pages with no mosaic.
@@ -233,7 +260,7 @@ main:has(.sheet) {
 
 .sheet .cell {
 	display: block;
-	margin: 0 0 0.75rem;
+	margin: 0 0 var(--sheet-gap);
 	break-inside: avoid;
 	transition: opacity 0.15s ease;
 }
@@ -244,5 +271,4 @@ main:has(.sheet) {
 
 .sheet .cell img {
 	width: 100%;
-	height: auto;
 }

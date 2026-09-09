@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-// Local tag suggestions (Florence-2 via transformers.js) — no API, offline
-// after the first download. Suggestions only, never written to frontmatter.
+// Local tag suggestions (Florence-2 via transformers.js) — no API, offline after
+// the first download. Suggestions only, never written to frontmatter.
 // Usage: yarn suggest-tags <slug>|--all. Env: TAGGER_MODEL, TAGGER_DTYPE, TAGGER_MAX.
 //
-// Three captions at rising detail, ranked by how many agree: the terse one names
-// the subject, the longest wanders into composition. <OD> is unused — COCO-trained,
-// so on landscapes it returns noise (one hallucinated "bird" on the first photo).
+// Three captions at rising detail, ranked by how many agree. <OD> is unused —
+// COCO-trained, so on landscapes it returns noise (a hallucinated "bird").
+// Mood and season are stripped, not scored; AGENTS.md has the measurements.
 
 import { existsSync, readdirSync } from "node:fs";
 import { extname, join } from "node:path";
@@ -15,13 +15,12 @@ import {
 	AutoProcessor,
 	RawImage,
 } from "@huggingface/transformers";
-import { cliArgs, frontmatter, idsIn, LIVE_DIR } from "./lib/entries.mjs";
+import { cliArgs, frontmatter, idsIn, LIVE_DIR, TAGGABLE_EXTS } from "./lib/entries.mjs";
 
 // Large at q8 beats base at fp32: smaller (821 MB vs 1.0 GB) and reads
 // black-and-white correctly where base guesses. ~3s more per photo.
 const MODEL = process.env.TAGGER_MODEL || "onnx-community/Florence-2-large";
 const DTYPE = process.env.TAGGER_DTYPE || "q8";
-const IMAGE_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
 
 // Words too generic to be useful tags, stripped from caption-derived keywords.
 const STOP = new Set(
@@ -38,28 +37,48 @@ const STOP = new Set(
 		"group groups bunch collection pair variety number amount range " +
 		"surface surfaces scattered arranged formation formations covering " +
 		"covered visible object objects horizon texture textured layer " +
-		"man woman people person background foreground front side scene shot center").split(
-			" ",
-		),
+		"man woman people person background foreground front side scene shot center " +
+		// Left behind once the framing and mood sentences are cut.
+		"angle taken appear either ones beautiful").split(" "),
 );
 
-// Mood and light words earn their place from a single mention.
-const MOOD = new Set(
-	("calm still quiet peaceful serene stark bleak soft harsh bright dark moody " +
-		"misty foggy hazy overcast stormy golden empty desolate lonely wintry " +
-		"barren rugged windswept glassy shadowed sunlit").split(" "),
+// Never suggested, whatever the captions agree on. In monochrome the model reads
+// any smooth bright region as snow or ice: it called a long-exposure river a
+// "frozen lake" in all three captions (fc75e1), so caption agreement cannot tell
+// the two apart. A season is yours to type — it is one word, and it is true.
+const CLIMATE = new Set(
+	("snow snowy snowfall snowing ice icy iced frost frosty frozen freeze " +
+		"fog foggy mist misty haze hazy rain rainy").split(" "),
 );
+
+// Longest first, so "snowfall" is not half-matched by "snow".
+const CLIMATE_RE = [...CLIMATE].sort((a, b) => b.length - a.length).join("|");
 
 const CAPTION_TASKS = ["<CAPTION>", "<DETAILED_CAPTION>", "<MORE_DETAILED_CAPTION>"];
 const MAX_TAGS = Number(process.env.TAGGER_MAX) || 7;
+const FLOOR = Number(process.env.TAGGER_FLOOR) || 6;
 
 export function findImage(slug) {
 	const dir = join(LIVE_DIR, slug);
 	if (!existsSync(dir)) return null;
 	const img = readdirSync(dir).find(
-		(f) => f.startsWith("image.") && IMAGE_EXTS.includes(extname(f).toLowerCase()),
+		(f) => f.startsWith("image.") && TAGGABLE_EXTS.includes(extname(f).toLowerCase()),
 	);
 	return img ? join(dir, img) : null;
+}
+
+// The mood verdict and the camera-position sentence are boilerplate: "peaceful
+// and serene" landed on 11 of 13 frames, so it separates none of them. Cut here,
+// so it reaches neither the ranking nor `scene`. Descriptive use survives.
+function frame(text) {
+	return (text || "")
+		.replace(/,?\s*(and\s+)?the overall (mood|atmosphere|feeling|tone)\b[^.]*\.?/gi, ".")
+		.replace(/[^.]*\bis (taken|shot|photographed) from\b[^.]*\.?/gi, "")
+		.replace(/,?\s*(and\s+)?(with|creating)\s+a\s+sense\s+of\b[^.]*/gi, "")
+		.replace(/,?\s*creating a\b[^.]*?\bcontrast\b[^.]*/gi, "")
+		.replace(/\s*\.\s*\./g, ".")
+		.replace(/\s{2,}/g, " ")
+		.trim();
 }
 
 // Hyphens split: "snow-covered" gives "snow" (real) and "covered" (stopped).
@@ -84,7 +103,7 @@ function corpusTags() {
 	return tags;
 }
 
-// Fold onto an established tag by plural — `/tags/tree/` vs `/tags/trees/`.
+// Fold onto an established tag by plural: one subject, one search term.
 function canonical(word, corpus) {
 	if (corpus.has(word)) return word;
 	for (const variant of [`${word}s`, word.replace(/s$/, "")]) {
@@ -94,9 +113,12 @@ function canonical(word, corpus) {
 }
 
 // Alt from the middle caption: the terse one is too thin, the longest is a
-// paragraph. Strip the model's "the image is a black and white photo of" opener —
-// a screen reader already says "image", and the catalogue is all monochrome — and
-// keep one sentence. The full description lives in `scene`.
+// paragraph. The opener goes (a screen reader already says "image") and one
+// sentence is kept; `scene` holds the rest.
+//
+// CLIMATE matters more here than in the tags, because `alt` is written to the
+// file and read by the one person who can't check it: "A frozen lake with water
+// flowing over rocks" (fc75e1) is a river with no ice on it.
 function deriveAlt(text) {
 	let s = (text || "")
 		.trim()
@@ -104,10 +126,22 @@ function deriveAlt(text) {
 		.replace(/^(a|an)\s+(black and white\s+)?(photo(graph)?|picture|image)\s+of\s+/i, "")
 		.replace(/^(black and white\s+)?(photo(graph)?|picture|image)\s+of\s+/i, "");
 	s = s.split(/(?<=\.)\s+/)[0].replace(/\s*\.\s*$/, "");
+	s = s
+		// A whole clause claiming a season goes; the main clause never does.
+		.replace(new RegExp(`,[^,]*\\b(${CLIMATE_RE})\\b[^,]*`, "gi"), "")
+		// "snow-covered rocks" has to lose both words, or "covered" dangles.
+		.replace(new RegExp(`\\b(${CLIMATE_RE})[-\\s]covered\\s*`, "gi"), "")
+		.replace(new RegExp(`\\b(${CLIMATE_RE})\\b\\s*`, "gi"), "")
+		.replace(/\s{2,}/g, " ")
+		.replace(/\s+([,.])/g, "$1")
+		.replace(/[\s,]+$/, "")
+		.trim();
 	return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
 }
 
 // Caption agreement is the signal, frequency the tiebreak; gerunds penalised.
+// Below FLOOR a word came from one caption and isn't already a site tag, so it
+// is dropped rather than padding the list. Raise the floor before widening STOP.
 function rank(captions, corpus) {
 	const stats = new Map();
 	for (const text of captions) {
@@ -125,12 +159,14 @@ function rank(captions, corpus) {
 	}
 
 	return [...stats.entries()]
+		.filter(([w]) => !CLIMATE.has(w))
 		.map(([w, s]) => {
-			let score = s.captions * 2 + s.count + (MOOD.has(w) ? 2 : 0);
+			let score = s.captions * 2 + s.count;
 			if (corpus.has(w)) score += 3;
 			if (w.endsWith("ing")) score -= 2;
 			return { tag: w, score };
 		})
+		.filter((r) => r.score >= FLOOR)
 		.sort((a, b) => b.score - a.score || a.tag.localeCompare(b.tag))
 		.slice(0, MAX_TAGS)
 		.map((r) => r.tag);
@@ -165,7 +201,7 @@ export async function tagImage(imagePath) {
 	const captions = [];
 	for (const task of CAPTION_TASKS) {
 		const out = await runTask(image, task);
-		captions.push((out[task] ?? "").trim());
+		captions.push(frame((out[task] ?? "").trim()));
 	}
 	return {
 		caption: captions[captions.length - 1],
