@@ -318,6 +318,12 @@
 
 	let state = { entries: [], vocab: {} };
 	let current = null;
+	// Twelve fields of typing are worth one confirm. Set by hand as well as by
+	// the input event, because chips and pickers change values from script.
+	let dirty = false;
+	const markDirty = () => {
+		dirty = true;
+	};
 
 	const say = (message) => {
 		$("#status").textContent = message;
@@ -427,6 +433,7 @@
 					if (next.has(value)) next.delete(value);
 					else next.add(value);
 					form.tags.value = [...next].join(", ");
+					markDirty();
 					drawTagPool();
 				};
 				return chip;
@@ -439,7 +446,9 @@
 	function select(id) {
 		const entry = state.entries.find((e) => e.id === id);
 		if (!entry) return;
+		if (dirty && id !== current && !confirm("Discard unsaved changes to this frame?")) return;
 		current = id;
+		dirty = false;
 
 		$("#hint").hidden = true;
 		form.hidden = false;
@@ -484,6 +493,7 @@
 				}),
 			);
 			select(current);
+			dirty = false;
 			say("Saved. yarn dev has it already.");
 		} catch (err) {
 			say(`Failed: ${err.message}`);
@@ -497,11 +507,20 @@
 		say("Reading the image. First run downloads the model, so give it a minute.");
 		try {
 			const { alt, scene, tags } = await api(`/api/entries/${current}/suggest`, { method: "POST" });
-			form.alt.value = alt || form.alt.value;
-			form.scene.value = scene || form.scene.value;
+
+			// Alt is the one field a human owns — AGENTS.md is explicit, because it
+			// is read by the one person who can't check it against the print. Fill
+			// it only when blank; otherwise offer the sentence and let it be taken.
+			const kept = [];
+			if (alt && !form.alt.value.trim()) form.alt.value = alt;
+			else if (alt) kept.push(`alt it would have written: "${alt}"`);
+			if (scene && !form.scene.value.trim()) form.scene.value = scene;
+
 			form.tags.value = [...new Set([...currentTags(), ...tags])].join(", ");
 			drawTagPool();
-			say(`Suggested ${tags.join(", ") || "nothing it was sure of"}. Cut what is wrong, then Save.`);
+			markDirty();
+			kept.unshift(`Suggested ${tags.join(", ") || "nothing it was sure of"}.`);
+			say(`${kept.join("  ")}  Cut what is wrong, then Save.`);
 		} catch (err) {
 			say(`Failed: ${err.message}`);
 		}
@@ -513,9 +532,10 @@
 	async function addImage(file) {
 		if (!file) return;
 		say(`Copying ${file.name}...`);
-		const data = await new Promise((done) => {
+		const data = await new Promise((done, fail) => {
 			const reader = new FileReader();
 			reader.onload = () => done(String(reader.result).split(",")[1]);
+			reader.onerror = () => fail(new Error(`Couldn't read ${file.name}`));
 			reader.readAsDataURL(file);
 		});
 		try {
@@ -525,6 +545,7 @@
 				body: JSON.stringify({ filename: file.name, data, fields: {} }),
 			});
 			refresh(created);
+			dirty = false;
 			select(created.id);
 			// Blank alt fails check-photos, so a new frame is read automatically.
 			$("#reread").click();
@@ -572,8 +593,13 @@
 
 	$("#filter").oninput = drawSheet;
 	form.tags.oninput = drawTagPool;
+	form.addEventListener("input", markDirty);
 	form.addEventListener("change", (event) => {
+		markDirty();
 		if (event.target.dataset.vocab) syncNew(event.target);
+	});
+	addEventListener("beforeunload", (event) => {
+		if (dirty) event.preventDefault();
 	});
 	document.addEventListener("keydown", (event) => {
 		if ((event.metaKey || event.ctrlKey) && event.key === "s") {

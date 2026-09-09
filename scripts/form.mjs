@@ -11,7 +11,6 @@ import {
 	entryTemplate,
 	findImageFile,
 	frontmatter,
-	IMAGE_EXTS,
 	idsIn,
 	LIVE_DIR,
 	newId,
@@ -22,6 +21,7 @@ import {
 
 const PORT = Number(process.env.PORT) || 4331;
 const PAGE = new URL("./form.html", import.meta.url);
+const REPO = new URL("../", import.meta.url);
 
 // The page links the site's stylesheet rather than restating its palette.
 const STATIC = {
@@ -31,6 +31,9 @@ const STATIC = {
 
 // Base64 of a 3 MB jpg is ~4 MB. The cap is slack, not a policy.
 const MAX_BODY = 32 * 1024 * 1024;
+
+// What sharp reports, mapped to the extension the collection uses.
+const FORMAT_EXT = { jpeg: ".jpg", png: ".png", webp: ".webp", avif: ".avif" };
 
 const TEXT_FIELDS = ["alt", "caption", "lens", "film", "location", "format", "notes", "scene"];
 
@@ -113,6 +116,7 @@ async function thumbnail(id, width) {
 	const file = findImageFile(id);
 	if (!file) return null;
 	const key = `${id}:${width}:${statSync(file).mtimeMs}`;
+	if (thumbs.size > 400) thumbs.clear();
 	if (!thumbs.has(key)) {
 		thumbs.set(key, await sharp(file).resize({ width, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer());
 	}
@@ -166,15 +170,15 @@ function sanitise(fields) {
 async function createEntry({ filename, data, fields }) {
 	if (!data) throw new Error("No image in the upload");
 
-	const ext = (extname(filename || "") || ".jpg").toLowerCase();
-	if (!IMAGE_EXTS.includes(ext)) {
-		throw new Error(`${ext} is not one of ${IMAGE_EXTS.join(", ")}`);
-	}
-
 	// Decoded first: a bad drop shouldn't leave a folder for check-photos to flag.
 	const buffer = Buffer.from(data, "base64");
-	const { width, height } = await sharp(buffer).metadata();
+	const { width, height, format } = await sharp(buffer).metadata();
 	if (!width || !height) throw new Error(`${filename} is not an image sharp can read`);
+
+	// The name is a claim, the bytes are the fact: a PNG exported as .jpg used to
+	// land as image.jpg with PNG inside. `.jpg` not `.jpeg`, matching the others.
+	const ext = FORMAT_EXT[format];
+	if (!ext) throw new Error(`${filename} is ${format}; use ${Object.keys(FORMAT_EXT).join(", ")}`);
 
 	const mb = buffer.length / 1024 / 1024;
 	if (mb > 3) console.log(`  ! ${filename} is ${mb.toFixed(1)} MB — check-photos warns over 3`);
@@ -229,7 +233,7 @@ const server = createServer(async (req, res) => {
 
 		if (req.method === "GET" && path in STATIC) {
 			const [file, type] = STATIC[path];
-			return send(res, 200, readFileSync(file), type);
+			return send(res, 200, readFileSync(new URL(file, REPO)), type);
 		}
 
 		if (req.method === "GET" && path === "/api/state") {
