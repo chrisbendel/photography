@@ -172,17 +172,22 @@ function rank(captions, corpus) {
 		.map((r) => r.tag);
 }
 
-// Loaded once, reused across every photo in a run.
+// Loaded once, reused across every photo in a run. The promise is kept, not the
+// result, so two reads that start together share one load instead of two.
 let _m = null;
-export async function loadModel() {
-	if (_m) return _m;
-	process.stdout.write(`Loading ${MODEL} (first run downloads weights) ... `);
-	const [model, processor] = await Promise.all([
-		Florence2ForConditionalGeneration.from_pretrained(MODEL, { dtype: DTYPE }),
-		AutoProcessor.from_pretrained(MODEL),
-	]);
-	console.log("ready");
-	_m = { model, processor };
+export function loadModel() {
+	_m ??= (async () => {
+		process.stdout.write(`Loading ${MODEL} (first run downloads weights) ... `);
+		const [model, processor] = await Promise.all([
+			Florence2ForConditionalGeneration.from_pretrained(MODEL, { dtype: DTYPE }),
+			AutoProcessor.from_pretrained(MODEL),
+		]);
+		console.log("ready");
+		return { model, processor };
+	})().catch((err) => {
+		_m = null; // a failed download is retried by the next read, not cached
+		throw err;
+	});
 	return _m;
 }
 

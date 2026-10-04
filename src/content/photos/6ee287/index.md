@@ -13,7 +13,7 @@ location: "Delta Park, Colchester, VT"
 # Written with × when shown, so type it plainly: 4x5, 6x7, 35mm.
 format: "4x5"
 # A slug. Naming one that doesn't exist yet is how you start it.
-series: winter
+series:
 # Lowercase search terms, any number including none. Not routes.
 tags: [lake, sunset, calm, water, spring, sky, mountains]
 # What the vision model saw. Feeds search, never displayed. Machine-written.

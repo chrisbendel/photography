@@ -62,7 +62,7 @@ if (copiedImage && !skipTags) {
 	}
 }
 
-// Shared with the bench (form.mjs), so the two can't drift on a fresh entry.
+// Shared with the bench (bench.mjs), so the two can't drift on a fresh entry.
 const mdPath = join(photoDir, "index.md");
 writeFileSync(
 	mdPath,

@@ -8,6 +8,8 @@ export type Series = {
 	photos: Photo[];
 };
 
+// The bench restates this as titleOf(), and the order below in seriesList()
+// (scripts/bench/store.js), so it shows series as /series/ will. Keep in step.
 export function titleFromSlug(slug: string): string {
 	return slug
 		.split("-")

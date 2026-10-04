@@ -13,7 +13,7 @@ location: "Swanton, VT"
 # Written with × when shown, so type it plainly: 4x5, 6x7, 35mm.
 format: "4x5"
 # A slug. Naming one that doesn't exist yet is how you start it.
-series: river
+series:
 # Lowercase search terms, any number including none. Not routes.
 # suggested — move keepers into tags: trees, water, sky, swamp, peaceful, clouds, plants
 tags: [trees, water, sky, swamp, river, peaceful, clouds, plants, lilypad]
