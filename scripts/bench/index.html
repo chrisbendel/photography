@@ -1,0 +1,150 @@
+<!doctype html>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Bench</title>
+
+<!-- The site's own stylesheet first, served by bench.mjs, then the bench's layout. -->
+<link rel="stylesheet" href="/global.css" />
+<link rel="stylesheet" href="/bench.css" />
+
+<script>
+	// Inline so the first paint is already the right shade. Same "theme" key name
+	// as Layout.astro, but a different origin (port), so its own storage: the two
+	// don't share a choice. The OS preference seeds it.
+	(function () {
+		var saved = null;
+		try {
+			saved = localStorage.getItem("theme");
+		} catch (_) {}
+		document.documentElement.dataset.theme =
+			saved === "light" || saved === "dark"
+				? saved
+				: matchMedia("(prefers-color-scheme: dark)").matches
+					? "dark"
+					: "light";
+	})();
+</script>
+
+<header id="top">
+	<button id="tab-todo" class="tab" type="button"></button>
+	<button id="tab-sheet" class="tab" type="button"></button>
+	<button id="tab-series" class="tab" type="button"></button>
+	<button id="add" type="button">Add photographs</button>
+	<button id="light" class="quiet" type="button"></button>
+	<input id="file" type="file" accept="image/*" multiple hidden />
+</header>
+
+<div id="work">
+	<section id="stage">
+		<div id="print">
+			<img id="preview" alt="" hidden />
+			<div id="batch" hidden></div>
+			<p id="empty" hidden></p>
+			<div id="members" hidden></div>
+			<div id="grid" hidden></div>
+		</div>
+		<div id="strip">
+			<div id="strip-head">
+				<span class="verso" id="strip-label"></span>
+				<input id="filter" type="search" placeholder="Filter" autocomplete="off" spellcheck="false" />
+				<input id="new-series" placeholder="New series" autocomplete="off" spellcheck="false" />
+				<span id="gaps"></span>
+				<span id="layouts">
+					<button type="button" class="quiet" data-layout="strip">Strip</button>
+					<button type="button" class="quiet" data-layout="grid" title="G">Grid</button>
+				</span>
+			</div>
+			<div id="frames"></div>
+		</div>
+	</section>
+
+	<main id="bench">
+		<form id="entry" hidden>
+			<h2 id="title" class="batch-only"></h2>
+			<p class="verso" id="idtag"></p>
+
+			<!-- What changes frame to frame comes first; the roll's details below. -->
+			<label class="single">
+				<span class="verso">Alt</span>
+				<textarea name="alt" rows="2" placeholder="What a screen reader says"></textarea>
+			</label>
+			<label class="single">
+				<span class="verso">Caption</span>
+				<input name="caption" placeholder="One line under the print" />
+			</label>
+			<label>
+				<span class="verso">Tags</span>
+				<input name="tags" placeholder="comma, separated" />
+			</label>
+			<div id="tagpool"></div>
+			<label class="single">
+				<span class="verso">Notes</span>
+				<textarea name="notes" rows="3" placeholder="What you saw, what you'd do differently"></textarea>
+			</label>
+
+			<fieldset>
+				<legend class="verso">Details</legend>
+				<div class="pair">
+					<label>
+						<span class="verso">Year</span>
+						<input name="year" type="number" min="1800" max="2100" step="1" />
+					</label>
+					<label>
+						<span class="verso">Format</span>
+						<input name="format" data-vocab autocomplete="off" />
+					</label>
+				</div>
+				<label>
+					<span class="verso">Lens</span>
+					<input name="lens" data-vocab autocomplete="off" />
+				</label>
+				<div class="pair">
+					<label>
+						<span class="verso">Film</span>
+						<input name="film" data-vocab autocomplete="off" />
+					</label>
+					<label>
+						<span class="verso">Location</span>
+						<input name="location" data-vocab autocomplete="off" data-sort="name" />
+					</label>
+				</div>
+				<!-- Managed in the Series place; here only to set one for a whole roll. -->
+				<label class="batch-only">
+					<span class="verso">Series</span>
+					<input name="series" data-vocab autocomplete="off" />
+				</label>
+			</fieldset>
+
+			<div id="actions">
+				<button type="submit" id="save" class="primary" title="⌘↩">Save</button>
+				<button type="button" id="cancel" class="batch-only">Cancel</button>
+				<button type="button" id="reread" class="single quiet">Read again</button>
+				<button type="button" id="delete" class="single quiet">Delete</button>
+				<span class="status" aria-live="polite"></span>
+			</div>
+		</form>
+
+		<section id="picker" hidden>
+			<!-- Rename swaps the title for a field inside the same heading, so it has
+			     the heading's type without restating it. -->
+			<h2>
+				<span id="series-title"></span>
+				<input id="rename" aria-label="Series name" autocomplete="off" spellcheck="false" hidden />
+			</h2>
+			<div id="series-head">
+				<p class="verso" id="series-meta"></p>
+				<button type="button" id="rename-start" class="quiet" title="Enter to rename, Esc to leave it">Rename</button>
+			</div>
+			<p class="status" aria-live="polite"></p>
+			<div id="series-add">
+				<label>
+					<span class="verso">Add frames</span>
+					<input id="pick-filter" type="search" placeholder="Search" autocomplete="off" spellcheck="false" />
+				</label>
+				<div id="candidates"></div>
+			</div>
+		</section>
+	</main>
+</div>
+
+<script type="module" src="/main.js"></script>

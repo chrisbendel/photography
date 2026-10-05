@@ -56,14 +56,14 @@ Rules that are easy to break:
   don't launch things, and this one only prompts when `stdin` is a TTY, so piped
   and CI runs still just print.
 
-Scripts: `photo.mjs` (scaffold), `form.mjs` + `form.html` (the bench),
+Scripts: `photo.mjs` (scaffold), `bench.mjs` + `bench/` (the bench),
 `check.mjs` (gate), `list.mjs` (`yarn entries`), `suggest-tags.mjs`. Shared
 plumbing in `scripts/lib/entries.mjs`, which owns the frontmatter template and
 the in-place field writer so the CLI and the bench cannot drift apart.
 
 ## The bench
 
-`yarn photo-form` is the CLI with eyes: one page on `127.0.0.1:4331`, thumbnails
+`yarn bench` is the CLI with eyes: one page on `127.0.0.1:4331`, thumbnails
 of every frame down the left, the selected entry's fields on the right. It writes
 `src/content/photos/<id>/index.md` through the same template `yarn photo` uses,
 and nothing else.
@@ -74,13 +74,18 @@ at 13 entries `lens` held seven strings for four lenses (`Fujinon W 250mm f/6.7`
 against `Fujinon W 250 f/6.7`; `Schneider 360mm Tele-Xenar f/5.5` against
 `Schneider Tele-Xenar 360mm f/5.5`; the Super Angulon with and without its
 "Super"), `location` had Delta Park under two spellings, and `film` had `4x5` in
-it. So `lens`, `film`, `format`, `location` and `series` are dropdowns over the
-values the collection already holds, ordered by how often each is used, with a
-row for a new one. A value is typed once, ever.
+it. So `lens`, `film`, `format`, `location` and `series` are searchable
+dropdowns (`combo.js`). Focus shows every value the collection already holds,
+typing narrows them, and a value not in the list is marked "New" and saved as
+typed. A value that matches an existing one except for capitals saves as the
+existing spelling. Not a `<datalist>`: its popup can't be styled, and it hides
+the list until you type, when seeing the other choices is the point. A value is typed once, ever. Suggestions are ordered most used
+first, except location, which goes a→z: there are many, and you look one up
+by name.
 
 Lens strings read maker, series name, focal length, aperture — `Caltar II-N 210mm
 f/5.6`. Four lenses, four strings: don't re-split one on a spelling. A near-match
-in the dropdown is drift, not a second lens.
+in the suggestions is drift, not a second lens.
 
 **This is not the CMS that was reverted** (#5, #7). No object storage, no D1, no
 auth, no second render path: git is still the versioned backup, and `yarn dev`
@@ -98,10 +103,73 @@ foreign `Origin` is refused; and a foreign `Host` is refused so a domain
 resolving to 127.0.0.1 can't pose as same-origin. Plain GETs send no `Origin`,
 so the page, the stylesheet and the thumbnails are untouched.
 
-Keep it dumb. It has no delete, no reorder, no bulk edit and no preview of the
-site — the collection, `git rm` and `yarn dev` already do those. If it ever needs
+A frame is only ever in one of two places. **To do** is what came in
+and isn't finished. **Sheet** is everything else. Both use the same layout: the
+print in the middle, its fields on the right, and that place's frames in a strip
+underneath. In To do the button is **Done** (⌘↩). It saves the frame, files it
+on the sheet, and opens the next frame on the roll. ⌘S saves without filing,
+for a frame you mean to come back to. On the sheet the button is plain Save.
+Arrow keys walk the strip. The to-do list, and the model's readings of frames
+not yet opened, are held in `localStorage`, so a reload does not lose your place.
+
+Gaps are found on the Sheet, not in a separate workflow. Next to the filter,
+one chip per field that some saved frame is missing, such as "no location · 12".
+The fields are alt, year, format, lens, film, location and tags. Caption and
+notes may well be blank, and series has its own place. A chip narrows the strip
+to those frames and opens the first. Saving a frame that fills the gap moves it
+out of the strip and opens the next, caret in that field. That is the same rule
+as Done: a write that takes a frame out of the strip makes way for the next.
+
+A roll comes off the scanner as a batch, so a drop of several files is one too.
+Before anything is written, the bench asks once for what the frames share
+(format, film, lens, location, year, series, tags). It stamps them on every
+entry it creates, in filename order, which is roll order. A single file skips
+that step. Either way, new frames land in To do. The model reads one frame at a
+time, the frame on screen first. Every reading lands the same way. `alt` and
+`scene` go to disk if they are blank there, as `yarn photo` writes them, so a
+frame is never left without alt. The rest of the reading waits for the form:
+its tags, and its alt if you have already typed your own. The form takes it
+straight away if the frame is open, or whenever you open it. This is not bulk
+edit. The shared fields apply only when
+the entries are created. After that, every frame is edited on its own.
+
+Delete removes the frame's whole folder, after a confirm. It arrived with
+batches: a roll has duds, and removing one should not mean leaving the bench to
+find a hash in the file tree. Git is the only undo, and only for committed
+frames. A frame from tonight's batch is gone for good, though the scan it came
+from is still wherever you dropped it from.
+
+Keep it dumb. It has no reorder, no bulk edit and no preview of the site — the
+collection and `yarn dev` already do those. If it ever needs
 a build step or a framework, that is the signal it has outgrown its brief, not a
 reason to add one.
+
+**How the bench should feel.** Check every UI change against these. Add to them
+as the bench teaches you something.
+
+1. **The print first.** It gets the most room. Everything else stays quiet
+   around it.
+2. **Places never mix.** Where a frame sits, in To do or on the Sheet, is its
+   state. It needs no badge to say so. Series is a third place for groups, not
+   a state, and a message said in one place is cleared on leaving it.
+3. **One obvious next step.** Each state has one filled button: Add, Done or
+   Save. Other actions are outlined (Cancel, Add photographs) or plain text
+   (Read again, Delete, the light).
+4. **Say it once.** No label, count or sentence repeats what is already on
+   screen. The tab holds the count, so the strip doesn't.
+5. **Name, don't instruct.** A label is the field's name. Hints go in
+   placeholders and tooltips, and a placeholder never looks like a value. An
+   empty Lens showing "Caltar II-N 210mm f/5.6" reads as set. Prose is only for
+   empty states and errors.
+6. **Ask only before loss.** Confirm only before throwing away typing, and
+   before Delete. Nothing else interrupts.
+7. **The loop stays on the keys.** ⌘↩ Done, ⌘S Save, ← → walk the strip. Done
+   puts the caret in the next frame's alt. Tooltips show the keys, but the
+   mouse never needs them.
+8. **The site's paper.** Use global.css tokens, verso labels, and underlines
+   instead of boxes. Add no new visual language.
+9. **Remove before adding.** A control earns its place by being used most
+   sessions. Anything rarer goes quiet or behind a disclosure.
 
 ## Series
 
@@ -121,8 +189,21 @@ Consequences, accepted knowingly:
   `getSeries()` (~15 lines). Not before — it was removed for doing nothing.
 
 `yarn photo` leaves `series:` blank, always. Joining one is a decision, same as
-founding one. The bench's dropdown is not a walk-back of that: it lists what
-exists and preselects nothing. Offering the vocabulary is not guessing from it.
+founding one, and the bench's **Series** place is where it's made.
+- **Layout.** The strip holds the series, each with its newest frame as a cover.
+  The stage shows the open series in the order /series/ will, with a Remove on
+  each frame. The panel searches every other frame, and a click adds one.
+- **One series per photo.** Adding a frame from another series moves it, and
+  the picker shows which series it would leave.
+- **New series.** Naming one opens it empty. It exists once a frame is added,
+  the same as anywhere else.
+- **Rename.** This rewrites `series:` on every member, one write each. Renaming
+  onto an existing name merges the two, so it asks first. The slug is the URL,
+  so the old `/series/<slug>/` stops working, and the status line says so.
+
+The per-frame form doesn't show Series, so it has one home. A roll can still
+take one as a shared field, since a roll is often a series. Offering what
+exists is not guessing from it.
 
 It used to guess, scoring the suggested tags against each existing series' slug
 and pooled member tags (2 overlaps to win). Don't reinstate that: the score grew
@@ -144,7 +225,7 @@ location, lens, film, format, year, series, notes — plus `scene`, the vision m
 full description, written by `yarn photo` and never rendered. `scene` is what
 makes "island" or "overcast" find a frame nobody thought to tag that way, and it
 is why search quality doesn't depend on tagging discipline. Backfill it on an
-old entry by copying the caption from `yarn suggest-tags <id>`.
+old entry with Read again on the bench, which fills a blank `scene`.
 
 The index is inlined per build — no fetch, no dependency, no search service. At
 a few hundred photos that's still a small page; past that, move it to a JSON
@@ -229,19 +310,31 @@ a wrong `alt` misinforms the one reader who can't check it against the image.
 - `main` is a flex column with `gap: var(--gap)`. Don't also put margins on its
   children — they stack on the gap and double every space.
 
-The bench (`scripts/form.html`) links `src/styles/global.css`, served by
-`form.mjs` alongside `grain.svg`, and adds only the layout the site has no
-equivalent for. It declares no palette and no type scale of its own, so it cannot
+The bench's page lives in `scripts/bench/`: markup in `index.html`, layout in
+`bench.css`, and plain ES modules that the browser loads as they are. There is
+no bundler. Read them in import order: `store` (state, the server), `view` (places, stage,
+strip, and drawing the Series place), `combo` (the searchable dropdown),
+`fields` (the inputs), `entry` (what is open, and Save, Done and Delete),
+`series` (adding, removing, renaming), `reader` (the vision queue), `intake`
+(files in), `main` (wiring).
+Imports only point back down that list, so there are no cycles. `bench.mjs`
+serves those files by bare name only, so no request path can leave the folder.
+The page links `src/styles/global.css`, served alongside `grain.svg`, and adds
+only the layout the site has no equivalent for. It declares no palette and no type scale of its own, so it cannot
 drift. Controls borrow the nav search field's treatment — underline, not a box,
 thickening on focus by shadow so nothing shifts — and labels borrow the verso
-metadata idiom. One flex row that wraps, `min-width: 0` on both panes, no media
-query and no nested scroller. The `min-width` is load-bearing: a `<select>`'s
-intrinsic width otherwise pushes the row past the viewport, the same trap the nav
-documents.
+metadata idiom. The layout is a light table, not a page: the window is the
+frame, so the fields pane and the strip scroll on their own. This is the one
+place nested scrollers are right, because the print must stay in view while you
+type. It is built for a laptop screen; there is no narrow layout. `min-width: 0`
+on the stage is load-bearing: a form control's intrinsic width otherwise pushes
+the row past the viewport, the same trap the nav documents.
 
-Light/dark on the bench is a plain button writing the same `theme` key
-`Layout.astro` reads, so a choice there and a pull of the cord here agree; the OS
-preference only seeds the first visit. **Don't port the pull-cord to it** — that
+Light/dark on the bench is a plain button. It uses the same `theme` key name as
+`Layout.astro`, but not the same storage: `localStorage` is per origin, and the
+bench (port 4331) and `yarn dev` (port 4321) are different origins. So a choice
+on one does not carry to the other. The OS preference seeds both. **Don't port
+the pull-cord to it** — that
 is 200 lines of SVG and CSS scoped inside `Nav.astro`, and a copy drifts the
 first time the cord is tweaked. The cord is a tactile detail for a visitor; the
 bench is a tool.

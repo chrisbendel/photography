@@ -13,7 +13,7 @@ location: "Huntington, VT"
 # Written with × when shown, so type it plainly: 4x5, 6x7, 35mm.
 format: "4x5"
 # A slug. Naming one that doesn't exist yet is how you start it.
-series: summer
+series:
 # Lowercase search terms, any number including none. Not routes.
 # suggested — move keepers into tags: river, mountains, trees, peaceful, clouds, forest, sky
 tags: [river, hills, trees, barn, rocks, nature]

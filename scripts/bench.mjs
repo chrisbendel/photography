@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // See every frame, edit one, write straight into the collection.
-// Usage: yarn photo-form. Env: PORT. Localhost only — it edits the working tree,
+// Usage: yarn bench. Env: PORT. Localhost only — it edits the working tree,
 // which is also the whole of its security model. See AGENTS.md.
 import { createServer } from "node:http";
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { extname, join, resolve } from "node:path";
 import sharp from "sharp";
 import {
@@ -20,13 +20,21 @@ import {
 } from "./lib/entries.mjs";
 
 const PORT = Number(process.env.PORT) || 4331;
-const PAGE = new URL("./form.html", import.meta.url);
+// The page and its modules, read per request so an edit shows on reload.
+const CLIENT = new URL("./bench/", import.meta.url);
 const REPO = new URL("../", import.meta.url);
 
 // The page links the site's stylesheet rather than restating its palette.
 const STATIC = {
-	"/global.css": ["src/styles/global.css", "text/css; charset=utf-8"],
-	"/grain.svg": ["public/grain.svg", "image/svg+xml"],
+	"/global.css": "src/styles/global.css",
+	"/grain.svg": "public/grain.svg",
+};
+
+const TYPES = {
+	".html": "text/html; charset=utf-8",
+	".css": "text/css; charset=utf-8",
+	".js": "text/javascript; charset=utf-8",
+	".svg": "image/svg+xml",
 };
 
 // Base64 of a 3 MB jpg is ~4 MB. The cap is slack, not a policy.
@@ -40,7 +48,8 @@ const TEXT_FIELDS = ["alt", "caption", "lens", "film", "location", "format", "no
 // Offered as dropdowns, so a value is typed once, ever.
 const VOCAB_FIELDS = ["lens", "film", "format", "location", "series"];
 
-const mdPathFor = (id) => join(LIVE_DIR, id, "index.md");
+const dirFor = (id) => join(LIVE_DIR, id);
+const mdPathFor = (id) => join(dirFor(id), "index.md");
 
 // Binding 127.0.0.1 stops other machines. It does not stop other pages in this
 // browser, which can reach localhost freely — and a `text/plain` body is a
@@ -110,17 +119,20 @@ function state() {
 	return { entries, vocab: vocabulary(entries) };
 }
 
-// In memory and keyed by mtime — no cache directory to gitignore.
+// In memory and keyed by mtime — no cache directory to gitignore. A Map keeps
+// insertion order, so re-setting on a hit makes the first key the least recent.
 const thumbs = new Map();
 async function thumbnail(id, width) {
 	const file = findImageFile(id);
 	if (!file) return null;
 	const key = `${id}:${width}:${statSync(file).mtimeMs}`;
-	if (thumbs.size > 400) thumbs.clear();
-	if (!thumbs.has(key)) {
-		thumbs.set(key, await sharp(file).resize({ width, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer());
-	}
-	return thumbs.get(key);
+	const buffer =
+		thumbs.get(key) ??
+		(await sharp(file).resize({ width, withoutEnlargement: true }).webp({ quality: 72 }).toBuffer());
+	thumbs.delete(key);
+	thumbs.set(key, buffer);
+	if (thumbs.size > 400) thumbs.delete(thumbs.keys().next().value);
+	return buffer;
 }
 
 async function readBody(req) {
@@ -153,6 +165,7 @@ function sanitise(fields) {
 		const year = Number.parseInt(fields.year, 10);
 		out.year = Number.isInteger(year) && year >= 1800 ? String(year) : "";
 	}
+	// slugify() in bench/store.js makes the same slug in the browser; keep in step.
 	if ("series" in fields) {
 		out.series = String(fields.series ?? "")
 			.toLowerCase()
@@ -184,7 +197,7 @@ async function createEntry({ filename, data, fields }) {
 	if (mb > 3) console.log(`  ! ${filename} is ${mb.toFixed(1)} MB — check-photos warns over 3`);
 
 	const id = newId();
-	const dir = join(LIVE_DIR, id);
+	const dir = dirFor(id);
 	mkdirSync(dir, { recursive: true });
 	writeFileSync(join(dir, `image${ext}`), buffer);
 
@@ -211,8 +224,8 @@ async function suggest(id) {
 	return { scene: caption, alt, tags };
 }
 
-const send = (res, code, body, type = "application/json") => {
-	res.writeHead(code, { "content-type": type, "cache-control": "no-store" });
+const send = (res, code, body, type = "application/json", cache = "no-store") => {
+	res.writeHead(code, { "content-type": type, "cache-control": cache });
 	res.end(typeof body === "string" || Buffer.isBuffer(body) ? body : JSON.stringify(body));
 };
 
@@ -227,13 +240,16 @@ const server = createServer(async (req, res) => {
 			return send(res, refused.code, { error: refused.message });
 		}
 
-		if (req.method === "GET" && (path === "/" || path === "/index.html")) {
-			return send(res, 200, readFileSync(PAGE), "text/html; charset=utf-8");
+		if (req.method === "GET" && path in STATIC) {
+			return send(res, 200, readFileSync(new URL(STATIC[path], REPO)), TYPES[extname(path)]);
 		}
 
-		if (req.method === "GET" && path in STATIC) {
-			const [file, type] = STATIC[path];
-			return send(res, 200, readFileSync(new URL(file, REPO)), type);
+		// A bare name and nothing else, so no path can climb out of bench/.
+		const name = path === "/" ? "index.html" : path.match(/^\/([a-z]+\.[a-z]+)$/)?.[1];
+		if (req.method === "GET" && name && TYPES[extname(name)]) {
+			const file = new URL(name, CLIENT);
+			if (!existsSync(file)) return send(res, 404, { error: `No ${name}` });
+			return send(res, 200, readFileSync(file), TYPES[extname(name)]);
 		}
 
 		if (req.method === "GET" && path === "/api/state") {
@@ -245,7 +261,9 @@ const server = createServer(async (req, res) => {
 			const width = Math.min(Number(url.searchParams.get("w")) || 480, 1600);
 			const buffer = await thumbnail(thumbMatch[1], width);
 			if (!buffer) return send(res, 404, { error: "No image" });
-			return send(res, 200, buffer, "image/webp");
+			// Cached, or every redraw of the strip refetches it. The bench never
+			// replaces a scan; one swapped by hand shows after a hard reload.
+			return send(res, 200, buffer, "image/webp", "private, max-age=3600");
 		}
 
 		if (req.method === "POST" && path === "/api/entries") {
@@ -260,6 +278,15 @@ const server = createServer(async (req, res) => {
 			if (!existsSync(mdPathFor(id))) return send(res, 404, { error: `No entry ${id}` });
 			setFrontmatter(mdPathFor(id), sanitise((await readBody(req)).fields ?? {}));
 			console.log(`  ~ ${id}  saved`);
+			return send(res, 200, state());
+		}
+
+		// The whole folder, image and entry. Git is the undo, if it was committed.
+		if (req.method === "DELETE" && entryMatch) {
+			const id = entryMatch[1];
+			if (!existsSync(dirFor(id))) return send(res, 404, { error: `No entry ${id}` });
+			rmSync(dirFor(id), { recursive: true });
+			console.log(`  - ${id}  deleted`);
 			return send(res, 200, state());
 		}
 

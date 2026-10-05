@@ -1,0 +1,485 @@
+/* The bench's layout. Tokens, palette and type come from the site's global.css,
+   linked first, so nothing here can drift from the site. */
+
+/* One rule for every toggle, so a display set below never un-hides anything. */
+[hidden] {
+	display: none !important;
+}
+
+/* A light table: the print in the middle, its fields on the right, the frames
+   of the current place in a strip underneath. The window is the frame, so the
+   panes scroll on their own. Built for a laptop screen; there is no narrow
+   layout. */
+body {
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+#top {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--gutter);
+	padding: 0.6rem var(--gutter);
+	border-bottom: 1px solid var(--rule);
+}
+
+/* Pushes the actions to the right, across the bar from the places. */
+#add {
+	margin-left: auto;
+}
+
+#work {
+	flex: 1;
+	min-height: 0;
+	display: flex;
+}
+
+#stage {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+}
+
+#print {
+	flex: 1;
+	min-height: 0;
+	position: relative;
+}
+
+/* Contained, not cropped: this is the one place the whole frame is seen. */
+#preview {
+	position: absolute;
+	inset: var(--gap);
+	width: calc(100% - 2 * var(--gap));
+	height: calc(100% - 2 * var(--gap));
+	max-width: none;
+	object-fit: contain;
+}
+
+#empty {
+	position: absolute;
+	inset: 0;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	color: var(--ink-soft);
+}
+
+/* #bench is a <main>, so global.css gives it the page shell; undo the measure. */
+#bench {
+	flex: 0 0 24rem;
+	min-width: 0;
+	max-width: none;
+	margin: 0;
+	overflow-y: auto;
+	border-left: 1px solid var(--rule);
+	/* None at the foot, or fields show through under the pinned actions. */
+	padding-bottom: 0;
+}
+
+/* ---------- Places ---------- */
+/* State by underline, like the site's nav: no accent colour. */
+
+#top .tab {
+	border: 0;
+	padding: 0.2rem 0;
+	color: var(--ink-soft);
+}
+
+/* The nav's current-page underline (Nav.astro), value for value. */
+#top .tab[aria-current="true"] {
+	color: var(--ink);
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	text-underline-offset: 0.25em;
+}
+
+/* ---------- Strip ---------- */
+
+#strip {
+	border-top: 1px solid var(--rule);
+	padding: 0.5rem var(--gutter) var(--gap);
+}
+
+#strip-head {
+	display: flex;
+	align-items: baseline;
+	gap: var(--gutter);
+	margin-bottom: 0.5rem;
+}
+
+/* Gap chips: plain text, the one narrowing the strip underlined like a tab. */
+#gaps {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 var(--gutter);
+}
+
+#gaps button,
+#layouts button {
+	font-size: 0.85rem;
+}
+
+/* Pushed to the right end of the strip head, across from the filter. */
+#layouts {
+	margin-left: auto;
+	display: flex;
+	gap: var(--gutter);
+}
+
+#gaps [aria-pressed="true"],
+#layouts [aria-pressed="true"] {
+	color: var(--ink);
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	text-underline-offset: 0.25em;
+}
+
+#strip-head input {
+	width: auto;
+	flex: 0 1 14rem;
+	padding: 0.1rem 0;
+}
+
+#frames {
+	display: flex;
+	gap: 0.5rem;
+	overflow-x: auto;
+	padding: 2px 2px 0.3rem;
+	min-height: 4.4rem;
+}
+
+.frame {
+	flex: 0 0 auto;
+	border: 0;
+	padding: 0;
+	background: none;
+	transition: opacity 0.15s ease;
+}
+
+.frame:hover {
+	opacity: 0.7;
+}
+
+/* Thumbs on the strip, in a waiting batch and in a series: a hairline, like
+   the mosaic's. */
+.frame img,
+#batch img,
+.member img {
+	object-fit: cover;
+	outline: 1px solid var(--rule);
+	outline-offset: -1px;
+}
+
+.frame img {
+	width: 5.5rem;
+	height: 4.4rem;
+	background: var(--paper-shadow);
+}
+
+.frame[aria-current="true"] img {
+	outline: 2px solid var(--ink);
+}
+
+/* The verso line under a thumb: a series name, "reading", or "no alt", which
+   fails check-photos and so is the one in full ink. One line, cut to the thumb. */
+.frame .verso {
+	padding-top: 0.2rem;
+	font-size: 0.6rem;
+	max-width: 5.5rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.frame .gap {
+	color: var(--ink);
+}
+
+/* ---------- Series ---------- */
+
+/* The grid: the strip's frames at contact-sheet size. */
+#grid {
+	align-content: flex-start;
+	gap: var(--gap);
+}
+
+#grid .frame img {
+	width: 11rem;
+	height: 8.8rem;
+}
+
+#grid .frame .verso {
+	max-width: 11rem;
+}
+
+/* The open series on the stage, each frame with its own Remove. */
+#members {
+	align-content: flex-start;
+	gap: var(--gutter);
+}
+
+.member {
+	width: 12rem;
+}
+
+.member img {
+	width: 100%;
+	aspect-ratio: 5 / 4;
+}
+
+.member figcaption {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+}
+
+/* The slug and count, with Rename across from them. */
+#series-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: var(--gutter);
+}
+
+#series-head .verso {
+	margin: 0;
+}
+
+/* It is the URL, so it is shown as typed, not in verso capitals. */
+#series-meta {
+	text-transform: none;
+}
+
+
+/* What can be added: a grid in the panel, searched like the sheet. */
+#candidates {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: var(--gap);
+}
+
+/* ---------- Batch ---------- */
+/* The drop, before anything is written: shared fields only. */
+
+/* The stage's scrolling layouts: a waiting batch, the open series, the grid. */
+#batch,
+#members,
+#grid {
+	position: absolute;
+	inset: 0;
+	overflow-y: auto;
+	padding: var(--gap) var(--gutter);
+	display: flex;
+	flex-wrap: wrap;
+}
+
+#batch {
+	align-content: center;
+	justify-content: center;
+	gap: 0.5rem;
+}
+
+#batch img {
+	width: 8rem;
+	aspect-ratio: 5 / 4;
+}
+
+#entry[data-batch] .single,
+#entry:not([data-batch]) .batch-only {
+	display: none;
+}
+
+/* ---------- Fields ---------- */
+
+label {
+	display: block;
+	margin-top: var(--gap);
+}
+
+/* The nav search field's treatment: underline, not a box, thickening by shadow
+   on focus so nothing shifts. */
+input,
+textarea {
+	width: 100%;
+	font: inherit;
+	color: var(--ink);
+	background: none;
+	border: 0;
+	border-bottom: 1px solid var(--rule);
+	padding: 0.3rem 0;
+}
+
+input:focus,
+textarea:focus {
+	outline: none;
+	border-bottom-color: var(--ink);
+	box-shadow: 0 1px 0 var(--ink);
+}
+
+textarea {
+	resize: vertical;
+}
+
+/* The vocabulary dropdown (combo.js). In the flow under its field, not floating,
+   so the scrolling panel can't clip it; the field's underline becomes its top. */
+#choices {
+	list-style: none;
+	margin: 0;
+	padding: 0.2rem 0;
+	max-height: 12rem;
+	overflow-y: auto;
+	border: 1px solid var(--rule);
+	border-top: 0;
+	scroll-margin-bottom: 6rem; /* clear of the pinned actions when scrolled to */
+}
+
+#choices li {
+	padding: 0.25rem 0.5rem;
+	cursor: pointer;
+}
+
+#choices li:hover,
+#choices li[aria-selected="true"] {
+	background: var(--paper-shadow);
+}
+
+/* What the field holds now, among the rest. */
+#choices .current {
+	font-weight: 500;
+}
+
+#choices .new {
+	color: var(--ink-soft);
+	cursor: default;
+}
+
+/* Two fields to a row where they belong together; they stack when narrow. */
+.pair {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--gutter);
+}
+
+/* The roll's details: set once per batch, rarely touched per frame. */
+fieldset {
+	border: 0;
+	padding: 0;
+	margin: var(--gutter) 0 0;
+	min-width: 0;
+}
+
+legend {
+	padding: 0;
+}
+
+.pair > label {
+	flex: 1 1 9rem;
+	min-width: 0;
+}
+
+/* ---------- Buttons ---------- */
+/* Hover thickens the rule, the way links and the search field do. */
+
+button {
+	font: inherit;
+	color: var(--ink);
+	background: none;
+	border: 1px solid var(--rule);
+	padding: 0.3rem 0.7rem;
+	cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+	border-color: var(--ink);
+}
+
+button:disabled {
+	color: var(--ink-faint);
+	cursor: default;
+}
+
+/* One filled button per state: the next step. */
+button.primary {
+	background: var(--ink);
+	border-color: var(--ink);
+	color: var(--paper);
+}
+
+button.primary:hover:not(:disabled) {
+	background: var(--ink-soft);
+	border-color: var(--ink-soft);
+}
+
+/* Rare or destructive: text, underlined on hover, like a link. */
+button.quiet {
+	border: 0;
+	padding-left: 0;
+	padding-right: 0;
+	color: var(--ink-soft);
+}
+
+button.quiet:hover:not(:disabled) {
+	color: var(--ink);
+	text-decoration: underline;
+	text-underline-offset: 0.25em;
+}
+
+#tagpool {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+	margin-top: 0.5rem;
+}
+
+#tagpool button {
+	font-size: 0.8rem;
+	padding: 0.05rem 0.4rem;
+	color: var(--ink-soft);
+}
+
+/* Pinned to the foot of the panel: the next step never scrolls out of reach. */
+#actions {
+	position: sticky;
+	bottom: 0;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem var(--gutter);
+	margin-top: var(--gutter);
+	padding: var(--gap) 0;
+	border-top: 1px solid var(--rule);
+	background: var(--paper);
+}
+
+.status {
+	color: var(--ink-soft);
+	font-size: 0.85rem;
+}
+
+.status:empty {
+	display: none;
+}
+
+/* Under the buttons, on a line of its own. */
+#actions .status {
+	flex-basis: 100%;
+	order: 1;
+}
+
+/* Across the row from Save, so a slip doesn't land on it. */
+#delete {
+	margin-left: auto;
+}
+
+body.dropping {
+	outline: 2px dashed var(--ink-soft);
+	outline-offset: -0.5rem;
+}
